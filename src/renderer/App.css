@@ -1,62 +1,138 @@
-/*
- * @NOTE: Prepend a `~` to css file paths that are in your node_modules
- *        See https://github.com/webpack-contrib/sass-loader#imports
- */
 body {
-  position: relative;
-  color: white;
-  height: 100vh;
-  background: linear-gradient(
-    200.96deg,
-    #fedc2a -29.09%,
-    #dd5789 51.77%,
-    #7a2c9e 129.35%
-  );
-  font-family: sans-serif;
-  overflow-y: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+  color: darkslategray;
+}
+
+h1 {
+  margin-top: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 16px;
+}
+
+h4 {
+  margin-top: 18px;
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 16px;
+}
+
+span {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+label {
+  font-size: 14px;
 }
 
 button {
-  background-color: white;
-  padding: 10px 20px;
-  border-radius: 10px;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: #fff;
   border: none;
-  appearance: none;
-  font-size: 1.3rem;
-  box-shadow: 0px 8px 28px -6px rgba(24, 39, 75, 0.12),
-    0px 18px 88px -4px rgba(24, 39, 75, 0.14);
-  transition: all ease-in 0.1s;
+  border-radius: 3px;
   cursor: pointer;
-  opacity: 0.9;
+  transition: background-color 0.3s;
 }
 
 button:hover {
-  transform: scale(1.05);
-  opacity: 1;
+  background-color: #0056b3;
 }
 
-li {
-  list-style: none;
+.save-button {
+  display: block;
+  margin-left: auto;
+  margin-top: 34px;
 }
 
-a {
-  text-decoration: none;
-  height: fit-content;
-  width: fit-content;
-  margin: 10px;
+.input-help {
+  font-size: 12px;
+  color: gray;
 }
 
-a:hover {
-  opacity: 1;
-  text-decoration: none;
-}
-
-.Hello {
+.nav {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ccc;
   margin: 20px 0;
+}
+
+#reset-button {
+  margin-left: auto;
+  background-color: darkgray;
+  font-size: 12px;
+}
+
+#reset-button:hover {
+  background-color: gray;
+}
+
+input[type='range'] {
+  max-width: calc(100% - 180px);
+  -webkit-appearance: none; /* Remove default appearance */
+  appearance: none;
+  width: 100%; /* Adjust width as needed */
+  height: 6px; /* Adjust height as needed */
+  background: #ddd; /* Track background color */
+  border-radius: 3px; /* Rounded corners for track */
+  cursor: pointer; /* Pointer cursor for interaction */
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Remove default appearance */
+  appearance: none;
+  width: 16px; /* Adjust thumb width */
+  height: 16px; /* Adjust thumb height */
+  background: #007bff; /* Thumb background color */
+  border-radius: 50%; /* Circular thumb */
+}
+
+/* CSS to remove number input arrows */
+.range-input-value::-webkit-inner-spin-button,
+.range-input-value::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.range-input-value {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.range-input-value {
+  display: inline;
+  color: darkslategray;
+  width: 14px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.input-value-wrapper {
+  font-size: 12px;
+  padding: 4px;
+  padding-bottom: 3px;
+  width: 24px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.input-value-wrapper input {
+  border-radius: 4px;
+  border: none;
+  padding: 0px;
+  outline: none;
 }

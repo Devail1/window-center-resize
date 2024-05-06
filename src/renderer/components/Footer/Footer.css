@@ -1,0 +1,25 @@
+footer {
+  background-color: #333;
+  text-align: center;
+  padding: 10px 0;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}
+
+footer p {
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+}
+
+footer a {
+  color: lightgray;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-shadow: #ddd 1px 0 4px;
+  color: #ddd;
+  transition: all;
+}

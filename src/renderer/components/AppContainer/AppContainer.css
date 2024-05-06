@@ -1,0 +1,15 @@
+#container {
+  margin: 50px 36px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 50px;
+}
+
+.innerContainer {
+  min-width: 375px;
+  max-width: 600px;
+  padding: 20px;
+  margin: 0 auto;
+}

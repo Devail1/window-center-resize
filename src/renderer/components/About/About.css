@@ -1,0 +1,51 @@
+.about {
+  background-color: #f9f9f9;
+  border-radius: 5px;
+}
+
+/* Style the summary to make it look like a button */
+summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px;
+  background-color: #f9f9f9;
+  font-size: 11px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+/* Create a new custom triangle on the right side */
+summary::before {
+  margin-right: 2px;
+  display: inline-block;
+  scale: 0.8;
+  content: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jaGV2cm9uLXJpZ2h0Ij48cGF0aCBkPSJtOSAxOCA2LTYtNi02Ii8+PC9zdmc+');
+  transition: 0.2s;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.read-more-content p {
+  margin: 4px 0;
+}
+
+.read-more-content ul {
+  padding-inline-start: 22px;
+}
+
+/* Style the content inside the details */
+.read-more-content {
+  font-size: 11px;
+  padding: 8px 4px;
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+  background-color: #f9f9f9;
+  bottom: 0;
+  width: 90%;
+  margin: 0 auto;
+  max-width: 600px;
+}
