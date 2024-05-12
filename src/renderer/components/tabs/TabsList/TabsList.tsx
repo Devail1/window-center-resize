@@ -1,8 +1,8 @@
-import './TabList.css';
-import { TTabAction } from '../../context/tabs/tabsContext'; // Import the context
-import { useTabsContext } from '../../context/tabs/TabsProvider';
+import './TabsList.css';
+import { useTabsContext } from '../../../providers/TabsProvider';
+import { TTabAction } from '../../AppContainer/AppContainer';
 
-function TabList() {
+function TabsList() {
   const { activeTab, setActiveTab } = useTabsContext();
 
   const handleClick = (tabName: TTabAction) => {
@@ -34,4 +34,4 @@ function TabList() {
   );
 }
 
-export default TabList;
+export default TabsList;

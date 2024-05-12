@@ -1,0 +1,17 @@
+.inner-container {
+  border-radius: 5px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 375px;
+  max-width: 400px;
+  margin: 50px 36px;
+  border: 1px solid #ccc;
+}
+
+.title {
+  padding: 20px 0 0 20px;
+}
+
+.tabs-content {
+  padding: 20px;
+}

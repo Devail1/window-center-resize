@@ -1,0 +1,72 @@
+input[type='range'] {
+  max-width: calc(100% - 144px);
+  -webkit-appearance: none; /* Remove default appearance */
+  appearance: none;
+  width: 100%; /* Adjust width as needed */
+  height: 6px; /* Adjust height as needed */
+  background: #ddd; /* Track background color */
+  border-radius: 3px; /* Rounded corners for track */
+  cursor: pointer; /* Pointer cursor for interaction */
+  margin-right: 34px;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Remove default appearance */
+  appearance: none;
+  width: 16px; /* Adjust thumb width */
+  height: 16px; /* Adjust thumb height */
+  background: #007bff; /* Thumb background color */
+  border-radius: 50%; /* Circular thumb */
+}
+
+/* CSS to remove number input arrows */
+.range-input-value::-webkit-inner-spin-button,
+.range-input-value::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.range-input-value {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.range-input-value {
+  display: inline;
+  color: darkslategray;
+  width: 14px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.input-value-wrapper {
+  font-size: 12px;
+  padding: 4px;
+  padding-bottom: 3px;
+  width: 24px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.input-value-wrapper input {
+  border-radius: 4px;
+  border: none;
+  padding: 0px;
+  outline: none;
+}
+
+.keybind-label {
+  display: flex;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.dimensions-label {
+  display: inline-flex;
+  min-width: 70px;
+  font-size: 13px;
+  margin: 6px 0;
+}

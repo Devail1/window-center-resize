@@ -1,3 +1,13 @@
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+  margin: 20px 0;
+  padding: 20px;
+}
+
 .tab {
   display: flex;
   gap: 8px;
@@ -22,4 +32,14 @@
 .tab button:hover {
   background-color: #0056b3;
   color: white;
+}
+
+#reset-button {
+  margin-left: auto;
+  background-color: darkgray;
+  font-size: 12px;
+}
+
+#reset-button:hover {
+  background-color: gray;
 }
