@@ -1,6 +1,7 @@
 /* eslint import/prefer-default-export: off */
 import { URL } from 'url';
 import path from 'path';
+import { nativeTheme } from 'electron';
 
 export function resolveHtmlPath(htmlFileName: string) {
   if (process.env.NODE_ENV === 'development') {
@@ -10,4 +11,9 @@ export function resolveHtmlPath(htmlFileName: string) {
     return url.href;
   }
   return `file://${path.resolve(__dirname, '../renderer/', htmlFileName)}`;
+}
+
+export function getIconPath(iconName: string) {
+  const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+  return path.join(__dirname, 'assets', 'icons copy', theme, `${iconName}.png`);
 }

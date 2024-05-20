@@ -1,6 +1,7 @@
 import { ReactNode, createContext } from 'react';
 import './AppContainer.css';
 import TabsProvider from '../../providers/TabsProvider';
+import SettingsProvider from '../../providers/SettingsProvider';
 
 export type TTabAction = 'center' | 'resize';
 
@@ -17,7 +18,9 @@ export const TabsContext = createContext<TabsContextProps | null>(null);
 function AppContainer({ children }: { children: ReactNode }) {
   return (
     <div id="container">
-      <TabsProvider>{children}</TabsProvider>
+      <SettingsProvider>
+        <TabsProvider>{children}</TabsProvider>
+      </SettingsProvider>
     </div>
   );
 }

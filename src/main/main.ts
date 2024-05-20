@@ -9,11 +9,28 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain /* , Tray */,
+  Tray,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
+import { getIconPath, resolveHtmlPath } from './util';
+import {
+  resetSettings,
+  loadSettings,
+  saveCenterSettings,
+  saveResizeSettings,
+  closeWatcher,
+  getSettings,
+} from './settings';
+import { createTrayMenu } from './window';
+import { stopAutoHotkeyProcess } from './autohotkey';
+import { handleSingleInstance } from './singleInstance';
 
 class AppUpdater {
   constructor() {
@@ -28,7 +45,7 @@ let mainWindow: BrowserWindow | null = null;
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
+  event.reply('ipc-example', msgTemplate('hello'));
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -75,6 +92,7 @@ const createWindow = async () => {
     height: 728,
     icon: getAssetPath('icon.png'),
     webPreferences: {
+      nodeIntegration: true,
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
@@ -112,10 +130,6 @@ const createWindow = async () => {
   new AppUpdater();
 };
 
-/**
- * Add event listeners...
- */
-
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
@@ -128,10 +142,45 @@ app
   .whenReady()
   .then(() => {
     createWindow();
+    const tray = new Tray(getIconPath('logo'));
+    createTrayMenu(tray);
+
     app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow();
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+
+    app.on('will-quit', () => {
+      closeWatcher();
+      stopAutoHotkeyProcess();
     });
   })
-  .catch(console.log);
+  .catch((error) => {
+    console.error('Error in app.whenReady:', error);
+  });
+
+if (mainWindow) {
+  handleSingleInstance(mainWindow);
+}
+/**
+ * Add event listeners...
+ */
+
+ipcMain.handle('reset-settings', async (event) => {
+  await resetSettings(event);
+});
+
+ipcMain.handle('load-settings', async (event) => {
+  await loadSettings(event);
+});
+
+ipcMain.handle('get-settings', async () => {
+  await getSettings();
+});
+
+ipcMain.handle('save-center-settings', async (event, data) => {
+  await saveCenterSettings(event, data);
+});
+
+ipcMain.handle('save-resize-settings', async (event, data) => {
+  await saveResizeSettings(event, data);
+});
