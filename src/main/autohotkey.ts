@@ -22,7 +22,6 @@ async function startAutoHotkeyProcess() {
     'autohotkey',
     'center-window-resize.ahk',
   );
-  console.log('autohotkeyPath', autohotkeyPath);
 
   try {
     autohotkeyProcess = child.spawn(autohotkeyPath, [scriptPath]);
