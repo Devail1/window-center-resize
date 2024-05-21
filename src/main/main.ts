@@ -8,18 +8,10 @@
  * When running `npm run build` or `npm run build:main`, this file is compiled to
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
-import path from 'path';
-import {
-  app,
-  BrowserWindow,
-  shell,
-  ipcMain /* , Tray */,
-  Tray,
-} from 'electron';
-import { autoUpdater } from 'electron-updater';
-import log from 'electron-log';
-import MenuBuilder from './menu';
-import { getIconPath, resolveHtmlPath } from './util';
+import { BrowserWindow, app, ipcMain } from 'electron';
+
+import { stopAutoHotkeyProcess } from './autohotkey';
+import { createWindow } from './window';
 import {
   resetSettings,
   loadSettings,
@@ -28,19 +20,8 @@ import {
   closeWatcher,
   getSettings,
 } from './settings';
-import { createTrayMenu } from './window';
-import { stopAutoHotkeyProcess } from './autohotkey';
+import createTrayMenu from './tray';
 import { handleSingleInstance } from './singleInstance';
-
-class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-}
-
-let mainWindow: BrowserWindow | null = null;
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -60,90 +41,13 @@ if (isDebug) {
   require('electron-debug')();
 }
 
-const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
-
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload,
-    )
-    .catch(console.log);
-};
-
-const createWindow = async () => {
-  if (isDebug) {
-    await installExtensions();
-  }
-
-  const RESOURCES_PATH = app.isPackaged
-    ? path.join(process.resourcesPath, 'assets')
-    : path.join(__dirname, '../../assets');
-
-  const getAssetPath = (...paths: string[]): string => {
-    return path.join(RESOURCES_PATH, ...paths);
-  };
-
-  mainWindow = new BrowserWindow({
-    show: false,
-    width: 1024,
-    height: 728,
-    icon: getAssetPath('icon.png'),
-    webPreferences: {
-      nodeIntegration: true,
-      preload: app.isPackaged
-        ? path.join(__dirname, 'preload.js')
-        : path.join(__dirname, '../../.erb/dll/preload.js'),
-    },
-  });
-
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
-
-  mainWindow.on('ready-to-show', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
-    }
-  });
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
-
-  // Open urls in the user's browser
-  mainWindow.webContents.setWindowOpenHandler((edata) => {
-    shell.openExternal(edata.url);
-    return { action: 'deny' };
-  });
-
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
-  new AppUpdater();
-};
-
-app.on('window-all-closed', () => {
-  // Respect the OSX convention of having the application in memory even
-  // after all windows have been closed
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+let mainWindow;
 
 app
   .whenReady()
   .then(() => {
-    createWindow();
-    const tray = new Tray(getIconPath('logo'));
-    createTrayMenu(tray);
+    mainWindow = createWindow();
+    createTrayMenu();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -161,26 +65,9 @@ app
 if (mainWindow) {
   handleSingleInstance(mainWindow);
 }
-/**
- * Add event listeners...
- */
 
-ipcMain.handle('reset-settings', async (event) => {
-  await resetSettings(event);
-});
-
-ipcMain.handle('load-settings', async (event) => {
-  await loadSettings(event);
-});
-
-ipcMain.handle('get-settings', async () => {
-  await getSettings();
-});
-
-ipcMain.handle('save-center-settings', async (event, data) => {
-  await saveCenterSettings(event, data);
-});
-
-ipcMain.handle('save-resize-settings', async (event, data) => {
-  await saveResizeSettings(event, data);
-});
+ipcMain.handle('reset-settings', resetSettings);
+ipcMain.handle('load-settings', loadSettings);
+ipcMain.handle('get-settings', getSettings);
+ipcMain.handle('save-center-settings', saveCenterSettings);
+ipcMain.handle('save-resize-settings', saveResizeSettings);

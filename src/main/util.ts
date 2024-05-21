@@ -15,5 +15,23 @@ export function resolveHtmlPath(htmlFileName: string) {
 
 export function getIconPath(iconName: string) {
   const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-  return path.join(__dirname, 'assets', 'icons copy', theme, `${iconName}.png`);
+  return path.join(
+    __dirname,
+    '../../assets',
+    'icons-copy',
+    theme,
+    `${iconName}.png`,
+  );
+}
+
+export function resolveIconPath(iconName: string) {
+  const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+  return `file://${path.resolve(
+    __dirname,
+    __dirname,
+    '../../assets',
+    'icons-copy',
+    theme,
+    `${iconName}.png`,
+  )}`;
 }

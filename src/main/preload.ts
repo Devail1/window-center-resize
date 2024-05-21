@@ -5,6 +5,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 export type Channels =
   | 'ipc-example'
   | 'get-settings'
+  | 'load-settings'
   | 'save-center-settings'
   | 'save-resize-settings'
   | 'reset-settings'

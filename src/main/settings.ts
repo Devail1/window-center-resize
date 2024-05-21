@@ -2,7 +2,7 @@ import { promises as fs, existsSync, watch, FSWatcher } from 'fs';
 import { join } from 'path';
 import { app, IpcMainInvokeEvent } from 'electron';
 import defaultSettings from '../constants/defaultSettings.json';
-import { startAutoHotkeyProcess, stopAutoHotkeyProcess } from './autohotkey';
+import { reloadAutoHotkey } from './autohotkey';
 
 const settingsPath = join(app.getPath('userData'), 'settings.json');
 let settingsWatcher: FSWatcher;
@@ -10,8 +10,7 @@ let settingsWatcher: FSWatcher;
 export async function resetSettings(event: IpcMainInvokeEvent) {
   event.sender.send('load-settings-reply', { settings: defaultSettings });
   await fs.writeFile(settingsPath, JSON.stringify(defaultSettings));
-  stopAutoHotkeyProcess();
-  startAutoHotkeyProcess();
+  reloadAutoHotkey();
 }
 
 export async function loadSettings(event: IpcMainInvokeEvent) {
@@ -24,8 +23,7 @@ export async function loadSettings(event: IpcMainInvokeEvent) {
     }
     const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
     event.sender.send('load-settings-reply', { settings });
-    stopAutoHotkeyProcess();
-    startAutoHotkeyProcess();
+    reloadAutoHotkey();
   } catch (err) {
     if (err instanceof Error) {
       console.error('Error loading settings:', err.message, err.stack);
@@ -64,8 +62,7 @@ export async function saveCenterSettings(
     const settings = JSON.parse(rawSettings);
     settings.centerWindow.keybinding = data.centerKeybind;
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
-    stopAutoHotkeyProcess();
-    startAutoHotkeyProcess();
+    reloadAutoHotkey();
   } catch (err) {
     if (err instanceof Error) {
       console.error('Error saving center settings:', err.message, err.stack);
@@ -90,8 +87,7 @@ export async function saveResizeSettings(
       windowSizePercentages: data.windowSizePercentages,
     };
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
-    stopAutoHotkeyProcess();
-    startAutoHotkeyProcess();
+    reloadAutoHotkey();
   } catch (err) {
     if (err instanceof Error) {
       console.error('Error saving resize settings:', err.message, err.stack);
@@ -101,8 +97,7 @@ export async function saveResizeSettings(
   }
 
   settingsWatcher = watch(settingsPath, () => {
-    stopAutoHotkeyProcess();
-    startAutoHotkeyProcess();
+    reloadAutoHotkey();
   });
 }
 

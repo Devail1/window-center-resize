@@ -41,4 +41,11 @@ async function stopAutoHotkeyProcess() {
   }
 }
 
-export { startAutoHotkeyProcess, stopAutoHotkeyProcess };
+function reloadAutoHotkey() {
+  if (autohotkeyProcess) {
+    stopAutoHotkeyProcess();
+    startAutoHotkeyProcess();
+  }
+}
+
+export { startAutoHotkeyProcess, stopAutoHotkeyProcess, reloadAutoHotkey };

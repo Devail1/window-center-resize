@@ -1,77 +1,89 @@
-import { app, BrowserWindow, Menu, Notification, Tray } from 'electron';
-import { getSettings } from './settings';
-import { getIconPath } from './util';
+/* eslint global-require: off, no-console: off */
 
-let mainWindow: BrowserWindow;
+import { app, BrowserWindow, shell } from 'electron';
+import path from 'path';
+import log from 'electron-log';
+import { autoUpdater } from 'electron-updater';
+import { getIconPath, resolveHtmlPath } from './util';
 
-function createWindow(): BrowserWindow {
+class AppUpdater {
+  constructor() {
+    log.transports.file.level = 'info';
+    autoUpdater.logger = log;
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+}
+
+const isDebug =
+  process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
+
+const installExtensions = async (): Promise<void> => {
+  const installer = require('electron-devtools-installer');
+  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
+  const extensions = ['REACT_DEVELOPER_TOOLS'];
+
+  return installer
+    .default(
+      extensions.map((name: string) => installer[name]),
+      forceDownload,
+    )
+    .catch(console.log);
+};
+
+let mainWindow: BrowserWindow | null = null;
+
+export const createWindow = async (): Promise<BrowserWindow> => {
+  if (isDebug) {
+    await installExtensions();
+  }
+
   mainWindow = new BrowserWindow({
-    width: 580,
-    height: 760,
+    width: 1024,
+    height: 728,
     icon: getIconPath('logo'),
-    autoHideMenuBar: true,
     show: false,
+    autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      preload: app.isPackaged
+        ? path.join(__dirname, 'preload.js')
+        : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
   });
 
-  mainWindow.loadFile('index.html');
+  mainWindow.loadURL(resolveHtmlPath('index.html'));
+
+  mainWindow.on('ready-to-show', () => {
+    if (!mainWindow) {
+      throw new Error('"mainWindow" is not defined');
+    }
+    if (process.env.START_MINIMIZED) {
+      mainWindow.minimize();
+    } else {
+      mainWindow.show();
+    }
+  });
 
   mainWindow.on('close', (event) => {
-    if (mainWindow.isVisible()) {
+    if (mainWindow?.isVisible()) {
       event.preventDefault();
       mainWindow.hide();
     }
   });
 
-  return mainWindow;
-}
-
-async function showNotification() {
-  const settings = await getSettings();
-  if (settings) {
-    const { centerWindow, resizeWindow } = settings;
-
-    const notification = new Notification({
-      title: 'Window Snapper',
-      body: `Press ${centerWindow.keybinding} to center the window. \nPress ${resizeWindow.keybinding} to resize the window.`,
-      silent: true,
-    });
-
-    notification.on('click', () => {
-      mainWindow.show();
-    });
-
-    notification.show();
-  }
-}
-
-function createTrayMenu(tray: Tray) {
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Open',
-      click: () => mainWindow.show(),
-      icon: getIconPath('open'),
-    },
-    {
-      label: 'Quit',
-      click: () => app.quit(),
-      icon: getIconPath('quit'),
-    },
-  ]);
-
-  contextMenu.items.forEach((item) => {
-    item.enabled = true;
-    item.visible = true;
-    item.icon = 'icon-quit';
+  mainWindow.on('closed', () => {
+    mainWindow = null;
   });
-  tray.setToolTip('Window Snapper');
-  tray.setContextMenu(contextMenu);
-  tray.on('click', () => mainWindow.show());
 
-  showNotification();
-}
+  mainWindow.webContents.setWindowOpenHandler((edata) => {
+    shell.openExternal(edata.url);
+    return { action: 'deny' };
+  });
 
-export { createWindow, createTrayMenu };
+  // eslint-disable-next-line
+  new AppUpdater();
+
+  return mainWindow;
+};
+
+export const getMainWindow = (): BrowserWindow | null => mainWindow;
