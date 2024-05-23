@@ -1,9 +1,9 @@
 {
   "centerWindow": {
-    "keybinding": "Control + Shift + C"
+    "keybinding": "ctrl + shift + c"
   },
   "resizeWindow": {
-    "keybinding": "F9",
+    "keybinding": "f9",
     "windowSizePercentages": [
       { "width": "50", "height": "50" },
       { "width": "75", "height": "75" },

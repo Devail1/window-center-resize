@@ -7,6 +7,8 @@ import React, {
   ReactNode,
 } from 'react';
 
+import defaultSettings from '../../constants/defaultSettings.json';
+
 // Define the shape of your settings
 export interface WindowSizePercentage {
   width: string;
@@ -24,6 +26,7 @@ export interface Settings {
 }
 
 interface SettingsContextProps extends Settings {
+  settings: Settings;
   saveCenterSettings: (centerKeybind: string) => void;
   saveResizeSettings: (
     resizeKeybind: string,
@@ -78,20 +81,14 @@ function settingsReducer(state: Settings, action: SettingsAction): Settings {
         },
       };
     case 'RESET_SETTINGS':
-      return {
-        centerWindow: { keybinding: '' },
-        resizeWindow: { keybinding: '', windowSizePercentages: [] },
-      };
+      return defaultSettings;
     default:
       return state;
   }
 }
 
 function SettingsProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(settingsReducer, {
-    centerWindow: { keybinding: '' },
-    resizeWindow: { keybinding: '', windowSizePercentages: [] },
-  });
+  const [state, dispatch] = useReducer(settingsReducer, defaultSettings);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -115,9 +112,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveCenterSettings = (centerKeybind: string) => {
-    window.electron.ipcRenderer.invoke('save-center-settings', {
-      centerWindowKeybinding: centerKeybind,
-    });
+    window.electron.ipcRenderer.invoke('save-center-settings', centerKeybind);
     dispatch({ type: 'SAVE_CENTER_SETTINGS', payload: { centerKeybind } });
   };
 
@@ -143,6 +138,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo(
     () => ({
       ...state,
+      settings: state,
       saveCenterSettings,
       saveResizeSettings,
       resetSettings,

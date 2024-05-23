@@ -1,8 +1,11 @@
 import './TabsList.css';
 import { useTabsContext } from '../../../providers/TabsProvider';
 import { TTabAction } from '../../AppContainer/AppContainer';
+import { useSettingsContext } from '../../../providers/SettingsProvider';
 
 function TabsList() {
+  const { resetSettings } = useSettingsContext();
+
   const { activeTab, setActiveTab } = useTabsContext();
 
   const handleClick = (tabName: TTabAction) => {
@@ -27,7 +30,7 @@ function TabsList() {
           Resize Window
         </button>
       </div>
-      <button id="reset-button" type="button">
+      <button id="reset-button" type="button" onClick={resetSettings}>
         Reset
       </button>
     </div>

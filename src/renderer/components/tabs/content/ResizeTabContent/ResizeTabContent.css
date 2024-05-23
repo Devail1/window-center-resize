@@ -61,7 +61,7 @@ input[type='range']::-webkit-slider-thumb {
 .keybind-label {
   display: flex;
   gap: 8px;
-  flex-grow: 1;
+  align-items: center;
 }
 
 .dimensions-label {

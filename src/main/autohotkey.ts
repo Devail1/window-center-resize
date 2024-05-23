@@ -3,15 +3,25 @@ import path from 'path';
 
 let autohotkeyProcess: child.ChildProcess | null = null;
 
-async function startAutoHotkeyProcess() {
+async function stopAutoHotkeyProcess() {
   if (autohotkeyProcess) {
     try {
       await autohotkeyProcess.kill();
     } catch (error) {
       console.error('Error killing child process:', error);
     }
+    autohotkeyProcess = null;
   }
-  const resourcesPath = path.join(process.cwd(), '/assets');
+}
+
+async function startAutoHotkeyProcess() {
+  if (autohotkeyProcess) {
+    stopAutoHotkeyProcess();
+  }
+
+  const resourcesPath = path.join(__dirname, '../../assets');
+
+  // path.join(process.cwd(), '/assets');
   const autohotkeyPath = path.join(
     resourcesPath,
     'autohotkey',
@@ -30,22 +40,11 @@ async function startAutoHotkeyProcess() {
   }
 }
 
-async function stopAutoHotkeyProcess() {
-  if (autohotkeyProcess) {
-    try {
-      await autohotkeyProcess.kill();
-    } catch (error) {
-      console.error('Error killing child process:', error);
-    }
-    autohotkeyProcess = null;
-  }
-}
-
 function reloadAutoHotkey() {
   if (autohotkeyProcess) {
     stopAutoHotkeyProcess();
-    startAutoHotkeyProcess();
   }
+  startAutoHotkeyProcess();
 }
 
 export { startAutoHotkeyProcess, stopAutoHotkeyProcess, reloadAutoHotkey };

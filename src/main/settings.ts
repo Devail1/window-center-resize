@@ -5,15 +5,15 @@ import defaultSettings from '../constants/defaultSettings.json';
 import { reloadAutoHotkey } from './autohotkey';
 
 const settingsPath = join(app.getPath('userData'), 'settings.json');
+
 let settingsWatcher: FSWatcher;
 
-export async function resetSettings(event: IpcMainInvokeEvent) {
-  event.sender.send('load-settings-reply', { settings: defaultSettings });
+export async function resetSettings() {
   await fs.writeFile(settingsPath, JSON.stringify(defaultSettings));
   reloadAutoHotkey();
 }
 
-export async function loadSettings(event: IpcMainInvokeEvent) {
+export async function loadSettings() {
   try {
     if (!existsSync(settingsPath)) {
       await fs.writeFile(
@@ -21,8 +21,8 @@ export async function loadSettings(event: IpcMainInvokeEvent) {
         JSON.stringify(defaultSettings, null, 2),
       );
     }
-    const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
-    event.sender.send('load-settings-reply', { settings });
+    // const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+    // event.sender.send('load-settings-reply', { settings });
     reloadAutoHotkey();
   } catch (err) {
     if (err instanceof Error) {
@@ -55,13 +55,14 @@ export async function getSettings() {
 
 export async function saveCenterSettings(
   event: IpcMainInvokeEvent,
-  data: { centerKeybind: string },
+  centerKeybind: string,
 ) {
   try {
     const rawSettings = await fs.readFile(settingsPath, 'utf8');
     const settings = JSON.parse(rawSettings);
-    settings.centerWindow.keybinding = data.centerKeybind;
+    settings.centerWindow.keybinding = centerKeybind;
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+
     reloadAutoHotkey();
   } catch (err) {
     if (err instanceof Error) {
@@ -75,16 +76,16 @@ export async function saveCenterSettings(
 export async function saveResizeSettings(
   event: IpcMainInvokeEvent,
   data: {
-    resizeKeybind: string;
-    windowSizePercentages: { width: string; height: string }[];
+    keybinding: string;
+    presets: { width: string; height: string }[];
   },
 ) {
   try {
     const rawSettings = await fs.readFile(settingsPath, 'utf8');
     const settings = JSON.parse(rawSettings);
     settings.resizeWindow = {
-      keybinding: data.resizeKeybind,
-      windowSizePercentages: data.windowSizePercentages,
+      keybinding: data.keybinding,
+      windowSizePercentages: data.presets,
     };
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
     reloadAutoHotkey();

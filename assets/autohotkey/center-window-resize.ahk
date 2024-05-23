@@ -9,7 +9,7 @@ Join(sep, params*) {
   return SubStr(str, StrLen(sep) + 1)
 }
 
-hotkeysJsToHotHotkeys := Map("shift", "+", "control", "^", "alt", "!", "meta", "#")
+hotkeysJsToHotHotkeys := Map("shift", "+", "ctrl", "^", "alt", "!", "meta", "#")
 
 ; Function to convert hotkeys-js keys to HotHotkeys syntax
 ConvertHotkeysJsToHotHotkeys(key) {
@@ -26,7 +26,8 @@ ConvertHotkeysJsToHotHotkeys(key) {
   return Join("", hotkeys*)
 }
 
-jsonFilePath := A_AppData . "\window-snapper-resizer\settings.json"
+; TODO: Replace electron with app name "window-center-resize"
+jsonFilePath := A_AppData . "\Electron\settings.json"
 
 ; Read JSON file
 jsonContent := Fileread(jsonFilePath)
@@ -40,6 +41,7 @@ jsonString := jxon_dump(json, indent := 0)
 ; Extract values from JSON
 centerWindowObj := json["centerWindow"]  ; Access "centerWindow" as an object
 CenterWindowKey := ConvertHotkeysJsToHotHotkeys(centerWindowObj["keybinding"])  ; Access "keybinding" from the object
+MsgBox(CenterWindowKey)
 resizeWindowObj := json["resizeWindow"]  ; Access "resizeWindow" as an object
 ResizeWindowKey := ConvertHotkeysJsToHotHotkeys(resizeWindowObj["keybinding"])  ; Access "keybinding" from the object
 ToggleSizes := resizeWindowObj["windowSizePercentages"]  ; Access the entire array

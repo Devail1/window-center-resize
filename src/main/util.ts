@@ -28,7 +28,6 @@ export function resolveIconPath(iconName: string) {
   const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
   return `file://${path.resolve(
     __dirname,
-    __dirname,
     '../../assets',
     'icons-copy',
     theme,

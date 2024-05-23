@@ -10,7 +10,7 @@
  */
 import { BrowserWindow, app, ipcMain } from 'electron';
 
-import { stopAutoHotkeyProcess } from './autohotkey';
+import { startAutoHotkeyProcess, stopAutoHotkeyProcess } from './autohotkey';
 import { createWindow } from './window';
 import {
   resetSettings,
@@ -41,13 +41,14 @@ if (isDebug) {
   require('electron-debug')();
 }
 
-let mainWindow;
+let mainWindow; // used to prevent multiple windows from running
 
 app
   .whenReady()
   .then(() => {
     mainWindow = createWindow();
     createTrayMenu();
+    startAutoHotkeyProcess();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
