@@ -11,7 +11,7 @@
 import { BrowserWindow, app, ipcMain } from 'electron';
 
 import { startAutoHotkeyProcess, stopAutoHotkeyProcess } from './autohotkey';
-import { createWindow } from './window';
+import { createWindow, getMainWindow } from './window';
 import {
   resetSettings,
   loadSettings,
@@ -41,12 +41,10 @@ if (isDebug) {
   require('electron-debug')();
 }
 
-let mainWindow; // used to prevent multiple windows from running
-
 app
   .whenReady()
   .then(() => {
-    mainWindow = createWindow();
+    createWindow();
     createTrayMenu();
     startAutoHotkeyProcess();
 
@@ -62,6 +60,9 @@ app
   .catch((error) => {
     console.error('Error in app.whenReady:', error);
   });
+
+// TOOD: Test single instance function in production
+const mainWindow = getMainWindow(); // used to prevent multiple windows from running
 
 if (mainWindow) {
   handleSingleInstance(mainWindow);

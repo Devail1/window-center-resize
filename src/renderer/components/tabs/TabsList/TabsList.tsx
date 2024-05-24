@@ -12,6 +12,12 @@ function TabsList() {
     setActiveTab(tabName);
   };
 
+  const handleReset = () => {
+    console.log('here');
+
+    resetSettings();
+  };
+
   return (
     <div className="nav">
       <div className="tab">
@@ -30,7 +36,7 @@ function TabsList() {
           Resize Window
         </button>
       </div>
-      <button id="reset-button" type="button" onClick={resetSettings}>
+      <button id="reset-button" type="button" onClick={handleReset}>
         Reset
       </button>
     </div>

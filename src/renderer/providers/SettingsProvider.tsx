@@ -29,7 +29,7 @@ interface SettingsContextProps extends Settings {
   settings: Settings;
   saveCenterSettings: (centerKeybind: string) => void;
   saveResizeSettings: (
-    resizeKeybind: string,
+    keybinding: string,
     windowSizePercentages: WindowSizePercentage[],
   ) => void;
   resetSettings: () => void;
@@ -53,7 +53,7 @@ type SettingsAction =
   | {
       type: 'SAVE_RESIZE_SETTINGS';
       payload: {
-        resizeKeybind: string;
+        keybinding: string;
         windowSizePercentages: WindowSizePercentage[];
       };
     }
@@ -76,7 +76,7 @@ function settingsReducer(state: Settings, action: SettingsAction): Settings {
         ...state,
         resizeWindow: {
           ...state.resizeWindow,
-          keybinding: action.payload.resizeKeybind,
+          keybinding: action.payload.keybinding,
           windowSizePercentages: action.payload.windowSizePercentages,
         },
       };
@@ -117,16 +117,16 @@ function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   const saveResizeSettings = (
-    resizeKeybind: string,
+    keybinding: string,
     windowSizePercentages: WindowSizePercentage[],
   ) => {
     window.electron.ipcRenderer.invoke('save-resize-settings', {
-      resizeWindowKeybinding: resizeKeybind,
-      resizeWindowPercentages: windowSizePercentages,
+      keybinding,
+      windowSizePercentages,
     });
     dispatch({
       type: 'SAVE_RESIZE_SETTINGS',
-      payload: { resizeKeybind, windowSizePercentages },
+      payload: { keybinding, windowSizePercentages },
     });
   };
 

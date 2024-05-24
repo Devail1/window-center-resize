@@ -3,14 +3,17 @@ import { join } from 'path';
 import { app, IpcMainInvokeEvent } from 'electron';
 import defaultSettings from '../constants/defaultSettings.json';
 import { reloadAutoHotkey } from './autohotkey';
+import { getMainWindow } from './window';
 
 const settingsPath = join(app.getPath('userData'), 'settings.json');
 
 let settingsWatcher: FSWatcher;
 
 export async function resetSettings() {
+  const mainWindow = getMainWindow();
   await fs.writeFile(settingsPath, JSON.stringify(defaultSettings));
   reloadAutoHotkey();
+  mainWindow?.reload();
 }
 
 export async function loadSettings() {
@@ -21,8 +24,6 @@ export async function loadSettings() {
         JSON.stringify(defaultSettings, null, 2),
       );
     }
-    // const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
-    // event.sender.send('load-settings-reply', { settings });
     reloadAutoHotkey();
   } catch (err) {
     if (err instanceof Error) {
@@ -77,7 +78,7 @@ export async function saveResizeSettings(
   event: IpcMainInvokeEvent,
   data: {
     keybinding: string;
-    presets: { width: string; height: string }[];
+    windowSizePercentages: { width: string; height: string }[];
   },
 ) {
   try {
@@ -85,7 +86,7 @@ export async function saveResizeSettings(
     const settings = JSON.parse(rawSettings);
     settings.resizeWindow = {
       keybinding: data.keybinding,
-      windowSizePercentages: data.presets,
+      windowSizePercentages: data.windowSizePercentages,
     };
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
     reloadAutoHotkey();

@@ -52,10 +52,32 @@ button:hover {
   display: flex;
 }
 
+.align-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
 .flex-grow {
   flex-grow: 1;
 }
 
 .flex-col {
   flex-direction: column;
+}
+
+/* Margin Util Classes */
+
+.mr-4 {
+  margin-right: 16px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTabsContext } from '../../../providers/TabsProvider';
 import About from '../../About/About';
 import TabsList from '../TabsList/TabsList';
@@ -7,6 +8,14 @@ import './TabsView.css';
 
 export default function TabsView() {
   const { activeTab } = useTabsContext();
+
+  useEffect(() => {
+    if (activeTab === 'center') {
+      document.title = 'Center Window';
+    } else if (activeTab === 'resize') {
+      document.title = 'Resize Window';
+    }
+  }, [activeTab]);
 
   return (
     <div className="inner-container">

@@ -35,10 +35,6 @@ function CenterTabContent() {
     updateInputRef();
   }, [updateInputRef]);
 
-  useEffect(() => {
-    setCenterKeybind(settings.centerWindow.keybinding);
-  }, [settings]);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
       const filteredKeys = filterUnwantedKeys(Array.from(keys));

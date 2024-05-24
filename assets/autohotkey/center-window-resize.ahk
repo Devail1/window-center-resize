@@ -12,7 +12,7 @@ Join(sep, params*) {
 hotkeysJsToHotHotkeys := Map("shift", "+", "ctrl", "^", "alt", "!", "meta", "#")
 
 ; Function to convert hotkeys-js keys to HotHotkeys syntax
-ConvertHotkeysJsToHotHotkeys(key) {
+convertHotkeysJsToHotHotkeys(key) {
   keys := StrSplit(key, "+")  ; Split key by "+"
 
   hotkeys := []
@@ -40,18 +40,19 @@ jsonString := jxon_dump(json, indent := 0)
 
 ; Extract values from JSON
 centerWindowObj := json["centerWindow"]  ; Access "centerWindow" as an object
-CenterWindowKey := ConvertHotkeysJsToHotHotkeys(centerWindowObj["keybinding"])  ; Access "keybinding" from the object
-MsgBox(CenterWindowKey)
+centerWindowKey := convertHotkeysJsToHotHotkeys(centerWindowObj["keybinding"])  ; Access "keybinding" from the object
+
 resizeWindowObj := json["resizeWindow"]  ; Access "resizeWindow" as an object
-ResizeWindowKey := ConvertHotkeysJsToHotHotkeys(resizeWindowObj["keybinding"])  ; Access "keybinding" from the object
-ToggleSizes := resizeWindowObj["windowSizePercentages"]  ; Access the entire array
+resizeWindowKey := convertHotkeysJsToHotHotkeys(resizeWindowObj["keybinding"])  ; Access "keybinding" from the object
+
+toggleSizes := resizeWindowObj["windowSizePercentages"]  ; Access the entire array
 
 
 ; Define hotkeys if keybinding exists
-if (CenterWindowKey != "")
-  Hotkey(CenterWindowKey, CenterWindow, "On")
-if (ResizeWindowKey != "")
-  Hotkey(ResizeWindowKey, ResizeWindow, "On")
+if (centerWindowKey != "")
+  Hotkey(centerWindowKey, CenterWindow, "On")
+if (resizeWindowKey != "")
+  Hotkey(resizeWindowKey, ResizeWindow, "On")
 
 
 CenterWindow(WinTitle) {
@@ -73,12 +74,12 @@ CenterWindow(WinTitle) {
 
 ResizeWindow(WinTitle) {
   static size := 1
-  size := Mod(size + 1, ToggleSizes.Length) + 1
+  size := Mod(size + 1, toggleSizes.Length) + 1
 
   hwnd := WinExist("A")  ; Get handle to active window
 
   if (hwnd) {
-    CenterAndResizeWindow("A", ToggleSizes[size]["width"], ToggleSizes[size]["height"])
+    CenterAndResizeWindow("A", toggleSizes[size]["width"], toggleSizes[size]["height"])
   } else {
     MsgBox("Active window not found.")
   }

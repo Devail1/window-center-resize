@@ -21,7 +21,6 @@ async function startAutoHotkeyProcess() {
 
   const resourcesPath = path.join(__dirname, '../../assets');
 
-  // path.join(process.cwd(), '/assets');
   const autohotkeyPath = path.join(
     resourcesPath,
     'autohotkey',
