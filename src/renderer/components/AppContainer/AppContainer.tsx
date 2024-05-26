@@ -1,7 +1,7 @@
 import { ReactNode, createContext } from 'react';
 import './AppContainer.css';
-import TabsProvider from '../../providers/TabsProvider';
-import SettingsProvider from '../../providers/SettingsProvider';
+import TabsProvider from '@/renderer/providers/TabsProvider';
+import SettingsProvider from '@/renderer/providers/SettingsProvider';
 
 export type TTabAction = 'center' | 'resize';
 

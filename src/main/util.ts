@@ -24,13 +24,10 @@ export function getIconPath(iconName: string) {
   );
 }
 
-export function resolveIconPath(iconName: string) {
-  const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-  return `file://${path.resolve(
-    __dirname,
-    '../../assets',
-    'icons-copy',
-    theme,
-    `${iconName}.png`,
-  )}`;
+export function capitalizeFirstLetterOfEachWord(str: string): string {
+  if (!str) return '';
+  return str
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }

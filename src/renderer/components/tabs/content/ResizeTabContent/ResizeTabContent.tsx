@@ -1,87 +1,28 @@
-import {
-  FormEvent,
-  KeyboardEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import { useRecordHotkeys } from 'react-hotkeys-hook';
+import { useState } from 'react';
+import useKeybindHandler from '@/renderer/hooks/useKeybindHandler';
 import {
   WindowSizePercentage,
   useSettingsContext,
-} from '../../../../providers/SettingsProvider';
+} from '@/renderer/providers/SettingsProvider';
 import './ResizeTabContent.css';
 
 function ResizeTabContent() {
-  const inputRef = useRef<null | HTMLInputElement>(null);
   const { settings, saveResizeSettings } = useSettingsContext();
-
-  const [resizeKeybind, setResizeKeybind] = useState<string>(
-    settings.resizeWindow.keybinding,
-  );
 
   const [presets, setPresets] = useState<WindowSizePercentage[]>(
     settings.resizeWindow.windowSizePercentages,
   );
 
-  const [keys, { start, stop, resetKeys, isRecording }] = useRecordHotkeys();
-
-  const filterUnwantedKeys = (keysList: string[]) =>
-    keysList.filter((s) => s !== 'escape' && s !== 'backspace');
-
-  const updateInputRef = useCallback(() => {
-    const recordedKeys = filterUnwantedKeys(Array.from(keys)).join(' + ');
-    if (keys.size && inputRef?.current) {
-      inputRef.current.value = recordedKeys;
-      setResizeKeybind(recordedKeys);
-    }
-  }, [keys]);
-
-  useEffect(() => {
-    updateInputRef();
-  }, [updateInputRef]);
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLInputElement>) => {
-      const filteredKeys = filterUnwantedKeys(Array.from(keys));
-      const lastKeyInput = e.key;
-
-      switch (lastKeyInput) {
-        case 'Escape':
-          setResizeKeybind('');
-          resetKeys();
-          break;
-
-        case 'Backspace':
-          if (filteredKeys.length) {
-            filteredKeys.pop();
-            keys.clear();
-            filteredKeys.forEach((key) => keys.add(key));
-          }
-          break;
-
-        default:
-          break;
-      }
-      updateInputRef();
-    },
-    [keys, updateInputRef, resetKeys],
+  const {
+    inputRef,
+    keybind,
+    handleKeyDown,
+    handleSubmit,
+    handleFocus,
+    handleBlur,
+  } = useKeybindHandler(settings.resizeWindow.keybinding, (newKeybind) =>
+    saveResizeSettings(newKeybind, presets),
   );
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    saveResizeSettings(resizeKeybind, presets);
-    stop();
-  };
-
-  const handleFocus = () => {
-    if (!isRecording || !keys.size) start();
-  };
-
-  const handleBlur = () => {
-    if (isRecording) stop();
-  };
 
   const handlePresetChange = (
     index: number,
@@ -116,7 +57,7 @@ function ResizeTabContent() {
               className="keybinding-input"
               id="resizeKeybind"
               placeholder="Enter Shortcut (e.g., F9)"
-              value={resizeKeybind}
+              value={keybind}
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}

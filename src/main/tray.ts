@@ -1,5 +1,5 @@
 import { app, Menu, Notification, Tray } from 'electron';
-import { getIconPath } from './util';
+import { capitalizeFirstLetterOfEachWord, getIconPath } from './util';
 import { getSettings } from './settings';
 import { getMainWindow } from './window';
 
@@ -12,7 +12,7 @@ const showNotification = async (): Promise<void> => {
 
     const notification = new Notification({
       title: 'Window Snapper',
-      body: `Press ${centerWindow.keybinding} to center the window. \nPress ${resizeWindow.keybinding} to resize the window.`,
+      body: `Press ${capitalizeFirstLetterOfEachWord(centerWindow.keybinding)} to center the window. \nPress ${capitalizeFirstLetterOfEachWord(resizeWindow.keybinding)} to resize the window.`,
       silent: true,
     });
 

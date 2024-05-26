@@ -7,7 +7,7 @@ import React, {
   ReactNode,
 } from 'react';
 
-import defaultSettings from '../../constants/defaultSettings.json';
+import defaultSettings from '@/constants/defaultSettings.json';
 
 // Define the shape of your settings
 export interface WindowSizePercentage {

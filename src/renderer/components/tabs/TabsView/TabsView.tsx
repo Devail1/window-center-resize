@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useTabsContext } from '../../../providers/TabsProvider';
-import About from '../../About/About';
+import { useTabsContext } from '@/renderer/providers/TabsProvider';
+import About from '@/renderer/components/About/About';
 import TabsList from '../TabsList/TabsList';
 import CenterTabContent from '../content/CenterTabContent/CenterTabContent';
 import ResizeTabContent from '../content/ResizeTabContent/ResizeTabContent';

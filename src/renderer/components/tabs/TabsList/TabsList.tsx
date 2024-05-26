@@ -1,7 +1,7 @@
 import './TabsList.css';
-import { useTabsContext } from '../../../providers/TabsProvider';
-import { TTabAction } from '../../AppContainer/AppContainer';
-import { useSettingsContext } from '../../../providers/SettingsProvider';
+import { useTabsContext } from '@/renderer/providers/TabsProvider';
+import { TTabAction } from '@/renderer/components/AppContainer/AppContainer';
+import { useSettingsContext } from '@/renderer/providers/SettingsProvider';
 
 function TabsList() {
   const { resetSettings } = useSettingsContext();
@@ -13,8 +13,6 @@ function TabsList() {
   };
 
   const handleReset = () => {
-    console.log('here');
-
     resetSettings();
   };
 
