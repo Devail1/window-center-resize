@@ -242,7 +242,7 @@
   },
   "devEngines": {
     "node": ">=14.x",
-    "pnpm": ">=7.x"
+    "npm": ">=7.x"
   },
   "electronmon": {
     "patterns": [
