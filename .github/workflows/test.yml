@@ -24,10 +24,6 @@ jobs:
         run: |
           npm install
 
-      - name: Update caniuse-lite database
-        run: |
-          npx update-browserslist-db@latest
-
       - name: Run Prettier
         run: |
           npx prettier --write .
