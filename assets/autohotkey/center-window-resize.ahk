@@ -26,8 +26,7 @@ convertHotkeysJsToHotHotkeys(key) {
   return Join("", hotkeys*)
 }
 
-; TODO: Replace electron with app name "window-center-resize"
-jsonFilePath := A_AppData . "\Electron\settings.json"
+jsonFilePath := A_AppData . "\window-center-resize\settings.json"
 
 ; Read JSON file
 jsonContent := Fileread(jsonFilePath)

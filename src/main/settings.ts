@@ -1,3 +1,5 @@
+/* eslint no-console: off */
+
 import { promises as fs, existsSync, watch, FSWatcher } from 'fs';
 import { join } from 'path';
 import { app, IpcMainInvokeEvent } from 'electron';

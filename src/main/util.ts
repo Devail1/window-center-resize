@@ -1,7 +1,7 @@
 /* eslint import/prefer-default-export: off */
 import { URL } from 'url';
 import path from 'path';
-import { nativeTheme } from 'electron';
+import { app, nativeTheme } from 'electron';
 
 export function resolveHtmlPath(htmlFileName: string) {
   if (process.env.NODE_ENV === 'development') {
@@ -12,16 +12,20 @@ export function resolveHtmlPath(htmlFileName: string) {
   }
   return `file://${path.resolve(__dirname, '../renderer/', htmlFileName)}`;
 }
-
 export function getIconPath(iconName: string) {
   const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-  return path.join(
-    __dirname,
-    '../../assets',
-    'icons-copy',
-    theme,
-    `${iconName}.png`,
-  );
+
+  const { isPackaged } = app;
+
+  const resourcesPath = isPackaged
+    ? path.join(process.resourcesPath, 'assets', 'icons-copy')
+    : path.join(app.getAppPath(), 'assets', 'icons-copy');
+
+  const iconPath = path.join(resourcesPath, theme, `${iconName}.png`);
+
+  console.log('Icon Path:', iconPath);
+
+  return iconPath;
 }
 
 export function capitalizeFirstLetterOfEachWord(str: string): string {

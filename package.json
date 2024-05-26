@@ -1,5 +1,7 @@
 {
-  "description": "A foundation for scalable desktop apps",
+  "name": "window-center-resize",
+  "version": "1.0.0",
+  "description": "A utility app that allows you to easily center and resize windows on your desktop",
   "keywords": [
     "electron",
     "boilerplate",
@@ -9,29 +11,22 @@
     "sass",
     "webpack",
     "hot",
-    "reload"
+    "reload",
+    "window",
+    "snapper",
+    "resizer",
+    "helper"
   ],
-  "homepage": "https://github.com/electron-react-boilerplate/electron-react-boilerplate#readme",
+  "homepage": "https://github.com/devail1/window-center-resize#readme",
   "bugs": {
-    "url": "https://github.com/electron-react-boilerplate/electron-react-boilerplate/issues"
+    "url": "https://github.com/devail1/window-center-resize/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/electron-react-boilerplate/electron-react-boilerplate.git"
+    "url": "git+https://github.com/devail1/window-center-resize.git"
   },
   "license": "MIT",
-  "author": {
-    "name": "Electron React Boilerplate Maintainers",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://electron-react-boilerplate.js.org"
-  },
-  "contributors": [
-    {
-      "name": "Amila Welihinda",
-      "email": "amilajack@gmail.com",
-      "url": "https://github.com/amilajack"
-    }
-  ],
+  "author": "devail1",
   "main": "./src/main/main.ts",
   "scripts": {
     "build": "concurrently \"pnpm run build:main\" \"pnpm run build:renderer\"",
@@ -119,6 +114,7 @@
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
     "@types/react-test-renderer": "^18.0.1",
+    "@types/source-map-support": "^0.5.10",
     "@types/terser-webpack-plugin": "^5.0.4",
     "@types/webpack-bundle-analyzer": "^4.6.0",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
@@ -159,6 +155,7 @@
     "rimraf": "^5.0.1",
     "sass": "^1.67.0",
     "sass-loader": "^13.3.2",
+    "source-map-support": "^0.5.21",
     "style-loader": "^3.3.3",
     "terser-webpack-plugin": "^5.3.9",
     "ts-jest": "^29.1.1",
@@ -174,54 +171,19 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.erb.ElectronReact",
+    "productName": "Window Center Resize",
+    "icon": "assets/icons-copy/logo.png",
     "asar": true,
-    "asarUnpack": "**\\*.{node,dll}",
+    "asarUnpack": "**\\*.{node,dll,exe,ahk}",
     "files": [
       "dist",
       "node_modules",
       "package.json"
     ],
-    "afterSign": ".erb/scripts/notarize.js",
-    "mac": {
-      "target": {
-        "target": "default",
-        "arch": [
-          "arm64",
-          "x64"
-        ]
-      },
-      "type": "distribution",
-      "hardenedRuntime": true,
-      "entitlements": "assets/entitlements.mac.plist",
-      "entitlementsInherit": "assets/entitlements.mac.plist",
-      "gatekeeperAssess": false
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
     "win": {
       "target": [
-        "nsis"
+        "portable"
       ]
-    },
-    "linux": {
-      "target": [
-        "AppImage"
-      ],
-      "category": "Development"
     },
     "directories": {
       "app": "release/app",
@@ -229,16 +191,13 @@
       "output": "release/build"
     },
     "extraResources": [
-      "./assets/**"
+      "./assets/**/*"
     ],
     "publish": {
       "provider": "github",
-      "owner": "electron-react-boilerplate",
-      "repo": "electron-react-boilerplate"
+      "owner": "devail1",
+      "repo": "window-center-resize"
     }
-  },
-  "collective": {
-    "url": "https://opencollective.com/electron-react-boilerplate-594"
   },
   "devEngines": {
     "node": ">=18.x",

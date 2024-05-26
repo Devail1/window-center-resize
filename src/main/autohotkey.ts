@@ -1,4 +1,7 @@
+/* eslint no-console: off */
+
 import * as child from 'child_process';
+import { app } from 'electron';
 import path from 'path';
 
 let autohotkeyProcess: child.ChildProcess | null = null;
@@ -19,18 +22,17 @@ async function startAutoHotkeyProcess() {
     stopAutoHotkeyProcess();
   }
 
-  const resourcesPath = path.join(__dirname, '../../assets');
+  const { isPackaged } = app;
 
-  const autohotkeyPath = path.join(
-    resourcesPath,
-    'autohotkey',
-    'AutoHotkey32.exe',
-  );
-  const scriptPath = path.join(
-    resourcesPath,
-    'autohotkey',
-    'center-window-resize.ahk',
-  );
+  const resourcesPath = isPackaged
+    ? path.join(process.resourcesPath, 'assets', 'autohotkey')
+    : path.join(__dirname, '../../assets', 'autohotkey');
+
+  const autohotkeyPath = path.join(resourcesPath, 'AutoHotkey32.exe');
+  const scriptPath = path.join(resourcesPath, 'center-window-resize.ahk');
+
+  console.log('AutoHotkey Path:', autohotkeyPath);
+  console.log('Script Path:', scriptPath);
 
   try {
     autohotkeyProcess = child.spawn(autohotkeyPath, [scriptPath]);

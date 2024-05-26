@@ -9,7 +9,8 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import { BrowserWindow, app, ipcMain } from 'electron';
-
+import sourceMapSupport from 'source-map-support';
+import debug from 'electron-debug';
 import { startAutoHotkeyProcess, stopAutoHotkeyProcess } from './autohotkey';
 import { createWindow, getMainWindow } from './window';
 import {
@@ -30,7 +31,6 @@ ipcMain.on('ipc-example', async (event, arg) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-  const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
 }
 
@@ -38,7 +38,7 @@ const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
 if (isDebug) {
-  require('electron-debug')();
+  debug();
 }
 
 app
@@ -61,7 +61,7 @@ app
     console.error('Error in app.whenReady:', error);
   });
 
-// TOOD: Test single instance function in production
+// TODO: Test single instance function in production
 const mainWindow = getMainWindow(); // used to prevent multiple windows from running
 
 if (mainWindow) {
