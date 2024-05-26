@@ -20,15 +20,30 @@ jobs:
           node-version: 18
           cache: npm
 
-      - name: npm install
+      - name: Install dependencies
         run: |
           npm install
 
-      - name: npm test
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update caniuse-lite database
+        run: |
+          npx update-browserslist-db@latest
+
+      - name: Run Prettier
+        run: |
+          npx prettier --write .
+
+      - name: Lint code
+        run: |
+          npm run lint
+
+      - name: Compile TypeScript
+        run: |
+          npm exec tsc
+
+      - name: Package application
         run: |
           npm run package
-          npm run lint
-          npm exec tsc
+
+      - name: Run tests
+        run: |
           npm test
