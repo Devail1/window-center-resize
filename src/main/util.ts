@@ -12,6 +12,7 @@ export function resolveHtmlPath(htmlFileName: string) {
   }
   return `file://${path.resolve(__dirname, '../renderer/', htmlFileName)}`;
 }
+
 export function getIconPath(iconName: string) {
   const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 
@@ -22,8 +23,6 @@ export function getIconPath(iconName: string) {
     : path.join(app.getAppPath(), 'assets', 'icons-copy');
 
   const iconPath = path.join(resourcesPath, theme, `${iconName}.png`);
-
-  console.log('Icon Path:', iconPath);
 
   return iconPath;
 }
