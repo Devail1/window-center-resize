@@ -194,12 +194,7 @@
     },
     "extraResources": [
       "./assets/**/*"
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "devail1",
-      "repo": "window-center-resize"
-    }
+    ]
   },
   "devEngines": {
     "node": ">=18.x",
