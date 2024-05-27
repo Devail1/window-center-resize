@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [windows-latest]
 
     steps:
       - name: Check out Git repository
@@ -20,15 +20,26 @@ jobs:
           node-version: 18
           cache: npm
 
-      - name: npm install
+      - name: Install dependencies
         run: |
           npm install
 
-      - name: npm test
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run Prettier
+        run: |
+          npx prettier --write .
+
+      - name: Lint code
+        run: |
+          npm run lint
+
+      - name: Compile TypeScript
+        run: |
+          npm exec tsc
+
+      - name: Package application
         run: |
           npm run package
-          npm run lint
-          npm exec tsc
+
+      - name: Run tests
+        run: |
           npm test

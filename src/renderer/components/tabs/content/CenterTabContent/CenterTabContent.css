@@ -1,0 +1,16 @@
+.save-button {
+  display: block;
+  margin-left: auto;
+  margin-top: 34px;
+}
+
+.input-help {
+  font-size: 12px;
+  color: gray;
+}
+
+.keybind-label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
