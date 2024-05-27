@@ -184,10 +184,9 @@
       "package.json"
     ],
     "win": {
-      "target": [
-        "portable"
-      ]
+      "target": "portable"
     },
+    "artifactName": "${productName}.${ext}",
     "directories": {
       "app": "release/app",
       "buildResources": "assets",
