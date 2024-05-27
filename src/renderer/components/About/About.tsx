@@ -7,7 +7,7 @@ function About() {
         <summary>Streamlined Window Management (Read more)</summary>
         <div className="read-more-content">
           <p>
-            Power users and multitaskers, maximize focus with Window Snapper &
+            Power users and multitaskers, maximize focus with Window Center &
             Resizer.
           </p>
           <ul>
@@ -31,7 +31,7 @@ function About() {
             <a
               target="_blank"
               rel="noopener noreferrer"
-              href="https://github.com/devail1/window-snapper-resizer"
+              href="https://github.com/devail1/window-center-resize"
             >
               repository
             </a>

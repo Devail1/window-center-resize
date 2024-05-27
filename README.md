@@ -10,7 +10,7 @@ Window Center & Resizer is a utility application for Windows that allows you to 
 
 ## Installation
 
-To use Window Center & Resizer, download the latest release from the [GitHub repository](https://github.com/devail1/window-center-resize) and run the executable file.
+To use Window Center & Resizer, [download](portable/Window%20Center%20Resize%201.0.0.exe?raw=1+) the latest release from the [GitHub repository](https://github.com/devail1/window-center-resize) and run the executable file.
 
 ## Usage
 

@@ -12,7 +12,7 @@ import { BrowserWindow, app, ipcMain } from 'electron';
 import sourceMapSupport from 'source-map-support';
 import debug from 'electron-debug';
 import { startAutoHotkeyProcess, stopAutoHotkeyProcess } from './autohotkey';
-import { createWindow, getMainWindow } from './window';
+import { createWindow } from './window';
 import {
   resetSettings,
   loadSettings,
@@ -22,7 +22,6 @@ import {
   getSettings,
 } from './settings';
 import createTrayMenu from './tray';
-import { handleSingleInstance } from './singleInstance';
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -60,13 +59,6 @@ app
   .catch((error) => {
     console.error('Error in app.whenReady:', error);
   });
-
-// TODO: Test single instance function in production
-const mainWindow = getMainWindow(); // used to prevent multiple windows from running
-
-if (mainWindow) {
-  handleSingleInstance(mainWindow);
-}
 
 ipcMain.handle('reset-settings', resetSettings);
 ipcMain.handle('load-settings', loadSettings);

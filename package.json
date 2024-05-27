@@ -99,7 +99,7 @@
     "electron-debug": "^3.2.0",
     "electron-log": "^4.4.8",
     "electron-updater": "^6.1.4",
-    "react": "^18.2.0",
+    "react": "^18.3.1",
     "react-dom": "^18.2.0",
     "react-hotkeys-hook": "^4.5.0",
     "react-router-dom": "^6.16.0"
@@ -114,7 +114,7 @@
     "@testing-library/react": "^15.0.7",
     "@types/jest": "^29.5.5",
     "@types/node": "20.6.2",
-    "@types/react": "^18.2.21",
+    "@types/react": "^18.3.1",
     "@types/react-dom": "^18.2.7",
     "@types/react-test-renderer": "^18.0.1",
     "@types/source-map-support": "^0.5.10",

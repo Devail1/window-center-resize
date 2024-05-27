@@ -14,8 +14,6 @@ export function handleSingleInstance(mainWindow: BrowserWindow) {
         }
         mainWindow.focus();
       }
-      app.relaunch();
-      app.quit();
     });
   }
 }

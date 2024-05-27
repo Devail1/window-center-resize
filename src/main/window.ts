@@ -5,6 +5,7 @@ import path from 'path';
 import log from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import { getIconPath, resolveHtmlPath } from './util';
+import { handleSingleInstance } from './singleInstance';
 
 class AppUpdater {
   constructor() {
@@ -79,6 +80,8 @@ export const createWindow = async (): Promise<BrowserWindow> => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
+
+  handleSingleInstance(mainWindow);
 
   // eslint-disable-next-line
   new AppUpdater();

@@ -40,7 +40,7 @@ const createTrayMenu = (): void => {
     },
   ]);
 
-  tray.setToolTip('Window Snapper');
+  tray.setToolTip('Window Center Resizer');
   tray.setContextMenu(contextMenu);
   tray.on('click', () => getMainWindow()?.show());
 
