@@ -1,6 +1,6 @@
 {
   "name": "window-center-resize",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A utility app that allows you to easily center and resize windows on your desktop",
   "keywords": [
     "electron",
