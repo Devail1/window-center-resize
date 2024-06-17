@@ -56,6 +56,14 @@ export async function getSettings() {
   }
 }
 
+function setupSettingsWatcher() {
+  reloadAutoHotkey();
+
+  settingsWatcher = watch(settingsPath, () => {
+    reloadAutoHotkey();
+  });
+}
+
 export async function saveCenterSettings(
   event: IpcMainInvokeEvent,
   centerKeybind: string,
@@ -66,7 +74,7 @@ export async function saveCenterSettings(
     settings.centerWindow.keybinding = centerKeybind;
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
 
-    reloadAutoHotkey();
+    setupSettingsWatcher();
   } catch (err) {
     if (err instanceof Error) {
       console.error('Error saving center settings:', err.message, err.stack);
@@ -91,7 +99,7 @@ export async function saveResizeSettings(
       windowSizePercentages: data.windowSizePercentages,
     };
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
-    reloadAutoHotkey();
+    setupSettingsWatcher();
   } catch (err) {
     if (err instanceof Error) {
       console.error('Error saving resize settings:', err.message, err.stack);
@@ -99,10 +107,6 @@ export async function saveResizeSettings(
       console.error('Unknown error saving resize settings:', err);
     }
   }
-
-  settingsWatcher = watch(settingsPath, () => {
-    reloadAutoHotkey();
-  });
 }
 
 export function closeWatcher() {

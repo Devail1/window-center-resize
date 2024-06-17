@@ -31,9 +31,6 @@ async function startAutoHotkeyProcess() {
   const autohotkeyPath = path.join(resourcesPath, 'AutoHotkey32.exe');
   const scriptPath = path.join(resourcesPath, 'center-window-resize.ahk');
 
-  console.log('AutoHotkey Path:', autohotkeyPath);
-  console.log('Script Path:', scriptPath);
-
   try {
     autohotkeyProcess = child.spawn(autohotkeyPath, [scriptPath]);
   } catch (error) {
