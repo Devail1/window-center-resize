@@ -10,7 +10,7 @@ Window Center & Resizer is a utility application for Windows that allows you to 
 
 ## Installation
 
-To use Window Center & Resizer, [download](release/build/Window%20Center%20Resize.exe?raw=1+) the latest release from the [GitHub repository](https://github.com/devail1/window-center-resize) and run the executable file.
+To use Window Center & Resizer, [download](releases/latest/download/Window-Center-Resize.exe) the latest release from the [GitHub repository](https://github.com/devail1/window-center-resize) and run the executable file.
 
 ## Usage
 
@@ -22,11 +22,10 @@ To use Window Center & Resizer, [download](release/build/Window%20Center%20Resiz
 
 This project is inspired by the window centering helper freeware by [Kamil Szymborski](https://kamilszymborski.github.io/). Window Center & Resizer offers a modern approach to window management with additional features and extensive customization capabilities.
 
-## Backlog
+## Feature Roadmap
 
 - **Label Sizes**: Provide an option to rename, add, or remove sizes for more flexibility in window resizing.
 - **Feature Enable/Disable**: Add the ability to enable or disable every feature in the app, such as centering and resizing.
-- **Decouple Centering and Resizing**: Allow decoupling centering and resizing, providing separate controls for each feature.
 - **Improved Settings UI**: Enhance the user interface for settings to make it more intuitive and user-friendly.
 
 ## Contributing
