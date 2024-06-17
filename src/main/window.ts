@@ -39,8 +39,8 @@ export const createWindow = async (): Promise<BrowserWindow> => {
   }
 
   mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 728,
+    width: 580,
+    height: 640,
     icon: getIconPath('logo'),
     show: false,
     autoHideMenuBar: true,
@@ -53,17 +53,6 @@ export const createWindow = async (): Promise<BrowserWindow> => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
-
-  mainWindow.on('ready-to-show', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
-    }
-  });
 
   mainWindow.on('close', (event) => {
     if (mainWindow?.isVisible()) {

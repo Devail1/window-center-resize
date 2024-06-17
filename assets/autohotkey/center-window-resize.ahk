@@ -34,18 +34,14 @@ jsonContent := Fileread(jsonFilePath)
 ; Parse JSON content
 json := jxon_load(&jsonContent)
 
-; Convert the map to a JSON formatted string
-jsonString := jxon_dump(json, indent := 0)
+centerWindowObj := json["centerWindow"]
+resizeWindowObj := json["resizeWindow"]
+global toggleSizes := resizeWindowObj["windowSizePercentages"]
+
 
 ; Extract values from JSON
-centerWindowObj := json["centerWindow"]  ; Access "centerWindow" as an object
-centerWindowKey := convertHotkeysJsToHotHotkeys(centerWindowObj["keybinding"])  ; Access "keybinding" from the object
-
-resizeWindowObj := json["resizeWindow"]  ; Access "resizeWindow" as an object
-resizeWindowKey := convertHotkeysJsToHotHotkeys(resizeWindowObj["keybinding"])  ; Access "keybinding" from the object
-
-toggleSizes := resizeWindowObj["windowSizePercentages"]  ; Access the entire array
-
+centerWindowKey := convertHotkeysJsToHotHotkeys(centerWindowObj["keybinding"])
+resizeWindowKey := convertHotkeysJsToHotHotkeys(resizeWindowObj["keybinding"])
 
 ; Define hotkeys if keybinding exists
 if (centerWindowKey != "")
@@ -73,7 +69,12 @@ CenterWindow(WinTitle) {
 
 ResizeWindow(WinTitle) {
   static size := 1
-  size := Mod(size + 1, toggleSizes.Length) + 1
+  global toggleSizes
+
+  size++
+
+  if (size > toggleSizes.Length)  ; Reset size to 1 if it exceeds array length
+    size := 1
 
   hwnd := WinExist("A")  ; Get handle to active window
 
