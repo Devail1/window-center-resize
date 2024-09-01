@@ -175,7 +175,7 @@
   },
   "build": {
     "productName": "Window Center Resize",
-    "icon": "assets/icons-copy/logo.png",
+    "icon": "assets/icons/logo.png",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll,exe,ahk}",
     "files": [

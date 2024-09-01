@@ -1,4 +1,3 @@
-/* eslint import/prefer-default-export: off */
 import { URL } from 'url';
 import path from 'path';
 import { app, nativeTheme } from 'electron';
@@ -19,8 +18,8 @@ export function getIconPath(iconName: string) {
   const { isPackaged } = app;
 
   const resourcesPath = isPackaged
-    ? path.join(process.resourcesPath, 'assets', 'icons-copy')
-    : path.join(app.getAppPath(), 'assets', 'icons-copy');
+    ? path.join(process.resourcesPath, 'assets', 'icons')
+    : path.join(app.getAppPath(), 'assets', 'icons');
 
   const iconPath = path.join(resourcesPath, theme, `${iconName}.png`);
 
