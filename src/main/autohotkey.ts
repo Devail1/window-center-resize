@@ -9,7 +9,7 @@ let autohotkeyProcess: child.ChildProcess | null = null;
 async function stopAutoHotkeyProcess() {
   if (autohotkeyProcess) {
     try {
-      await autohotkeyProcess.kill();
+      autohotkeyProcess.kill();
     } catch (error) {
       console.error('Error killing child process:', error);
     }

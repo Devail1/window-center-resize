@@ -1,4 +1,3 @@
-/* eslint import/prefer-default-export: off */
 import { app, BrowserWindow } from 'electron';
 
 export function handleSingleInstance(mainWindow: BrowserWindow) {

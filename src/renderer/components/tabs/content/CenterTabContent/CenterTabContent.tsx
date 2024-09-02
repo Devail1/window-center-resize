@@ -15,7 +15,7 @@ function CenterTabContent() {
   } = useKeybindHandler(settings.centerWindow.keybinding, saveCenterSettings);
 
   return (
-    <div id="center" className="tabcontent active">
+    <div className="tabcontent active">
       <h3>Center Window</h3>
       <form onSubmit={handleSubmit}>
         <div className="display-flex">

@@ -45,7 +45,7 @@ function ResizeTabContent() {
   };
 
   return (
-    <div id="resize" className="tabcontent">
+    <div className="tabcontent">
       <h3>Resize Window</h3>
       <form onSubmit={handleSubmit}>
         <div className="resize-content">

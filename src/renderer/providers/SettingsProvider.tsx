@@ -98,17 +98,6 @@ function SettingsProvider({ children }: { children: ReactNode }) {
     };
 
     loadSettings();
-
-    window.electron.ipcRenderer.on(
-      'settings-updated',
-      (event, updatedSettings: any) => {
-        dispatch({ type: 'LOAD_SETTINGS', payload: updatedSettings });
-      },
-    );
-
-    return () => {
-      window.electron.ipcRenderer.removeAllListeners('settings-updated');
-    };
   }, []);
 
   const saveCenterSettings = (centerKeybind: string) => {

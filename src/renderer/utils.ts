@@ -1,5 +1,3 @@
-/* eslint import/prefer-default-export: off */
-
 export function capitalizeFirstLetterOfEachWord(str: string): string {
   if (!str) return '';
   return str
