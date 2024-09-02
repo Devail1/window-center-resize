@@ -8,104 +8,96 @@ import { reloadAutoHotkey } from './autohotkey';
 import { getMainWindow } from './window';
 
 const settingsPath = join(app.getPath('userData'), 'settings.json');
-
 let settingsWatcher: FSWatcher;
+
+function handleError(message: string, err?: unknown) {
+  if (err instanceof Error) {
+    console.error(`${message}:`, err.message, err.stack);
+  } else {
+    console.error(`${message}: Unknown error`, err);
+  }
+}
+
+function setupSettingsWatcher() {
+  if (!settingsWatcher) {
+    settingsWatcher = watch(settingsPath, () => {
+      reloadAutoHotkey();
+    });
+  }
+}
+
+async function ensureSettingsFileExists() {
+  if (!existsSync(settingsPath)) {
+    await fs.writeFile(settingsPath, JSON.stringify(defaultSettings, null, 2));
+  }
+}
+
+async function readSettingsFile() {
+  await ensureSettingsFileExists();
+  const rawSettings = await fs.readFile(settingsPath, 'utf8');
+  return JSON.parse(rawSettings);
+}
+
+async function writeSettingsFile(settings: any) {
+  await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+  setupSettingsWatcher();
+}
 
 export async function resetSettings() {
   const mainWindow = getMainWindow();
   await fs.writeFile(settingsPath, JSON.stringify(defaultSettings));
   reloadAutoHotkey();
-  mainWindow?.reload();
+  mainWindow?.webContents.reload();
 }
 
 export async function loadSettings() {
   try {
-    if (!existsSync(settingsPath)) {
-      await fs.writeFile(
-        settingsPath,
-        JSON.stringify(defaultSettings, null, 2),
-      );
-    }
+    await ensureSettingsFileExists();
     reloadAutoHotkey();
   } catch (err) {
-    if (err instanceof Error) {
-      console.error('Error loading settings:', err.message, err.stack);
-    } else {
-      console.error('Unknown error loading settings:', err);
-    }
+    handleError('Error loading settings', err);
   }
 }
 
 export async function getSettings() {
   try {
-    if (!existsSync(settingsPath)) {
-      await fs.writeFile(
-        settingsPath,
-        JSON.stringify(defaultSettings, null, 2),
-      );
-    }
-    const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+    const settings = await readSettingsFile();
     return settings;
   } catch (err) {
-    if (err instanceof Error) {
-      console.error('Error getting settings:', err.message, err.stack);
-    } else {
-      console.error('Unknown error getting settings:', err);
-    }
+    handleError('Error getting settings', err);
     return null;
   }
 }
 
-function setupSettingsWatcher() {
-  reloadAutoHotkey();
-
-  settingsWatcher = watch(settingsPath, () => {
-    reloadAutoHotkey();
-  });
-}
-
 export async function saveCenterSettings(
-  event: IpcMainInvokeEvent,
+  _event: IpcMainInvokeEvent,
   centerKeybind: string,
 ) {
   try {
-    const rawSettings = await fs.readFile(settingsPath, 'utf8');
-    const settings = JSON.parse(rawSettings);
+    const settings = await readSettingsFile();
     settings.centerWindow.keybinding = centerKeybind;
-    await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
-
-    setupSettingsWatcher();
+    await writeSettingsFile(settings);
   } catch (err) {
-    if (err instanceof Error) {
-      console.error('Error saving center settings:', err.message, err.stack);
-    } else {
-      console.error('Unknown error saving center settings:', err);
-    }
+    handleError(`Error while saving center settings at ${settingsPath}`, err);
   }
 }
 
 export async function saveResizeSettings(
-  event: IpcMainInvokeEvent,
+  _event: IpcMainInvokeEvent,
   data: {
     keybinding: string;
     windowSizePercentages: { width: string; height: string }[];
   },
 ) {
   try {
-    const rawSettings = await fs.readFile(settingsPath, 'utf8');
-    const settings = JSON.parse(rawSettings);
+    const settings = await readSettingsFile();
     settings.resizeWindow = {
       keybinding: data.keybinding,
       windowSizePercentages: data.windowSizePercentages,
     };
-    await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
-    setupSettingsWatcher();
+    await writeSettingsFile(settings);
   } catch (err) {
-    if (err instanceof Error) {
-      console.error('Error saving resize settings:', err.message, err.stack);
-    } else {
-      console.error('Unknown error saving resize settings:', err);
-    }
+    handleError(`Error while saving resize settings at ${settingsPath}`, err);
   }
 }
 

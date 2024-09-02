@@ -10,16 +10,18 @@ async function stopAutoHotkeyProcess() {
   if (autohotkeyProcess) {
     try {
       autohotkeyProcess.kill();
+      autohotkeyProcess.on('exit', () => {
+        autohotkeyProcess = null;
+      });
     } catch (error) {
-      console.error('Error killing child process:', error);
+      console.error('Error killing AutoHotkey process:', error);
     }
-    autohotkeyProcess = null;
   }
 }
 
 async function startAutoHotkeyProcess() {
   if (autohotkeyProcess) {
-    stopAutoHotkeyProcess();
+    await stopAutoHotkeyProcess();
   }
 
   const { isPackaged } = app;
@@ -34,15 +36,12 @@ async function startAutoHotkeyProcess() {
   try {
     autohotkeyProcess = child.spawn(autohotkeyPath, [scriptPath]);
   } catch (error) {
-    console.error('Unexpected error spawning AutoHotkey:', error);
+    console.error('Error starting AutoHotkey process:', error);
   }
 }
 
-function reloadAutoHotkey() {
-  if (autohotkeyProcess) {
-    stopAutoHotkeyProcess();
-  }
-  startAutoHotkeyProcess();
+async function reloadAutoHotkey() {
+  await startAutoHotkeyProcess();
 }
 
 export { startAutoHotkeyProcess, stopAutoHotkeyProcess, reloadAutoHotkey };
