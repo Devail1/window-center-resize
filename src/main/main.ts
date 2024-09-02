@@ -43,7 +43,7 @@ app
       stopAutoHotkeyProcess();
     });
 
-    startAppUpdater(); // Start the updater here
+    startAppUpdater();
     return null;
   })
   .catch((error) => {

@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useReducer,
@@ -9,7 +9,6 @@ import React, {
 
 import defaultSettings from '@/constants/defaultSettings.json';
 
-// Define the shape of your settings
 export interface WindowSizePercentage {
   width: string;
   height: string;

@@ -40,7 +40,7 @@ function ResizeTabContent() {
 
   const removePreset = (index: number) => {
     const updatedPresets = [...presets];
-    updatedPresets.splice(index, 1); // Remove the preset at the specified index
+    updatedPresets.splice(index, 1);
     setPresets(updatedPresets);
   };
 

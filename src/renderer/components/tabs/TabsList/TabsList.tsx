@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import './TabsList.css';
 import { useTabsContext } from '@/renderer/providers/TabsProvider';
 import { TTabAction } from '@/renderer/components/AppContainer/AppContainer';
@@ -15,20 +15,20 @@ function TabsList() {
 
   const handleReset = () => {
     if (dialogRef.current) {
-      dialogRef.current.showModal(); // Show the dialog when reset is clicked
+      dialogRef.current.showModal();
     }
   };
 
   const handleConfirm = () => {
     resetSettings();
     if (dialogRef.current) {
-      dialogRef.current.close(); // Close the dialog after confirmation
+      dialogRef.current.close();
     }
   };
 
   const handleCancel = () => {
     if (dialogRef.current) {
-      dialogRef.current.close(); // Close the dialog if canceled
+      dialogRef.current.close();
     }
   };
 
