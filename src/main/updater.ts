@@ -5,6 +5,8 @@ import log from 'electron-log';
 import { dialog, shell } from 'electron';
 
 export const startAppUpdater = () => {
+  autoUpdater.channel = 'beta';
+
   log.transports.file.level = 'info';
   autoUpdater.logger = log;
 

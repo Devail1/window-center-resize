@@ -63,7 +63,7 @@ CenterWindow(WinTitle) {
 
     WinMove(NewX, NewY, Width, Height, hwnd)  ; Move window to the center
   } else {
-    MsgBox("Window not found.")
+    ; MsgBox("Window not found.")
   }
 }
 
@@ -81,7 +81,7 @@ ResizeWindow(WinTitle) {
   if (hwnd) {
     CenterAndResizeWindow("A", toggleSizes[size]["width"], toggleSizes[size]["height"])
   } else {
-    MsgBox("Active window not found.")
+    ; MsgBox("Active window not found.")
   }
 }
 
@@ -105,7 +105,7 @@ CenterAndResizeWindow(WinTitle, WidthPercentage, HeightPercentage) {
 
     WinMove(NewX, NewY, NewWidth, NewHeight, hwnd)  ; Move and resize window
   } else {
-    MsgBox("Window with title `"" WinTitle "`" not found.")
+    ; MsgBox("Window with title `"" WinTitle "`" not found.")
   }
 }
 

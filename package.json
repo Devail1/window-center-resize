@@ -1,6 +1,6 @@
 {
   "name": "window-center-resize",
-  "version": "1.0.2",
+  "version": "1.0.3-beta.1",
   "description": "A utility app that allows you to easily center and resize windows on your desktop",
   "keywords": [
     "electron",
@@ -199,7 +199,9 @@
       {
         "provider": "github",
         "owner": "devail1",
-        "repo": "window-center-resize"
+        "repo": "window-center-resize",
+        "releaseType": "prerelease",
+        "channel": "beta"
       }
     ]
   },
