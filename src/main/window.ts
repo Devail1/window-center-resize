@@ -2,18 +2,8 @@
 
 import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
-import log from 'electron-log';
-import { autoUpdater } from 'electron-updater';
 import { getIconPath, resolveHtmlPath } from './util';
 import { handleSingleInstance } from './singleInstance';
-
-class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-}
 
 const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
@@ -71,9 +61,6 @@ export const createWindow = async (): Promise<BrowserWindow> => {
   });
 
   handleSingleInstance(mainWindow);
-
-  // eslint-disable-next-line
-  new AppUpdater();
 
   return mainWindow;
 };
