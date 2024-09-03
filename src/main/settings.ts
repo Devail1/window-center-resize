@@ -50,15 +50,6 @@ export async function resetSettings() {
   mainWindow?.webContents.reload();
 }
 
-export async function loadSettings() {
-  try {
-    await ensureSettingsFileExists();
-    reloadAutoHotkey();
-  } catch (err) {
-    handleError('Error loading settings', err);
-  }
-}
-
 export async function getSettings() {
   try {
     const settings = await readSettingsFile();

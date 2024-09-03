@@ -7,7 +7,6 @@ import { startAutoHotkeyProcess, stopAutoHotkeyProcess } from './autohotkey';
 import { createWindow } from './window';
 import {
   resetSettings,
-  loadSettings,
   saveCenterSettings,
   saveResizeSettings,
   closeWatcher,
@@ -51,7 +50,6 @@ app
   });
 
 ipcMain.handle('reset-settings', resetSettings);
-ipcMain.handle('load-settings', loadSettings);
 ipcMain.handle('get-settings', getSettings);
 ipcMain.handle('save-center-settings', saveCenterSettings);
 ipcMain.handle('save-resize-settings', saveResizeSettings);
