@@ -1,4 +1,4 @@
-/* eslint global-require: off, no-console: off */
+/* eslint no-console: off */
 
 import { BrowserWindow, app, ipcMain } from 'electron';
 import sourceMapSupport from 'source-map-support';
