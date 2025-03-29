@@ -50,6 +50,19 @@ if (resizeWindowKey != "")
   Hotkey(resizeWindowKey, ResizeWindow, "On")
 
 
+; Add this function before CenterWindow
+HandleWindowError(err) {
+  if InStr(err.Message, "Access is denied") {
+    MsgBox("Unable to move window - Access denied. The target window may be running with elevated privileges.", "Access Denied", "IconX")
+  } else if InStr(err.Message, "Window not found") {
+    MsgBox("Unable to find the target window. It may have been closed.", "Window Not Found", "IconX")
+  } else if InStr(err.Message, "Invalid window handle") {
+    MsgBox("Invalid window handle. The window may have been closed or is not accessible.", "Invalid Window", "IconX")
+  } else {
+    MsgBox("An unexpected error occurred: " err.Message, "Error", "IconX")
+  }
+}
+
 CenterWindow(WinTitle) {
   hwnd := WinExist("A")  ; Check if window exists
 
@@ -61,7 +74,11 @@ CenterWindow(WinTitle) {
     NewX := mon.WALeft + (mon.WAWidth - Width) / 2  ; Calculate centered X position on current monitor
     NewY := mon.WATop + (mon.WAHeight - Height) / 2  ; Calculate centered Y position on current monitor
 
-    WinMove(NewX, NewY, Width, Height, hwnd)  ; Move window to the center
+    try {
+      WinMove(NewX, NewY, Width, Height, hwnd)  ; Move window to the center
+    } catch Error as err {
+      HandleWindowError(err)
+    }
   } else {
     MsgBox("Window not found.")
   }
@@ -103,7 +120,11 @@ CenterAndResizeWindow(WinTitle, WidthPercentage, HeightPercentage) {
     NewX := mon.WALeft + (mon.WAWidth - NewWidth) / 2 ; Calculate centered X position on current monitor
     NewY := mon.WATop + (mon.WAHeight - NewHeight) / 2 ; Calculate centered Y position on current monitor
 
-    WinMove(NewX, NewY, NewWidth, NewHeight, hwnd)  ; Move and resize window
+    try {
+      WinMove(NewX, NewY, NewWidth, NewHeight, hwnd)  ; Move and resize window
+    } catch Error as err {
+      HandleWindowError(err)
+    }
   } else {
     MsgBox("Window with title `"" WinTitle "`" not found.")
   }
