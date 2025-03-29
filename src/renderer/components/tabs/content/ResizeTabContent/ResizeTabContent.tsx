@@ -47,6 +47,7 @@ function ResizeTabContent() {
   return (
     <div className="tabcontent">
       <h3>Resize Window</h3>
+
       <form onSubmit={handleSubmit}>
         <div className="resize-content">
           <label className="keybind-label" htmlFor="resizeKeybind">
@@ -164,6 +165,44 @@ function ResizeTabContent() {
           </button>
         </div>
       </form>
+
+      <div className="screen-preview">
+        <div className="screen-dimensions">
+          Screen Size: {window.screen.width} x {window.screen.height}
+        </div>
+        <div
+          className="screen-visualization"
+          style={{
+            aspectRatio: `${window.screen.width} / ${window.screen.height}`,
+            width: '100%',
+            maxWidth: '400px',
+            border: '2px solid #333',
+            backgroundColor: '#f5f5f5',
+            margin: '1rem 0',
+            position: 'relative',
+          }}
+        >
+          {presets.map((preset) => (
+            <div
+              key={`window-preview-${preset.width}-${preset.height}`}
+              className="window-preview"
+              style={{
+                position: 'absolute',
+                width: `${preset.width}%`,
+                height: `${preset.height}%`,
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: '#007AFF33',
+                border: '2px solid #007AFF',
+                transition: 'all 0.3s ease',
+                opacity: 0.7,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
