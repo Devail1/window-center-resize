@@ -1,8 +1,14 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
+import throttle from 'lodash/throttle';
 
 interface Position {
   x: number;
   y: number;
+  width: number;
+  height: number;
+}
+
+interface ScreenSize {
   width: number;
   height: number;
 }
@@ -12,11 +18,6 @@ interface WindowConstraints {
   minHeight?: number;
   maxWidth?: number;
   maxHeight?: number;
-}
-
-interface ScreenSize {
-  width: number;
-  height: number;
 }
 
 const DEFAULT_CONSTRAINTS: WindowConstraints = {
@@ -30,8 +31,8 @@ const getBoundedPosition = (
   constraints: WindowConstraints = DEFAULT_CONSTRAINTS,
 ): Position => {
   const {
-    minWidth,
-    minHeight,
+    minWidth = 100,
+    minHeight = 100,
     maxWidth = screenSize.width,
     maxHeight = screenSize.height,
   } = constraints;
@@ -58,13 +59,32 @@ export const useNativeDragResize = (
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const resizeDirection = useRef('');
+  const containerRect = useRef<DOMRect | null>(null);
+  const scaleFactors = useRef({ x: 1, y: 1 });
+
+  // Cache container dimensions and scale factors
+  useEffect(() => {
+    const updateContainerRect = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        containerRect.current = rect;
+        scaleFactors.current = {
+          x: screenSize.width / rect.width,
+          y: screenSize.height / rect.height,
+        };
+      }
+    };
+
+    updateContainerRect();
+    window.addEventListener('resize', updateContainerRect);
+    return () => window.removeEventListener('resize', updateContainerRect);
+  }, [screenSize, containerRef]);
 
   const getScaledPosition = useCallback(
     (position: Position) => {
-      if (!containerRef.current) return position;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const scaleX = containerRect.width / screenSize.width;
-      const scaleY = containerRect.height / screenSize.height;
+      if (!containerRect.current) return position;
+      const scaleX = containerRect.current.width / screenSize.width;
+      const scaleY = containerRect.current.height / screenSize.height;
 
       return {
         x: position.x * scaleX,
@@ -73,24 +93,21 @@ export const useNativeDragResize = (
         height: position.height * scaleY,
       };
     },
-    [containerRef, screenSize],
+    [screenSize],
   );
 
   const getUnscaledPosition = useCallback(
     (x: number, y: number, width: number, height: number) => {
-      if (!containerRef.current) return { x, y, width, height };
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const scaleX = screenSize.width / containerRect.width;
-      const scaleY = screenSize.height / containerRect.height;
+      if (!containerRect.current) return { x, y, width, height };
 
       return {
-        x: Math.round(x * scaleX),
-        y: Math.round(y * scaleY),
-        width: Math.round(width * scaleX),
-        height: Math.round(height * scaleY),
+        x: Math.round(x * scaleFactors.current.x),
+        y: Math.round(y * scaleFactors.current.y),
+        width: Math.round(width * scaleFactors.current.x),
+        height: Math.round(height * scaleFactors.current.y),
       };
     },
-    [containerRef, screenSize],
+    [],
   );
 
   const handleDragStart = useCallback(
@@ -122,23 +139,25 @@ export const useNativeDragResize = (
     [windowRef],
   );
 
+  // Mouse move handler with proper type checking
   const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!windowRef.current || !containerRef.current) return;
+    (e: MouseEvent) => {
+      if (!windowRef.current || !containerRect.current) return;
 
       if (isDragging.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        const newX = e.clientX - containerRect.left - dragStartPos.current.x;
-        const newY = e.clientY - containerRect.top - dragStartPos.current.y;
+        const currentRect = containerRect.current;
+        const currentWindow = windowRef.current;
 
-        const newPosition = getUnscaledPosition(
-          newX,
-          newY,
-          windowRef.current.offsetWidth,
-          windowRef.current.offsetHeight,
-        );
+        const newX = e.clientX - currentRect.left - dragStartPos.current.x;
+        const newY = e.clientY - currentRect.top - dragStartPos.current.y;
+        const width =
+          (currentWindow.offsetWidth || DEFAULT_CONSTRAINTS.minWidth) ?? 0;
+        const height =
+          (currentWindow.offsetHeight || DEFAULT_CONSTRAINTS.minHeight) ?? 0;
 
+        const newPosition = getUnscaledPosition(newX, newY, width, height);
         const boundedPosition = getBoundedPosition(newPosition, screenSize);
+
         if (snapPosition && snapToGrid) {
           const snappedPosition = snapPosition(boundedPosition);
           onPositionChange(snappedPosition);
@@ -146,7 +165,10 @@ export const useNativeDragResize = (
           onPositionChange(boundedPosition);
         }
       } else if (isResizing.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
+        const currentContainerBounds =
+          containerRef.current?.getBoundingClientRect();
+        if (!currentContainerBounds) return;
+
         const deltaX = e.clientX - resizeStartPos.current.x;
         const deltaY = e.clientY - resizeStartPos.current.y;
 
@@ -190,11 +212,15 @@ export const useNativeDragResize = (
             newX = resizeStartPos.current.x + deltaX;
             newY = resizeStartPos.current.y + deltaY;
             break;
+          default:
+            // Handle unexpected resize direction
+            // console.warn(`Unexpected resize direction: ${resizeDirection.current}`);
+            break;
         }
 
         const newPosition = getUnscaledPosition(
-          newX - containerRect.left,
-          newY - containerRect.top,
+          newX - currentContainerBounds.left,
+          newY - currentContainerBounds.top,
           newWidth,
           newHeight,
         );
@@ -210,13 +236,22 @@ export const useNativeDragResize = (
     },
     [
       windowRef,
-      containerRef,
       getUnscaledPosition,
       screenSize,
       snapPosition,
       snapToGrid,
       onPositionChange,
+      containerRef,
     ],
+  );
+
+  // Create a stable throttled version of handleMouseMove
+  const throttledMouseMove = useCallback(
+    (e: MouseEvent) => {
+      const throttledFn = throttle(() => handleMouseMove(e), 16);
+      throttledFn();
+    },
+    [handleMouseMove],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -225,23 +260,21 @@ export const useNativeDragResize = (
   }, []);
 
   React.useEffect(() => {
-    document.addEventListener('mousemove', handleMouseMove as any);
+    document.addEventListener('mousemove', throttledMouseMove as any);
     document.addEventListener('mouseup', handleMouseUp);
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove as any);
+      document.removeEventListener('mousemove', throttledMouseMove as any);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [handleMouseMove, handleMouseUp]);
+  }, [throttledMouseMove, handleMouseUp]);
 
   const NativeWindow = useCallback(
     ({
       children,
       position,
-      constraints = DEFAULT_CONSTRAINTS,
     }: {
       children: React.ReactNode;
       position: Position;
-      constraints?: WindowConstraints;
     }) => {
       const scaledPos = getScaledPosition(position);
 
@@ -261,8 +294,11 @@ export const useNativeDragResize = (
           }}
         >
           <div
+            role="button"
+            tabIndex={0}
             className="window-drag-handle"
             onMouseDown={handleDragStart}
+            onKeyDown={(e) => e.key === 'Enter' && handleDragStart(e as any)}
             style={{
               position: 'absolute',
               top: 0,
@@ -271,40 +307,89 @@ export const useNativeDragResize = (
               height: '30px',
               cursor: 'move',
             }}
+            aria-label="Drag window"
           />
           {children}
           <div className="resize-handles">
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle top"
               onMouseDown={(e) => handleResizeStart(e, 'top')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'top')
+              }
+              aria-label="Resize from top"
             />
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle right"
               onMouseDown={(e) => handleResizeStart(e, 'right')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'right')
+              }
+              aria-label="Resize from right"
             />
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle bottom"
               onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'bottom')
+              }
+              aria-label="Resize from bottom"
             />
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle left"
               onMouseDown={(e) => handleResizeStart(e, 'left')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'left')
+              }
+              aria-label="Resize from left"
             />
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle top-right"
               onMouseDown={(e) => handleResizeStart(e, 'topRight')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'topRight')
+              }
+              aria-label="Resize from top-right"
             />
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle bottom-right"
               onMouseDown={(e) => handleResizeStart(e, 'bottomRight')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'bottomRight')
+              }
+              aria-label="Resize from bottom-right"
             />
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle bottom-left"
               onMouseDown={(e) => handleResizeStart(e, 'bottomLeft')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'bottomLeft')
+              }
+              aria-label="Resize from bottom-left"
             />
             <div
+              role="button"
+              tabIndex={0}
               className="resize-handle top-left"
               onMouseDown={(e) => handleResizeStart(e, 'topLeft')}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && handleResizeStart(e as any, 'topLeft')
+              }
+              aria-label="Resize from top-left"
             />
           </div>
         </div>

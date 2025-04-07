@@ -11,6 +11,7 @@ function GlobalSaveButton(): React.ReactElement {
     try {
       await saveAllSettings();
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error saving settings:', error);
     } finally {
       setTimeout(() => setIsSaving(false), 1000);
