@@ -13,17 +13,13 @@ interface ScreenPreviewProps {
   position: Position;
   screenSize: { width: number; height: number };
   onPositionChange: (position: Position) => void;
-  showGrid: boolean;
-  snapToGrid: boolean;
 }
 
-const ScreenPreview: React.FC<ScreenPreviewProps> = ({
+function ScreenPreview({
   position,
   screenSize,
   onPositionChange,
-  showGrid,
-  snapToGrid,
-}) => {
+}: ScreenPreviewProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLDivElement>(null);
 
@@ -33,8 +29,6 @@ const ScreenPreview: React.FC<ScreenPreviewProps> = ({
     null,
     screenSize,
     onPositionChange,
-    showGrid,
-    snapToGrid,
   );
 
   return (
@@ -61,6 +55,6 @@ const ScreenPreview: React.FC<ScreenPreviewProps> = ({
       </NativeWindow>
     </div>
   );
-};
+}
 
 export default ScreenPreview;

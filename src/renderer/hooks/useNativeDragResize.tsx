@@ -51,7 +51,6 @@ export const useNativeDragResize = (
   snapPosition: ((position: Position) => Position) | null,
   screenSize: ScreenSize,
   onPositionChange: (position: Position) => void,
-  showGrid: boolean = false,
   snapToGrid: boolean = false,
 ) => {
   const dragStartPos = useRef({ x: 0, y: 0 });
@@ -213,8 +212,6 @@ export const useNativeDragResize = (
             newY = resizeStartPos.current.y + deltaY;
             break;
           default:
-            // Handle unexpected resize direction
-            // console.warn(`Unexpected resize direction: ${resizeDirection.current}`);
             break;
         }
 
@@ -288,9 +285,9 @@ export const useNativeDragResize = (
             top: scaledPos.y,
             width: scaledPos.width,
             height: scaledPos.height,
-            background: showGrid ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
-            border: showGrid ? '1px dashed rgba(59, 130, 246, 0.3)' : 'none',
-            transition: 'transform 0.2s ease',
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
           }}
         >
           <div
@@ -395,13 +392,7 @@ export const useNativeDragResize = (
         </div>
       );
     },
-    [
-      windowRef,
-      getScaledPosition,
-      showGrid,
-      handleDragStart,
-      handleResizeStart,
-    ],
+    [windowRef, getScaledPosition, handleDragStart, handleResizeStart],
   );
 
   return {
