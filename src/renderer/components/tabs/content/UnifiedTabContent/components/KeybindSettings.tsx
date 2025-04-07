@@ -1,39 +1,41 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import useKeybindHandler from '@/renderer/hooks/useKeybindHandler';
-
-interface Settings {
-  centerWindow?: {
-    keybinding: string;
-  };
-  resizeWindow?: {
-    keybinding: string;
-    windowSizePercentages: Array<{
-      width: number;
-      height: number;
-      x: number;
-      y: number;
-    }>;
-  };
-}
+import { useSettingsContext } from '@/renderer/providers/SettingsProvider';
 
 interface KeybindSettingsProps {
-  settings: Settings;
-  onSave: () => void;
   onReset: () => void;
 }
 
 function KeybindSettings({
-  settings,
-  onSave,
   onReset,
 }: KeybindSettingsProps): React.ReactElement {
+  const { settings, saveCenterSettings, saveResizeSettings } =
+    useSettingsContext();
+
+  const handleCenterSave = useCallback(
+    (keybind: string) => {
+      saveCenterSettings(keybind);
+    },
+    [saveCenterSettings],
+  );
+
+  const handleResizeSave = useCallback(
+    (keybind: string) => {
+      saveResizeSettings(keybind, settings.resizeWindow.windowSizePercentages);
+    },
+    [saveResizeSettings, settings.resizeWindow.windowSizePercentages],
+  );
+
   const {
     inputRef: centerInputRef,
     keybind: centerKeybind,
     handleKeyDown: handleCenterKeyDown,
     handleFocus: handleCenterFocus,
     handleBlur: handleCenterBlur,
-  } = useKeybindHandler(settings.centerWindow?.keybinding || '', onSave);
+  } = useKeybindHandler(
+    settings.centerWindow?.keybinding || '',
+    handleCenterSave,
+  );
 
   const {
     inputRef: resizeInputRef,
@@ -41,7 +43,20 @@ function KeybindSettings({
     handleKeyDown: handleResizeKeyDown,
     handleFocus: handleResizeFocus,
     handleBlur: handleResizeBlur,
-  } = useKeybindHandler(settings.resizeWindow?.keybinding || '', onSave);
+  } = useKeybindHandler(
+    settings.resizeWindow?.keybinding || '',
+    handleResizeSave,
+  );
+
+  // Only update inputs when settings change and inputs are not focused
+  useEffect(() => {
+    if (centerInputRef.current && !centerInputRef.current.matches(':focus')) {
+      centerInputRef.current.value = settings.centerWindow?.keybinding || '';
+    }
+    if (resizeInputRef.current && !resizeInputRef.current.matches(':focus')) {
+      resizeInputRef.current.value = settings.resizeWindow?.keybinding || '';
+    }
+  }, [settings, centerInputRef, resizeInputRef]);
 
   return (
     <div className="keybind-section">
@@ -50,7 +65,9 @@ function KeybindSettings({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onSave();
+            if (centerKeybind) {
+              handleCenterSave(centerKeybind);
+            }
           }}
         >
           <label className="keybind-label" htmlFor="centerKeybind">
@@ -61,7 +78,7 @@ function KeybindSettings({
               className="keybinding-input"
               id="centerKeybind"
               placeholder="Enter Shortcut (e.g., Win+Shift+C)"
-              value={centerKeybind}
+              defaultValue={settings.centerWindow?.keybinding || ''}
               onFocus={handleCenterFocus}
               onBlur={handleCenterBlur}
               onKeyDown={handleCenterKeyDown}
@@ -77,7 +94,9 @@ function KeybindSettings({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onSave();
+            if (resizeKeybind) {
+              handleResizeSave(resizeKeybind);
+            }
           }}
         >
           <label className="keybind-label" htmlFor="resizeKeybinding">
@@ -88,7 +107,7 @@ function KeybindSettings({
               className="keybinding-input"
               id="resizeKeybinding"
               placeholder="Enter Shortcut (e.g., F9)"
-              value={resizeKeybind}
+              defaultValue={settings.resizeWindow?.keybinding || ''}
               onFocus={handleResizeFocus}
               onBlur={handleResizeBlur}
               onKeyDown={handleResizeKeyDown}

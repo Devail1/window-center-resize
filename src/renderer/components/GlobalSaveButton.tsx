@@ -3,22 +3,18 @@ import { useSettingsContext } from '@/renderer/providers/SettingsProvider';
 import './GlobalSaveButton.css';
 
 function GlobalSaveButton(): React.ReactElement {
-  const { settings, saveCenterSettings, saveResizeSettings } =
-    useSettingsContext();
+  const { saveAllSettings } = useSettingsContext();
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-
-    // Save all settings
-    saveCenterSettings(settings.centerWindow.keybinding);
-    saveResizeSettings(
-      settings.resizeWindow.keybinding,
-      settings.resizeWindow.windowSizePercentages,
-    );
-
-    // Reset saving state after a delay
-    setTimeout(() => setIsSaving(false), 1000);
+    try {
+      await saveAllSettings();
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    } finally {
+      setTimeout(() => setIsSaving(false), 1000);
+    }
   };
 
   return (

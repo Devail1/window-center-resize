@@ -33,6 +33,7 @@ interface SettingsContextProps extends Settings {
     keybinding: string,
     windowSizePercentages: WindowSizePercentage[],
   ) => void;
+  saveAllSettings: () => void;
   resetSettings: () => void;
 }
 
@@ -94,52 +95,87 @@ function SettingsProvider({ children }: { children: ReactNode }) {
     defaultSettings as Settings,
   );
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      const settings = await window.electron.ipcRenderer.invoke('get-settings');
+  const loadSettings = async () => {
+    const settings = await window.electron.ipcRenderer.invoke('get-settings');
+    if (settings) {
       dispatch({
         type: 'LOAD_SETTINGS',
-        payload: settings || (defaultSettings as Settings),
+        payload: settings,
       });
-    };
+    }
+  };
 
+  useEffect(() => {
     loadSettings();
+
+    // Listen for settings changes from main process
+    const unsubscribe = window.electron.ipcRenderer.on(
+      'settings-changed',
+      loadSettings,
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  const saveCenterSettings = (centerKeybind: string) => {
-    window.electron.ipcRenderer.invoke('save-center-settings', centerKeybind);
-    dispatch({ type: 'SAVE_CENTER_SETTINGS', payload: { centerKeybind } });
-  };
+  const contextValue = useMemo(() => {
+    const saveCenterSettings = async (centerKeybind: string) => {
+      try {
+        await window.electron.ipcRenderer.invoke(
+          'save-center-settings',
+          centerKeybind,
+        );
+        dispatch({ type: 'SAVE_CENTER_SETTINGS', payload: { centerKeybind } });
+      } catch (error) {
+        console.error('Error saving center settings:', error);
+      }
+    };
 
-  const saveResizeSettings = (
-    keybinding: string,
-    windowSizePercentages: WindowSizePercentage[],
-  ) => {
-    window.electron.ipcRenderer.invoke('save-resize-settings', {
-      keybinding,
-      windowSizePercentages,
-    });
-    dispatch({
-      type: 'SAVE_RESIZE_SETTINGS',
-      payload: { keybinding, windowSizePercentages },
-    });
-  };
+    const saveResizeSettings = async (
+      keybinding: string,
+      windowSizePercentages: WindowSizePercentage[],
+    ) => {
+      try {
+        await window.electron.ipcRenderer.invoke('save-resize-settings', {
+          keybinding,
+          windowSizePercentages,
+        });
+        dispatch({
+          type: 'SAVE_RESIZE_SETTINGS',
+          payload: { keybinding, windowSizePercentages },
+        });
+      } catch (error) {
+        console.error('Error saving resize settings:', error);
+      }
+    };
 
-  const resetSettings = () => {
-    window.electron.ipcRenderer.invoke('reset-settings');
-    dispatch({ type: 'RESET_SETTINGS' });
-  };
+    const saveAllSettings = async () => {
+      try {
+        await window.electron.ipcRenderer.invoke('save-settings', state);
+      } catch (error) {
+        console.error('Error saving all settings:', error);
+      }
+    };
 
-  const contextValue = useMemo(
-    () => ({
+    const resetSettings = async () => {
+      try {
+        await window.electron.ipcRenderer.invoke('reset-settings');
+        dispatch({ type: 'RESET_SETTINGS' });
+      } catch (error) {
+        console.error('Error resetting settings:', error);
+      }
+    };
+
+    return {
       ...state,
       settings: state,
       saveCenterSettings,
       saveResizeSettings,
+      saveAllSettings,
       resetSettings,
-    }),
-    [state],
-  );
+    };
+  }, [state]);
 
   return (
     <SettingsContext.Provider value={contextValue}>

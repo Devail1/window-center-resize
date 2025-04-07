@@ -8,6 +8,7 @@ export type Channels =
   | 'save-center-settings'
   | 'save-resize-settings'
   | 'save-settings'
+  | 'settings-changed'
   | 'get-screen-size';
 
 const electronHandler = {

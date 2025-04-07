@@ -7,8 +7,24 @@ import defaultSettings from '../constants/defaultSettings.json';
 import { reloadAutoHotkey } from './autohotkey';
 import { getMainWindow } from './window';
 
+interface Settings {
+  centerWindow: {
+    keybinding: string;
+  };
+  resizeWindow: {
+    keybinding: string;
+    windowSizePercentages: Array<{
+      width: number;
+      height: number;
+      x: number;
+      y: number;
+    }>;
+  };
+}
+
 const settingsPath = join(app.getPath('userData'), 'settings.json');
 let settingsWatcher: FSWatcher;
+let isWritingSettings = false;
 
 function handleError(message: string, err?: unknown) {
   if (err instanceof Error) {
@@ -20,8 +36,11 @@ function handleError(message: string, err?: unknown) {
 
 function setupSettingsWatcher() {
   if (!settingsWatcher) {
-    settingsWatcher = watch(settingsPath, () => {
-      reloadAutoHotkey();
+    settingsWatcher = watch(settingsPath, (eventType) => {
+      // Only reload if the change wasn't triggered by our own write
+      if (eventType === 'change' && !isWritingSettings) {
+        reloadAutoHotkey();
+      }
     });
   }
 }
@@ -39,8 +58,13 @@ async function readSettingsFile() {
 }
 
 async function writeSettingsFile(settings: any) {
-  await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
-  setupSettingsWatcher();
+  isWritingSettings = true;
+  try {
+    await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+    setupSettingsWatcher();
+  } finally {
+    isWritingSettings = false;
+  }
 }
 
 export async function resetSettings() {
@@ -62,59 +86,50 @@ export async function getSettings() {
 
 export async function saveSettings(
   _event: IpcMainInvokeEvent,
-  settings: {
-    centerWindow?: {
-      keybinding: string;
-    };
-    resizeWindow?: {
-      keybinding: string;
-      windowSizePercentages: {
-        width: string;
-        height: string;
-        x: number;
-        y: number;
-      }[];
-    };
-  },
+  settings: Settings,
 ) {
   try {
-    const currentSettings = await readSettingsFile();
-    const updatedSettings = {
-      ...currentSettings,
-      ...(settings.centerWindow && { centerWindow: settings.centerWindow }),
-      ...(settings.resizeWindow && { resizeWindow: settings.resizeWindow }),
-    };
-    await writeSettingsFile(updatedSettings);
+    await writeSettingsFile(settings);
+    reloadAutoHotkey();
+    const mainWindow = getMainWindow();
+    mainWindow?.webContents.send('settings-changed');
   } catch (err) {
     handleError(`Error while saving settings at ${settingsPath}`, err);
   }
 }
 
-// Deprecated - use saveSettings instead
 export async function saveCenterSettings(
   _event: IpcMainInvokeEvent,
   centerKeybind: string,
 ) {
-  return saveSettings(_event, { centerWindow: { keybinding: centerKeybind } });
+  try {
+    const currentSettings = await readSettingsFile();
+    currentSettings.centerWindow.keybinding = centerKeybind;
+    await writeSettingsFile(currentSettings);
+  } catch (err) {
+    handleError(`Error while saving center settings at ${settingsPath}`, err);
+  }
 }
 
-// Deprecated - use saveSettings instead
 export async function saveResizeSettings(
   _event: IpcMainInvokeEvent,
   data: {
     keybinding: string;
-    windowSizePercentages: { width: string; height: string }[];
+    windowSizePercentages: Array<{
+      width: number;
+      height: number;
+      x: number;
+      y: number;
+    }>;
   },
 ) {
-  const resizeData = {
-    ...data,
-    windowSizePercentages: data.windowSizePercentages.map((size) => ({
-      ...size,
-      x: 0,
-      y: 0,
-    })),
-  };
-  return saveSettings(_event, { resizeWindow: resizeData });
+  try {
+    const currentSettings = await readSettingsFile();
+    currentSettings.resizeWindow = data;
+    await writeSettingsFile(currentSettings);
+  } catch (err) {
+    handleError(`Error while saving resize settings at ${settingsPath}`, err);
+  }
 }
 
 export function closeWatcher() {

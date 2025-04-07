@@ -14,9 +14,9 @@ export default function useKeybindHandler(
   onSave: (keybind: string) => void,
 ) {
   const inputRef = useRef<null | HTMLInputElement>(null);
-  const [keybind, setKeybind] = useState<string>(
-    capitalizeFirstLetterOfEachWord(initialKeybind),
-  );
+  const [keybind, setKeybind] = useState<string>(initialKeybind);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const [keys, { start, stop, resetKeys, isRecording }] = useRecordHotkeys();
 
@@ -24,20 +24,23 @@ export default function useKeybindHandler(
     keysList.filter((s) => s !== 'escape' && s !== 'backspace');
 
   const updateInputRef = useCallback(() => {
-    const recordedKeys = filterUnwantedKeys(Array.from(keys)).join(' + ');
+    const recordedKeys = filterUnwantedKeys(Array.from(keys));
     const formattedString = capitalizeFirstLetterOfEachWord(
-      recordedKeys.toString(),
+      recordedKeys.join(' + '),
     );
-    if (keys.size && inputRef?.current && formattedString) {
+    if (keys.size && inputRef?.current) {
       inputRef.current.value = formattedString;
       setKeybind(formattedString);
+      setIsDirty(true);
     }
   }, [keys]);
 
-  // Required for immidiate ui updates in the input
+  // Update input value when keys change
   useEffect(() => {
-    updateInputRef();
-  }, [updateInputRef]);
+    if (isRecording && isEditing) {
+      updateInputRef();
+    }
+  }, [keys, isRecording, updateInputRef, isEditing]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
@@ -46,8 +49,13 @@ export default function useKeybindHandler(
 
       switch (lastKeyInput) {
         case 'Escape':
-          setKeybind('');
+          if (inputRef.current) {
+            inputRef.current.value = initialKeybind;
+          }
+          setKeybind(initialKeybind);
           resetKeys();
+          setIsEditing(false);
+          setIsDirty(false);
           break;
 
         case 'Backspace':
@@ -55,29 +63,46 @@ export default function useKeybindHandler(
             filteredKeys.pop();
             keys.clear();
             filteredKeys.forEach((key) => keys.add(key));
+            updateInputRef();
           }
           break;
 
         default:
           break;
       }
-      updateInputRef();
     },
-    [keys, updateInputRef, resetKeys],
+    [keys, updateInputRef, resetKeys, initialKeybind],
   );
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    onSave(keybind);
+    if (keybind && isDirty) {
+      onSave(keybind);
+    }
     stop();
+    setIsEditing(false);
+    setIsDirty(false);
   };
 
   const handleFocus = () => {
-    if (!isRecording || !keys.size) start();
+    if (!isRecording) {
+      start();
+      setIsEditing(true);
+    }
   };
 
   const handleBlur = () => {
-    if (isRecording) stop();
+    if (isRecording) {
+      stop();
+      setIsEditing(false);
+      // If no keys were recorded or not dirty, restore the previous value
+      if ((!keys.size || !isDirty) && inputRef.current) {
+        inputRef.current.value = keybind;
+      } else if (isDirty) {
+        // If we have changes, save them
+        onSave(keybind);
+      }
+    }
   };
 
   return {

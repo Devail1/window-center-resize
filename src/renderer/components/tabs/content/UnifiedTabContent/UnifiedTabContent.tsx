@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useGridSnap } from '@/renderer/hooks/useGridSnap';
 import { useSettingsContext } from '@/renderer/providers/SettingsProvider';
 import KeybindSettings from './components/KeybindSettings';
@@ -57,7 +57,7 @@ function UnifiedTabContent(): React.ReactElement {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleSavePreset = (newPosition: Position) => {
+  const handleSavePreset = useCallback((newPosition: Position) => {
     const timestamp = new Date().toLocaleTimeString();
     const newPresetId = `Preset ${timestamp}`;
 
@@ -71,60 +71,70 @@ function UnifiedTabContent(): React.ReactElement {
         y: Math.round(newPosition.y),
       },
     }));
-  };
+  }, []);
 
-  const handleDeletePreset = (presetId: string) => {
+  const handleDeletePreset = useCallback((presetId: string) => {
     setPresets((currentPresets) => {
       const newPresets = { ...currentPresets };
       delete newPresets[presetId];
       return newPresets;
     });
-  };
+  }, []);
 
-  const handlePresetClick = (presetId: string) => {
-    if (activePreset === presetId) {
-      setIsEditing(true);
-    } else {
-      setActivePreset(presetId);
-      setIsEditing(false);
-      if (presets[presetId]) {
-        setPosition(presets[presetId]);
+  const handlePresetClick = useCallback(
+    (presetId: string) => {
+      if (activePreset === presetId) {
+        setIsEditing(true);
+      } else {
+        setActivePreset(presetId);
+        setIsEditing(false);
+        if (presets[presetId]) {
+          setPosition(presets[presetId]);
+        }
       }
-    }
-  };
+    },
+    [activePreset, presets],
+  );
 
-  const handleQuickAction = (newPosition: Position) => {
-    const boundedPosition = {
-      x: Math.max(
-        0,
-        Math.min(newPosition.x, screenSize.width - newPosition.width),
-      ),
-      y: Math.max(
-        0,
-        Math.min(newPosition.y, screenSize.height - newPosition.height),
-      ),
-      width: Math.min(newPosition.width, screenSize.width),
-      height: Math.min(newPosition.height, screenSize.height),
-    };
-    setPosition(boundedPosition);
-  };
+  const handleQuickAction = useCallback(
+    (newPosition: Position) => {
+      const boundedPosition = {
+        x: Math.max(
+          0,
+          Math.min(newPosition.x, screenSize.width - newPosition.width),
+        ),
+        y: Math.max(
+          0,
+          Math.min(newPosition.y, screenSize.height - newPosition.height),
+        ),
+        width: Math.min(newPosition.width, screenSize.width),
+        height: Math.min(newPosition.height, screenSize.height),
+      };
+      setPosition(boundedPosition);
+    },
+    [screenSize],
+  );
 
-  const handlePositionChange = (newPosition: Position) => {
-    const boundedPosition = {
-      x: Math.max(
-        0,
-        Math.min(newPosition.x, screenSize.width - newPosition.width),
-      ),
-      y: Math.max(
-        0,
-        Math.min(newPosition.y, screenSize.height - newPosition.height),
-      ),
-      width: Math.min(newPosition.width, screenSize.width),
-      height: Math.min(newPosition.height, screenSize.height),
-    };
-    setPosition(boundedPosition);
-  };
+  const handlePositionChange = useCallback(
+    (newPosition: Position) => {
+      const boundedPosition = {
+        x: Math.max(
+          0,
+          Math.min(newPosition.x, screenSize.width - newPosition.width),
+        ),
+        y: Math.max(
+          0,
+          Math.min(newPosition.y, screenSize.height - newPosition.height),
+        ),
+        width: Math.min(newPosition.width, screenSize.width),
+        height: Math.min(newPosition.height, screenSize.height),
+      };
+      setPosition(boundedPosition);
+    },
+    [screenSize],
+  );
 
+  // Only initialize presets once when settings are loaded
   useEffect(() => {
     if (
       Object.keys(presets).length === 0 &&
@@ -144,16 +154,12 @@ function UnifiedTabContent(): React.ReactElement {
       });
       setPresets(defaultPresets);
     }
-  }, [screenSize, presets, settings]);
+  }, [screenSize, settings.resizeWindow?.windowSizePercentages, presets]);
 
   return (
     <div className="unified-tab-content">
       <div className="controls-section">
-        <KeybindSettings
-          settings={settings}
-          onReset={resetSettings}
-          onSave={() => {}}
-        />
+        <KeybindSettings onReset={resetSettings} />
         <GridControls
           showGrid={showGrid}
           snapToGrid={snapToGrid}
