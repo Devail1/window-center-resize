@@ -1,5 +1,4 @@
 import React, { useCallback, useRef, useEffect } from 'react';
-import throttle from 'lodash/throttle';
 
 interface Position {
   x: number;
@@ -117,6 +116,13 @@ export const useNativeDragResize = (
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       };
+      // Store the initial dimensions to maintain them during drag
+      resizeStartPos.current = {
+        width: rect.width,
+        height: rect.height,
+        x: rect.left,
+        y: rect.top,
+      };
       isDragging.current = true;
     },
     [windowRef],
@@ -145,16 +151,17 @@ export const useNativeDragResize = (
 
       if (isDragging.current) {
         const currentRect = containerRect.current;
-        const currentWindow = windowRef.current;
 
         const newX = e.clientX - currentRect.left - dragStartPos.current.x;
         const newY = e.clientY - currentRect.top - dragStartPos.current.y;
-        const width =
-          (currentWindow.offsetWidth || DEFAULT_CONSTRAINTS.minWidth) ?? 0;
-        const height =
-          (currentWindow.offsetHeight || DEFAULT_CONSTRAINTS.minHeight) ?? 0;
 
-        const newPosition = getUnscaledPosition(newX, newY, width, height);
+        // Use the stored dimensions from drag start
+        const newPosition = getUnscaledPosition(
+          newX,
+          newY,
+          resizeStartPos.current.width,
+          resizeStartPos.current.height,
+        );
         const boundedPosition = getBoundedPosition(newPosition, screenSize);
 
         if (snapPosition && snapToGrid) {
@@ -164,63 +171,77 @@ export const useNativeDragResize = (
           onPositionChange(boundedPosition);
         }
       } else if (isResizing.current) {
-        const currentContainerBounds =
-          containerRef.current?.getBoundingClientRect();
+        const currentContainerBounds = containerRect.current;
         if (!currentContainerBounds) return;
 
-        const deltaX = e.clientX - resizeStartPos.current.x;
-        const deltaY = e.clientY - resizeStartPos.current.y;
+        // Calculate the scale factors for accurate resize
+        const scaleX = screenSize.width / currentContainerBounds.width;
+        const scaleY = screenSize.height / currentContainerBounds.height;
 
-        let newWidth = resizeStartPos.current.width;
-        let newHeight = resizeStartPos.current.height;
-        let newX = resizeStartPos.current.x;
-        let newY = resizeStartPos.current.y;
+        // Get the actual mouse position relative to the container
+        const mouseX = (e.clientX - currentContainerBounds.left) * scaleX;
+        const mouseY = (e.clientY - currentContainerBounds.top) * scaleY;
+
+        // Calculate the delta in screen coordinates
+        const startX =
+          (resizeStartPos.current.x - currentContainerBounds.left) * scaleX;
+        const startY =
+          (resizeStartPos.current.y - currentContainerBounds.top) * scaleY;
+        const deltaX = mouseX - startX;
+        const deltaY = mouseY - startY;
+
+        let newWidth = resizeStartPos.current.width * scaleX;
+        let newHeight = resizeStartPos.current.height * scaleY;
+        let newX =
+          (resizeStartPos.current.x - currentContainerBounds.left) * scaleX;
+        let newY =
+          (resizeStartPos.current.y - currentContainerBounds.top) * scaleY;
 
         switch (resizeDirection.current) {
           case 'right':
-            newWidth = resizeStartPos.current.width + deltaX;
+            newWidth += deltaX;
             break;
           case 'bottom':
-            newHeight = resizeStartPos.current.height + deltaY;
+            newHeight += deltaY;
             break;
           case 'left':
-            newWidth = resizeStartPos.current.width - deltaX;
-            newX = resizeStartPos.current.x + deltaX;
+            newWidth -= deltaX;
+            newX += deltaX;
             break;
           case 'top':
-            newHeight = resizeStartPos.current.height - deltaY;
-            newY = resizeStartPos.current.y + deltaY;
+            newHeight -= deltaY;
+            newY += deltaY;
             break;
           case 'topRight':
-            newWidth = resizeStartPos.current.width + deltaX;
-            newHeight = resizeStartPos.current.height - deltaY;
-            newY = resizeStartPos.current.y + deltaY;
+            newWidth += deltaX;
+            newHeight -= deltaY;
+            newY += deltaY;
             break;
           case 'bottomRight':
-            newWidth = resizeStartPos.current.width + deltaX;
-            newHeight = resizeStartPos.current.height + deltaY;
+            newWidth += deltaX;
+            newHeight += deltaY;
             break;
           case 'bottomLeft':
-            newWidth = resizeStartPos.current.width - deltaX;
-            newHeight = resizeStartPos.current.height + deltaY;
-            newX = resizeStartPos.current.x + deltaX;
+            newWidth -= deltaX;
+            newHeight += deltaY;
+            newX += deltaX;
             break;
           case 'topLeft':
-            newWidth = resizeStartPos.current.width - deltaX;
-            newHeight = resizeStartPos.current.height - deltaY;
-            newX = resizeStartPos.current.x + deltaX;
-            newY = resizeStartPos.current.y + deltaY;
+            newWidth -= deltaX;
+            newHeight -= deltaY;
+            newX += deltaX;
+            newY += deltaY;
             break;
           default:
             break;
         }
 
-        const newPosition = getUnscaledPosition(
-          newX - currentContainerBounds.left,
-          newY - currentContainerBounds.top,
-          newWidth,
-          newHeight,
-        );
+        const newPosition = {
+          x: newX,
+          y: newY,
+          width: newWidth,
+          height: newHeight,
+        };
 
         const boundedPosition = getBoundedPosition(newPosition, screenSize);
         if (snapPosition && snapToGrid) {
@@ -238,15 +259,15 @@ export const useNativeDragResize = (
       snapPosition,
       snapToGrid,
       onPositionChange,
-      containerRef,
     ],
   );
 
   // Create a stable throttled version of handleMouseMove
   const throttledMouseMove = useCallback(
     (e: MouseEvent) => {
-      const throttledFn = throttle(() => handleMouseMove(e), 16);
-      throttledFn();
+      if (!isDragging.current && !isResizing.current) return;
+      e.preventDefault();
+      handleMouseMove(e);
     },
     [handleMouseMove],
   );
