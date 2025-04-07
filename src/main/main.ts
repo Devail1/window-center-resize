@@ -1,6 +1,6 @@
 /* eslint no-console: off */
 
-import { BrowserWindow, app, ipcMain } from 'electron';
+import { BrowserWindow, app, ipcMain, screen } from 'electron';
 import sourceMapSupport from 'source-map-support';
 import debug from 'electron-debug';
 import { startAutoHotkeyProcess, stopAutoHotkeyProcess } from './autohotkey';
@@ -9,6 +9,7 @@ import {
   resetSettings,
   saveCenterSettings,
   saveResizeSettings,
+  saveSettings,
   closeWatcher,
   getSettings,
 } from './settings';
@@ -33,6 +34,17 @@ app
     createTrayMenu();
     startAutoHotkeyProcess();
 
+    // Register IPC handlers
+    ipcMain.handle('get-settings', getSettings);
+    ipcMain.handle('reset-settings', resetSettings);
+    ipcMain.handle('save-center-settings', saveCenterSettings);
+    ipcMain.handle('save-resize-settings', saveResizeSettings);
+    ipcMain.handle('save-settings', saveSettings);
+    ipcMain.handle('get-screen-size', () => {
+      const primaryDisplay = screen.getPrimaryDisplay();
+      return primaryDisplay.workAreaSize;
+    });
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
@@ -48,8 +60,3 @@ app
   .catch((error) => {
     console.error('Error in app.whenReady:', error);
   });
-
-ipcMain.handle('reset-settings', resetSettings);
-ipcMain.handle('get-settings', getSettings);
-ipcMain.handle('save-center-settings', saveCenterSettings);
-ipcMain.handle('save-resize-settings', saveResizeSettings);

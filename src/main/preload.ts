@@ -6,7 +6,9 @@ export type Channels =
   | 'get-settings'
   | 'reset-settings'
   | 'save-center-settings'
-  | 'save-resize-settings';
+  | 'save-resize-settings'
+  | 'save-settings'
+  | 'get-screen-size';
 
 const electronHandler = {
   ipcRenderer: {

@@ -14,6 +14,7 @@ function MyApp() {
     </div>
   );
 }
+
 export default function App() {
   return (
     <Router>

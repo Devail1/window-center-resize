@@ -12,6 +12,8 @@ import defaultSettings from '@/constants/defaultSettings.json';
 export interface WindowSizePercentage {
   width: string;
   height: string;
+  x: number;
+  y: number;
 }
 
 export interface Settings {
@@ -80,7 +82,16 @@ function settingsReducer(state: Settings, action: SettingsAction): Settings {
         },
       };
     case 'RESET_SETTINGS':
-      return defaultSettings;
+      return {
+        centerWindow: {
+          keybinding: defaultSettings.centerWindow.keybinding,
+        },
+        resizeWindow: {
+          keybinding: defaultSettings.resizeWindow.keybinding,
+          windowSizePercentages:
+            defaultSettings.resizeWindow.windowSizePercentages,
+        },
+      };
     default:
       return state;
   }

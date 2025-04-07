@@ -1,4 +1,4 @@
-import { ReactNode, createContext } from 'react';
+import React, { ReactNode, createContext } from 'react';
 import './AppContainer.css';
 import TabsProvider from '@/renderer/providers/TabsProvider';
 import SettingsProvider from '@/renderer/providers/SettingsProvider';
@@ -15,13 +15,15 @@ interface TabsContextProps extends TabsState {
 
 export const TabsContext = createContext<TabsContextProps | null>(null);
 
-function AppContainer({ children }: { children: ReactNode }) {
+interface AppContainerProps {
+  children: ReactNode;
+}
+
+function AppContainer({ children }: AppContainerProps): React.ReactElement {
   return (
-    <div id="container">
-      <SettingsProvider>
-        <TabsProvider>{children}</TabsProvider>
-      </SettingsProvider>
-    </div>
+    <SettingsProvider>
+      <TabsProvider>{children}</TabsProvider>
+    </SettingsProvider>
   );
 }
 

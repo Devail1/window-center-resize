@@ -60,19 +60,45 @@ export async function getSettings() {
   }
 }
 
+export async function saveSettings(
+  _event: IpcMainInvokeEvent,
+  settings: {
+    centerWindow?: {
+      keybinding: string;
+    };
+    resizeWindow?: {
+      keybinding: string;
+      windowSizePercentages: {
+        width: string;
+        height: string;
+        x: number;
+        y: number;
+      }[];
+    };
+  },
+) {
+  try {
+    const currentSettings = await readSettingsFile();
+    const updatedSettings = {
+      ...currentSettings,
+      ...(settings.centerWindow && { centerWindow: settings.centerWindow }),
+      ...(settings.resizeWindow && { resizeWindow: settings.resizeWindow }),
+    };
+    await writeSettingsFile(updatedSettings);
+  } catch (err) {
+    handleError(`Error while saving settings at ${settingsPath}`, err);
+  }
+}
+
+// Deprecated - use saveSettings instead
 export async function saveCenterSettings(
   _event: IpcMainInvokeEvent,
   centerKeybind: string,
 ) {
-  try {
-    const settings = await readSettingsFile();
-    settings.centerWindow.keybinding = centerKeybind;
-    await writeSettingsFile(settings);
-  } catch (err) {
-    handleError(`Error while saving center settings at ${settingsPath}`, err);
-  }
+  return saveSettings(_event, { centerWindow: { keybinding: centerKeybind } });
 }
 
+// Deprecated - use saveSettings instead
 export async function saveResizeSettings(
   _event: IpcMainInvokeEvent,
   data: {
@@ -80,16 +106,15 @@ export async function saveResizeSettings(
     windowSizePercentages: { width: string; height: string }[];
   },
 ) {
-  try {
-    const settings = await readSettingsFile();
-    settings.resizeWindow = {
-      keybinding: data.keybinding,
-      windowSizePercentages: data.windowSizePercentages,
-    };
-    await writeSettingsFile(settings);
-  } catch (err) {
-    handleError(`Error while saving resize settings at ${settingsPath}`, err);
-  }
+  const resizeData = {
+    ...data,
+    windowSizePercentages: data.windowSizePercentages.map((size) => ({
+      ...size,
+      x: 0,
+      y: 0,
+    })),
+  };
+  return saveSettings(_event, { resizeWindow: resizeData });
 }
 
 export function closeWatcher() {
