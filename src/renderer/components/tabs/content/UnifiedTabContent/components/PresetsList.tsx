@@ -1,5 +1,11 @@
 import React from 'react';
-import type { Preset } from '@/renderer/atoms/presetAtom';
+
+interface Preset {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 interface PresetsListProps {
   presets: { [key: string]: Preset };
@@ -18,6 +24,7 @@ function PresetItem({
   screenSize,
   onPresetClick,
   onDeletePreset,
+  allPresets,
 }: {
   id: string;
   preset: Preset;
@@ -26,6 +33,7 @@ function PresetItem({
   screenSize: { width: number; height: number };
   onPresetClick: (presetId: string) => void;
   onDeletePreset: (presetId: string, e: React.MouseEvent) => void;
+  allPresets: { [key: string]: Preset };
 }): React.ReactElement {
   const formatNumber = (num: number, isPercentage = false) => {
     if (isPercentage) {
@@ -55,7 +63,7 @@ function PresetItem({
           {formatNumber(preset.height / screenSize.height, true)}
         </span>
       </div>
-      {id !== 'Default 50%' && (
+      {id !== 'Default 50%' && Object.keys(allPresets).length > 1 && (
         <button
           type="button"
           className="delete-preset-button"
@@ -89,6 +97,7 @@ function PresetsList({
           screenSize={screenSize}
           onPresetClick={onPresetClick}
           onDeletePreset={onDeletePreset}
+          allPresets={presets}
         />
       ))}
     </div>
