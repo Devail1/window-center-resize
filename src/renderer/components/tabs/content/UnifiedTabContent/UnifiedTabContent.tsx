@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useGridSnap } from '@/renderer/hooks/useGridSnap';
 import { useSettingsContext } from '@/renderer/providers/SettingsProvider';
-import type { Channels } from '@/renderer/types/electron';
 import KeybindSettings from './components/KeybindSettings';
 import GridControls from './components/GridControls';
 import QuickActions from './components/QuickActions';
@@ -38,13 +37,12 @@ function UnifiedTabContent(): React.ReactElement {
   const [presets, setPresets] = useState<Presets>({});
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [screenSize, setScreenSize] = useState({ width: 1920, height: 1080 });
 
-  const { gridLines, snapPosition } = useGridSnap(containerRef, showGrid);
+  const { gridLines } = useGridSnap(containerRef, showGrid);
 
   useEffect(() => {
     const handleResize = () => {
@@ -131,24 +129,31 @@ function UnifiedTabContent(): React.ReactElement {
     if (
       Object.keys(presets).length === 0 &&
       screenSize.width &&
-      screenSize.height
+      screenSize.height &&
+      settings.resizeWindow?.windowSizePercentages
     ) {
-      const defaultPreset = {
-        'Default 50%': {
-          width: screenSize.width * 0.5,
-          height: screenSize.height * 0.5,
-          x: screenSize.width * 0.25,
-          y: screenSize.height * 0.25,
-        },
-      };
-      setPresets(defaultPreset);
+      const defaultPresets: Presets = {};
+      settings.resizeWindow.windowSizePercentages.forEach((preset, index) => {
+        defaultPresets[`Preset ${index + 1}`] = {
+          width: (preset.width / 100) * screenSize.width,
+          height: (preset.height / 100) * screenSize.height,
+          x: (screenSize.width - (preset.width / 100) * screenSize.width) / 2,
+          y:
+            (screenSize.height - (preset.height / 100) * screenSize.height) / 2,
+        };
+      });
+      setPresets(defaultPresets);
     }
-  }, [screenSize, presets]);
+  }, [screenSize, presets, settings]);
 
   return (
     <div className="unified-tab-content">
       <div className="controls-section">
-        <KeybindSettings settings={settings} onReset={resetSettings} />
+        <KeybindSettings
+          settings={settings}
+          onReset={resetSettings}
+          onSave={() => {}}
+        />
         <GridControls
           showGrid={showGrid}
           snapToGrid={snapToGrid}
@@ -169,6 +174,13 @@ function UnifiedTabContent(): React.ReactElement {
           snapToGrid={snapToGrid}
         />
         {showGrid && gridLines}
+        <button
+          type="button"
+          className="save-preset-button"
+          onClick={() => handleSavePreset(position)}
+        >
+          Save Current Position
+        </button>
       </div>
       <div className="presets-section">
         <PresetsList

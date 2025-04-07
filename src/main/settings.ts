@@ -45,7 +45,7 @@ async function writeSettingsFile(settings: any) {
 
 export async function resetSettings() {
   const mainWindow = getMainWindow();
-  await fs.writeFile(settingsPath, JSON.stringify(defaultSettings));
+  await fs.writeFile(settingsPath, JSON.stringify(defaultSettings, null, 2));
   reloadAutoHotkey();
   mainWindow?.webContents.reload();
 }
@@ -56,7 +56,7 @@ export async function getSettings() {
     return settings;
   } catch (err) {
     handleError('Error getting settings', err);
-    return null;
+    return defaultSettings;
   }
 }
 

@@ -1,16 +1,29 @@
 import React from 'react';
 import useKeybindHandler from '@/renderer/hooks/useKeybindHandler';
 
+interface Settings {
+  centerWindow?: {
+    keybinding: string;
+  };
+  resizeWindow?: {
+    keybinding: string;
+    windowSizePercentages: Array<{
+      width: number;
+      height: number;
+      x: number;
+      y: number;
+    }>;
+  };
+}
+
 interface KeybindSettingsProps {
-  centerKeybinding: string;
-  resizeKeybinding: string;
+  settings: Settings;
   onSave: () => void;
   onReset: () => void;
 }
 
 function KeybindSettings({
-  centerKeybinding,
-  resizeKeybinding,
+  settings,
   onSave,
   onReset,
 }: KeybindSettingsProps): React.ReactElement {
@@ -20,7 +33,7 @@ function KeybindSettings({
     handleKeyDown: handleCenterKeyDown,
     handleFocus: handleCenterFocus,
     handleBlur: handleCenterBlur,
-  } = useKeybindHandler(centerKeybinding, onSave);
+  } = useKeybindHandler(settings.centerWindow?.keybinding || '', onSave);
 
   const {
     inputRef: resizeInputRef,
@@ -28,7 +41,7 @@ function KeybindSettings({
     handleKeyDown: handleResizeKeyDown,
     handleFocus: handleResizeFocus,
     handleBlur: handleResizeBlur,
-  } = useKeybindHandler(resizeKeybinding, onSave);
+  } = useKeybindHandler(settings.resizeWindow?.keybinding || '', onSave);
 
   return (
     <div className="keybind-section">

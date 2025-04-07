@@ -141,6 +141,7 @@ const configuration: webpack.Configuration = {
      */
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'development',
+      ELECTRON_RENDERER_URL: `http://localhost:${port}/dist`,
     }),
 
     new webpack.LoaderOptionsPlugin({

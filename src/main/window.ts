@@ -5,29 +5,9 @@ import path from 'path';
 import { getIconPath, resolveHtmlPath } from './util';
 import { handleSingleInstance } from './singleInstance';
 
-const isDebug =
-  process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
-
-const installExtensions = async (): Promise<void> => {
-  const installer = require('electron-devtools-installer');
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
-
-  return installer
-    .default(
-      extensions.map((name: string) => installer[name]),
-      forceDownload,
-    )
-    .catch(console.log);
-};
-
 let mainWindow: BrowserWindow | null = null;
 
 export const createWindow = async (): Promise<BrowserWindow> => {
-  if (isDebug) {
-    await installExtensions();
-  }
-
   mainWindow = new BrowserWindow({
     width: 580,
     height: 640,

@@ -10,8 +10,8 @@ import {
 import defaultSettings from '@/constants/defaultSettings.json';
 
 export interface WindowSizePercentage {
-  width: string;
-  height: string;
+  width: number;
+  height: number;
   x: number;
   y: number;
 }
@@ -82,29 +82,25 @@ function settingsReducer(state: Settings, action: SettingsAction): Settings {
         },
       };
     case 'RESET_SETTINGS':
-      return {
-        centerWindow: {
-          keybinding: defaultSettings.centerWindow.keybinding,
-        },
-        resizeWindow: {
-          keybinding: defaultSettings.resizeWindow.keybinding,
-          windowSizePercentages:
-            defaultSettings.resizeWindow.windowSizePercentages,
-        },
-      };
+      return defaultSettings as Settings;
     default:
       return state;
   }
 }
 
 function SettingsProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(settingsReducer, defaultSettings);
+  const [state, dispatch] = useReducer(
+    settingsReducer,
+    defaultSettings as Settings,
+  );
 
   useEffect(() => {
     const loadSettings = async () => {
       const settings = await window.electron.ipcRenderer.invoke('get-settings');
-
-      dispatch({ type: 'LOAD_SETTINGS', payload: settings });
+      dispatch({
+        type: 'LOAD_SETTINGS',
+        payload: settings || (defaultSettings as Settings),
+      });
     };
 
     loadSettings();

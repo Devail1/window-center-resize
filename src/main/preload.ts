@@ -36,6 +36,12 @@ const electronHandler = {
   },
 };
 
-contextBridge.exposeInMainWorld('electron', electronHandler);
+// Only expose the handler if we're in a sandboxed environment
+if (process.contextIsolated) {
+  contextBridge.exposeInMainWorld('electron', electronHandler);
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = electronHandler;
+}
 
 export type ElectronHandler = typeof electronHandler;
