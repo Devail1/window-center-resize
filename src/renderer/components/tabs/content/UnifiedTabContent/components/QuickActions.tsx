@@ -1,4 +1,5 @@
 import React from 'react';
+import './QuickActions.css';
 
 interface Position {
   x: number;
@@ -8,7 +9,6 @@ interface Position {
 }
 
 interface QuickActionButtonProps {
-  screenSize: { width: number; height: number };
   onQuickAction: (position: Position) => void;
   position: Position;
   title: string;
@@ -17,7 +17,6 @@ interface QuickActionButtonProps {
 }
 
 function QuickActionButton({
-  screenSize,
   onQuickAction,
   position,
   title,
@@ -55,6 +54,10 @@ function QuickActionButton({
     </button>
   );
 }
+
+QuickActionButton.defaultProps = {
+  description: undefined,
+};
 
 interface QuickActionsProps {
   screenSize: { width: number; height: number };
@@ -123,12 +126,10 @@ function QuickActions({
       {quickActions.map((action) => (
         <QuickActionButton
           key={action.title}
-          screenSize={screenSize}
           onQuickAction={onQuickAction}
           position={action.position}
           title={action.title}
           iconClass={action.iconClass}
-          description={action.title}
         />
       ))}
     </div>

@@ -1,0 +1,85 @@
+.presets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.preset-item {
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.preset-item:hover {
+  background: #ebebeb;
+  border-color: #d0d0d0;
+}
+
+.preset-item.active {
+  border-color: #4a9eff;
+  background: #f0f7ff;
+}
+
+.preset-item.editing {
+  border-color: #4a9eff;
+  background: #e6f0fd;
+}
+
+.preset-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preset-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preset-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.preset-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.preset-label {
+  color: #888;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.editing-badge {
+  margin-left: 8px;
+  font-size: 0.8em;
+  padding: 2px 6px;
+  background: #4a9eff;
+  border-radius: 4px;
+  color: white;
+}
+
+.delete-preset-button {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.delete-preset-button:hover {
+  color: #ff4444;
+}

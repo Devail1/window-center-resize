@@ -1,0 +1,123 @@
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.quick-action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px;
+  gap: 4px;
+}
+
+.quick-action-button:hover {
+  border-color: #007AFF;
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.quick-action-button:active {
+  transform: translateY(0);
+}
+
+.quick-action-label {
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.quick-action-button:hover .layout-icon {
+  border-color: #007AFF;
+}
+
+.quick-action-button:hover .layout-icon::before {
+  background: #007AFF;
+  opacity: 0.3;
+}
+
+.quick-action-button.dragging {
+  opacity: 0.5;
+  background: rgba(0, 122, 255, 0.1);
+  border-color: #007AFF;
+  cursor: grabbing;
+  transform: scale(0.95);
+}
+
+.layout-icon {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #666;
+  border-radius: 2px;
+  position: relative;
+  background: #f8f9fa;
+}
+
+.layout-icon::before,
+.layout-icon::after {
+  content: '';
+  position: absolute;
+  background: #666;
+  opacity: 0.2;
+  transition: all 0.2s ease;
+}
+
+.layout-icon.left-half::before {
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: #666;
+}
+
+.layout-icon.right-half::before {
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: #666;
+}
+
+.layout-icon.top-half::before {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 50%;
+  background: #666;
+}
+
+.layout-icon.bottom-half::before {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 50%;
+  background: #666;
+}
+
+.layout-icon.center::before {
+  left: 25%;
+  top: 25%;
+  width: 50%;
+  height: 50%;
+  background: #666;
+}

@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useNativeDragResize } from '@/renderer/hooks/useNativeDragResize';
-import './useNativeDragResize.css';
+import '@/renderer/hooks/useNativeDragResize.css';
+import './ScreenPreview.css';
 
 interface Position {
   x: number;
