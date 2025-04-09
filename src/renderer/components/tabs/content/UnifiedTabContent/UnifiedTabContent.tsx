@@ -25,7 +25,7 @@ interface Presets {
 }
 
 function UnifiedTabContent(): React.ReactElement {
-  const { settings, saveResizeSettings, resetSettings } = useSettingsContext();
+  const { settings, saveResizeSettings } = useSettingsContext();
   const [position, setPosition] = useState<Position>({
     x: 0,
     y: 0,
@@ -265,7 +265,7 @@ function UnifiedTabContent(): React.ReactElement {
   return (
     <div className="unified-tab-content">
       <div className="controls-section">
-        <KeybindSettings onReset={resetSettings} />
+        <KeybindSettings />
         <QuickActions
           screenSize={screenSize}
           onQuickAction={handleQuickAction}

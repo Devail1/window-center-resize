@@ -2,13 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import useKeybindHandler from '@/renderer/hooks/useKeybindHandler';
 import { useSettingsContext } from '@/renderer/providers/SettingsProvider';
 
-interface KeybindSettingsProps {
-  onReset: () => void;
-}
-
-function KeybindSettings({
-  onReset,
-}: KeybindSettingsProps): React.ReactElement {
+function KeybindSettings(): React.ReactElement {
   const { settings, saveCenterSettings, saveResizeSettings } =
     useSettingsContext();
 
@@ -116,16 +110,6 @@ function KeybindSettings({
             <span className="input-help">Press Esc to reset</span>
           </label>
         </form>
-      </div>
-
-      <div className="keybind-group">
-        <button
-          type="button"
-          className="reset-settings-button"
-          onClick={onReset}
-        >
-          Reset to Default
-        </button>
       </div>
     </div>
   );

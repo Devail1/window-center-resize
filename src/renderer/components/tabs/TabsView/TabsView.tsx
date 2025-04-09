@@ -1,6 +1,5 @@
-import React from 'react';
 import About from '@/renderer/components/About/About';
-import GlobalSaveButton from '@/renderer/components/GlobalSaveButton';
+import GlobalActionsSection from '@/renderer/components/GlobalActionsSection';
 import UnifiedTabContent from '../content/UnifiedTabContent/UnifiedTabContent';
 import './TabsView.css';
 
@@ -10,7 +9,7 @@ export default function TabsView() {
       <h1 className="title">Window Snapper & Resizer</h1>
       <div className="tabs-content">
         <UnifiedTabContent />
-        <GlobalSaveButton />
+        <GlobalActionsSection />
       </div>
       <About />
     </div>
