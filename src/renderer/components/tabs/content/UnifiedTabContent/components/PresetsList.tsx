@@ -38,15 +38,9 @@ function PresetItem({
 }): React.ReactElement {
   const formatNumber = (num: number, isPercentage = false) => {
     if (isPercentage) {
-      return `${(num * 100).toFixed(2)}%`;
+      return `${(num * 100).toFixed(0)}%`;
     }
     return `${Math.round(num)}px`;
-  };
-
-  const formatPosition = (x: number, y: number) => {
-    const xPercent = (x / screenSize.width) * 100;
-    const yPercent = (y / screenSize.height) * 100;
-    return `L:${xPercent.toFixed(0)}% T:${yPercent.toFixed(0)}%`;
   };
 
   const widthPercent = preset.width / screenSize.width;
@@ -68,38 +62,31 @@ function PresetItem({
     >
       <div className="preset-content">
         <div className="preset-header">
-          <span className="preset-title">
-            {id}
-            {isEditing && activePreset === id && (
-              <span className="editing-badge">Editing</span>
-            )}
-          </span>
-          {id !== 'Default 50%' && Object.keys(allPresets).length > 1 && (
-            <button
-              type="button"
-              className="delete-preset-button"
-              onClick={(e) => onDeletePreset(id, e)}
-              title="Delete preset"
-            >
-              ×
-            </button>
-          )}
+          <span className="preset-title">{id}</span>
         </div>
         <div className="preset-details">
-          <div className="preset-size">
-            <span title="Width × Height">
-              <span className="preset-label">Size:</span>{' '}
-              {formatNumber(widthPercent, true)} ×{' '}
-              {formatNumber(heightPercent, true)}
-            </span>
-          </div>
-          <div className="preset-position">
-            <span title="Position from Left and Top edges">
-              <span className="preset-label">Pos:</span>{' '}
-              {formatPosition(preset.x, preset.y)}
-            </span>
-          </div>
+          <span>
+            {formatNumber(widthPercent, true)} ×{' '}
+            {formatNumber(heightPercent, true)}
+          </span>
+          <span>
+            L:{formatNumber(preset.x / screenSize.width, true)} T:
+            {formatNumber(preset.y / screenSize.height, true)}
+          </span>
         </div>
+        {isEditing && activePreset === id && (
+          <span className="editing-badge">Editing</span>
+        )}
+        {id !== 'Default 50%' && Object.keys(allPresets).length > 1 && (
+          <button
+            type="button"
+            className="delete-preset-button"
+            onClick={(e) => onDeletePreset(id, e)}
+            title="Delete preset"
+          >
+            ×
+          </button>
+        )}
       </div>
     </div>
   );
