@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 
 interface Position {
   x: number;
@@ -47,10 +47,8 @@ const getBoundedPosition = (
 export const useNativeDragResize = (
   containerRef: React.RefObject<HTMLDivElement>,
   windowRef: React.RefObject<HTMLDivElement>,
-  snapPosition: ((position: Position) => Position) | null,
   screenSize: ScreenSize,
   onPositionChange: (position: Position) => void,
-  snapToGrid: boolean = false,
 ) => {
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0, width: 0, height: 0 });
@@ -59,6 +57,7 @@ export const useNativeDragResize = (
   const resizeDirection = useRef('');
   const containerRect = useRef<DOMRect | null>(null);
   const scaleFactors = useRef({ x: 1, y: 1 });
+  const [isActive, setIsActive] = useState(false);
 
   // Cache container dimensions and scale factors
   useEffect(() => {
@@ -116,7 +115,6 @@ export const useNativeDragResize = (
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       };
-      // Store the initial dimensions to maintain them during drag
       resizeStartPos.current = {
         width: rect.width,
         height: rect.height,
@@ -124,6 +122,7 @@ export const useNativeDragResize = (
         y: rect.top,
       };
       isDragging.current = true;
+      setIsActive(true);
     },
     [windowRef],
   );
@@ -140,22 +139,20 @@ export const useNativeDragResize = (
       };
       resizeDirection.current = direction;
       isResizing.current = true;
+      setIsActive(true);
     },
     [windowRef],
   );
 
-  // Mouse move handler with proper type checking
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!windowRef.current || !containerRect.current) return;
 
       if (isDragging.current) {
         const currentRect = containerRect.current;
-
         const newX = e.clientX - currentRect.left - dragStartPos.current.x;
         const newY = e.clientY - currentRect.top - dragStartPos.current.y;
 
-        // Use the stored dimensions from drag start
         const newPosition = getUnscaledPosition(
           newX,
           newY,
@@ -163,26 +160,17 @@ export const useNativeDragResize = (
           resizeStartPos.current.height,
         );
         const boundedPosition = getBoundedPosition(newPosition, screenSize);
-
-        if (snapPosition && snapToGrid) {
-          const snappedPosition = snapPosition(boundedPosition);
-          onPositionChange(snappedPosition);
-        } else {
-          onPositionChange(boundedPosition);
-        }
+        onPositionChange(boundedPosition);
       } else if (isResizing.current) {
         const currentContainerBounds = containerRect.current;
         if (!currentContainerBounds) return;
 
-        // Calculate the scale factors for accurate resize
         const scaleX = screenSize.width / currentContainerBounds.width;
         const scaleY = screenSize.height / currentContainerBounds.height;
 
-        // Get the actual mouse position relative to the container
         const mouseX = (e.clientX - currentContainerBounds.left) * scaleX;
         const mouseY = (e.clientY - currentContainerBounds.top) * scaleY;
 
-        // Calculate the delta in screen coordinates
         const startX =
           (resizeStartPos.current.x - currentContainerBounds.left) * scaleX;
         const startY =
@@ -244,25 +232,12 @@ export const useNativeDragResize = (
         };
 
         const boundedPosition = getBoundedPosition(newPosition, screenSize);
-        if (snapPosition && snapToGrid) {
-          const snappedPosition = snapPosition(boundedPosition);
-          onPositionChange(snappedPosition);
-        } else {
-          onPositionChange(boundedPosition);
-        }
+        onPositionChange(boundedPosition);
       }
     },
-    [
-      windowRef,
-      getUnscaledPosition,
-      screenSize,
-      snapPosition,
-      snapToGrid,
-      onPositionChange,
-    ],
+    [windowRef, getUnscaledPosition, screenSize, onPositionChange],
   );
 
-  // Create a stable throttled version of handleMouseMove
   const throttledMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isDragging.current && !isResizing.current) return;
@@ -275,9 +250,10 @@ export const useNativeDragResize = (
   const handleMouseUp = useCallback(() => {
     isDragging.current = false;
     isResizing.current = false;
+    setIsActive(false);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     document.addEventListener('mousemove', throttledMouseMove as any);
     document.addEventListener('mouseup', handleMouseUp);
     return () => {
@@ -299,7 +275,7 @@ export const useNativeDragResize = (
       return (
         <div
           ref={windowRef as any}
-          className="native-window"
+          className={`native-window ${isActive ? 'active' : ''}`}
           style={{
             position: 'absolute',
             left: scaledPos.x,
@@ -309,111 +285,142 @@ export const useNativeDragResize = (
             background: 'rgba(59, 130, 246, 0.1)',
             border: '1px solid rgba(59, 130, 246, 0.3)',
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            transition: isActive ? 'none' : 'all 0.2s ease',
+            cursor: isActive ? 'grabbing' : 'grab',
           }}
+          onMouseDown={handleDragStart}
+          onKeyDown={(e) => e.key === 'Enter' && handleDragStart(e as any)}
+          role="button"
+          tabIndex={0}
+          aria-label="Draggable window"
         >
-          <div
-            role="button"
-            tabIndex={0}
-            className="window-drag-handle"
-            onMouseDown={handleDragStart}
-            onKeyDown={(e) => e.key === 'Enter' && handleDragStart(e as any)}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '30px',
-              cursor: 'move',
-            }}
-            aria-label="Drag window"
-          />
           {children}
           <div className="resize-handles">
             <div
               role="button"
               tabIndex={0}
               className="resize-handle top"
-              onMouseDown={(e) => handleResizeStart(e, 'top')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'top')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'top');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') handleResizeStart(e as any, 'top');
+              }}
               aria-label="Resize from top"
             />
             <div
               role="button"
               tabIndex={0}
               className="resize-handle right"
-              onMouseDown={(e) => handleResizeStart(e, 'right')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'right')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'right');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') handleResizeStart(e as any, 'right');
+              }}
               aria-label="Resize from right"
             />
             <div
               role="button"
               tabIndex={0}
               className="resize-handle bottom"
-              onMouseDown={(e) => handleResizeStart(e, 'bottom')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'bottom')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'bottom');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') handleResizeStart(e as any, 'bottom');
+              }}
               aria-label="Resize from bottom"
             />
             <div
               role="button"
               tabIndex={0}
               className="resize-handle left"
-              onMouseDown={(e) => handleResizeStart(e, 'left')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'left')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'left');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') handleResizeStart(e as any, 'left');
+              }}
               aria-label="Resize from left"
             />
             <div
               role="button"
               tabIndex={0}
               className="resize-handle top-right"
-              onMouseDown={(e) => handleResizeStart(e, 'topRight')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'topRight')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'topRight');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') handleResizeStart(e as any, 'topRight');
+              }}
               aria-label="Resize from top-right"
             />
             <div
               role="button"
               tabIndex={0}
               className="resize-handle bottom-right"
-              onMouseDown={(e) => handleResizeStart(e, 'bottomRight')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'bottomRight')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'bottomRight');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter')
+                  handleResizeStart(e as any, 'bottomRight');
+              }}
               aria-label="Resize from bottom-right"
             />
             <div
               role="button"
               tabIndex={0}
               className="resize-handle bottom-left"
-              onMouseDown={(e) => handleResizeStart(e, 'bottomLeft')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'bottomLeft')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'bottomLeft');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter')
+                  handleResizeStart(e as any, 'bottomLeft');
+              }}
               aria-label="Resize from bottom-left"
             />
             <div
               role="button"
               tabIndex={0}
               className="resize-handle top-left"
-              onMouseDown={(e) => handleResizeStart(e, 'topLeft')}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleResizeStart(e as any, 'topLeft')
-              }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleResizeStart(e, 'topLeft');
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') handleResizeStart(e as any, 'topLeft');
+              }}
               aria-label="Resize from top-left"
             />
           </div>
         </div>
       );
     },
-    [windowRef, getScaledPosition, handleDragStart, handleResizeStart],
+    [
+      windowRef,
+      getScaledPosition,
+      handleDragStart,
+      handleResizeStart,
+      isActive,
+    ],
   );
 
   return {

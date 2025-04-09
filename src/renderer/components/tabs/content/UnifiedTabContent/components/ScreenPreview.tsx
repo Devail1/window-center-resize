@@ -27,7 +27,6 @@ function ScreenPreview({
   const { NativeWindow } = useNativeDragResize(
     containerRef,
     windowRef,
-    null,
     screenSize,
     onPositionChange,
   );
