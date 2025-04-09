@@ -277,16 +277,10 @@ export const useNativeDragResize = (
           ref={windowRef as any}
           className={`native-window ${isActive ? 'active' : ''}`}
           style={{
-            position: 'absolute',
             left: scaledPos.x,
             top: scaledPos.y,
             width: scaledPos.width,
             height: scaledPos.height,
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            transition: isActive ? 'none' : 'all 0.2s ease',
-            cursor: isActive ? 'grabbing' : 'grab',
           }}
           onMouseDown={handleDragStart}
           onKeyDown={(e) => e.key === 'Enter' && handleDragStart(e as any)}
@@ -294,7 +288,7 @@ export const useNativeDragResize = (
           tabIndex={0}
           aria-label="Draggable window"
         >
-          {children}
+          <div className="native-window-content">{children}</div>
           <div className="resize-handles">
             <div
               role="button"

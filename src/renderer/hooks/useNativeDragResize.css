@@ -1,13 +1,27 @@
+/* Base window styles */
+.native-window {
+  position: absolute;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: grab;
+}
+
+.native-window.active {
+  cursor: grabbing;
+  transition: none;
+}
+
+/* Resize handles container */
 .resize-handles {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   pointer-events: none;
   z-index: 2;
 }
 
+/* Base resize handle styles */
 .resize-handle {
   position: absolute;
   background: transparent;
@@ -17,6 +31,7 @@
   z-index: 3;
 }
 
+/* Resize handle positions */
 .resize-handle.top {
   top: -6px;
   left: 50%;
@@ -53,6 +68,7 @@
   height: 100%;
 }
 
+/* Corner resize handles */
 .resize-handle.top-right {
   top: -6px;
   right: -6px;
@@ -77,30 +93,11 @@
   cursor: nwse-resize;
 }
 
-.window-drag-handle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  cursor: move;
-  z-index: 1;
-  user-select: none;
-}
-
-.native-window {
-  position: absolute;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
+/* Window content */
 .native-window-content {
   position: relative;
   width: 100%;
   height: 100%;
   pointer-events: auto;
   z-index: 1;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
 }

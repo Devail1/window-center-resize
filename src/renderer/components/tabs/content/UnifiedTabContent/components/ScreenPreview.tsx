@@ -32,26 +32,9 @@ function ScreenPreview({
   );
 
   return (
-    <div
-      ref={containerRef}
-      className="screen-preview"
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        background: '#f0f0f0',
-        overflow: 'hidden',
-      }}
-    >
+    <div ref={containerRef} className="screen-preview">
       <NativeWindow position={position}>
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-          }}
-        />
+        <div className="window-preview" />
       </NativeWindow>
     </div>
   );
