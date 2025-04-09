@@ -140,9 +140,9 @@ CenterAndResizeWindow(WinTitle, WidthPercentage, HeightPercentage, XPercentage :
         NewWidth := (mon.WAWidth * WidthPercentage / 100)
         NewHeight := (mon.WAHeight * HeightPercentage / 100)
 
-        ; Calculate position based on percentages
-        NewX := mon.WALeft + (mon.WAWidth * XPercentage / 100) - (NewWidth / 2)
-        NewY := mon.WATop + (mon.WAHeight * YPercentage / 100) - (NewHeight / 2)
+        ; Calculate position based on percentages - now treating them as relative positions from edges
+        NewX := mon.WALeft + (mon.WAWidth - NewWidth) * (XPercentage / 100)
+        NewY := mon.WATop + (mon.WAHeight - NewHeight) * (YPercentage / 100)
 
         ; Ensure window stays within screen bounds
         NewX := Max(mon.WALeft, Min(NewX, mon.WARight - NewWidth))

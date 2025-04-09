@@ -81,14 +81,14 @@ export const useNativeDragResize = (
   const getScaledPosition = useCallback(
     (position: Position) => {
       if (!containerRect.current) return position;
-      const scaleX = containerRect.current.width / screenSize.width;
-      const scaleY = containerRect.current.height / screenSize.height;
+      const scaleX = screenSize.width / containerRect.current.width;
+      const scaleY = screenSize.height / containerRect.current.height;
 
       return {
-        x: position.x * scaleX,
-        y: position.y * scaleY,
-        width: position.width * scaleX,
-        height: position.height * scaleY,
+        x: position.x / scaleX,
+        y: position.y / scaleY,
+        width: position.width / scaleX,
+        height: position.height / scaleY,
       };
     },
     [screenSize],
@@ -418,5 +418,6 @@ export const useNativeDragResize = (
 
   return {
     NativeWindow,
+    getScaledPosition,
   };
 };

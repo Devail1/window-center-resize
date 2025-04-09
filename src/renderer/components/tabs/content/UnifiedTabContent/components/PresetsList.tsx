@@ -57,7 +57,12 @@ function PresetItem({
       }}
     >
       <div className="preset-info">
-        <span>{id}</span>
+        <span>
+          {id}
+          {isEditing && activePreset === id && (
+            <span className="editing-badge">Editing</span>
+          )}
+        </span>
         <span>
           {formatNumber(preset.width / screenSize.width, true)} x{' '}
           {formatNumber(preset.height / screenSize.height, true)}

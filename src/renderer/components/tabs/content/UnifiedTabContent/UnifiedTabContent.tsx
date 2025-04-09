@@ -54,36 +54,70 @@ function UnifiedTabContent(): React.ReactElement {
 
   const handleSavePreset = useCallback(
     (newPosition: Position) => {
-      const timestamp = new Date().toLocaleTimeString();
-      const newPresetId = `Preset ${timestamp}`;
-
-      // Convert position to percentages
+      // Convert position to percentages, accounting for window size
       const newPreset = {
         width: (newPosition.width / screenSize.width) * 100,
         height: (newPosition.height / screenSize.height) * 100,
-        x: 50, // Center by default
-        y: 50, // Center by default
+        // Convert x position to percentage relative to available space
+        x: (newPosition.x / (screenSize.width - newPosition.width)) * 100,
+        // Convert y position to percentage relative to available space
+        y: (newPosition.y / (screenSize.height - newPosition.height)) * 100,
       };
 
-      // Update local state
-      setPresets((currentPresets) => ({
-        ...currentPresets,
-        [newPresetId]: {
-          ...newPosition,
-          width: Math.round(newPosition.width),
-          height: Math.round(newPosition.height),
-          x: Math.round(newPosition.x),
-          y: Math.round(newPosition.y),
-        },
-      }));
+      if (isEditing && activePreset) {
+        // Update existing preset
+        setPresets((currentPresets) => ({
+          ...currentPresets,
+          [activePreset]: {
+            ...newPosition,
+            width: Math.round(newPosition.width),
+            height: Math.round(newPosition.height),
+            x: Math.round(newPosition.x),
+            y: Math.round(newPosition.y),
+          },
+        }));
 
-      // Update settings with new window size percentages
-      const currentPercentages =
-        settings.resizeWindow.windowSizePercentages || [];
-      const updatedPercentages = [...currentPercentages, newPreset];
-      saveResizeSettings(settings.resizeWindow.keybinding, updatedPercentages);
+        // Update settings by replacing the existing preset
+        const presetIndex = parseInt(activePreset.split(' ')[1], 10) - 1;
+        const updatedPercentages = [
+          ...settings.resizeWindow.windowSizePercentages,
+        ];
+        updatedPercentages[presetIndex] = newPreset;
+        saveResizeSettings(
+          settings.resizeWindow.keybinding,
+          updatedPercentages,
+        );
+
+        // Exit editing mode
+        setIsEditing(false);
+      } else {
+        // Create new preset
+        const timestamp = new Date().toLocaleTimeString();
+        const newPresetId = `Preset ${timestamp}`;
+
+        // Update local state
+        setPresets((currentPresets) => ({
+          ...currentPresets,
+          [newPresetId]: {
+            ...newPosition,
+            width: Math.round(newPosition.width),
+            height: Math.round(newPosition.height),
+            x: Math.round(newPosition.x),
+            y: Math.round(newPosition.y),
+          },
+        }));
+
+        // Update settings with new window size percentages
+        const currentPercentages =
+          settings.resizeWindow.windowSizePercentages || [];
+        const updatedPercentages = [...currentPercentages, newPreset];
+        saveResizeSettings(
+          settings.resizeWindow.keybinding,
+          updatedPercentages,
+        );
+      }
     },
-    [screenSize, settings, saveResizeSettings],
+    [screenSize, settings, saveResizeSettings, isEditing, activePreset],
   );
 
   const handleDeletePreset = useCallback(
@@ -172,17 +206,26 @@ function UnifiedTabContent(): React.ReactElement {
     ) {
       const updatedPresets: Presets = {};
       settings.resizeWindow.windowSizePercentages.forEach((preset, index) => {
+        const width = (preset.width / 100) * screenSize.width;
+        const height = (preset.height / 100) * screenSize.height;
         updatedPresets[`Preset ${index + 1}`] = {
-          width: (preset.width / 100) * screenSize.width,
-          height: (preset.height / 100) * screenSize.height,
-          x: (screenSize.width - (preset.width / 100) * screenSize.width) / 2,
-          y:
-            (screenSize.height - (preset.height / 100) * screenSize.height) / 2,
+          width: Math.round(width),
+          height: Math.round(height),
+          // Calculate x position to maintain the window's relative position from the left edge
+          x: Math.round((preset.x / 100) * (screenSize.width - width)),
+          // Calculate y position to maintain the window's relative position from the top edge
+          y: Math.round((preset.y / 100) * (screenSize.height - height)),
         };
       });
       setPresets(updatedPresets);
+
+      // If no active preset is selected, set the first preset as the current position
+      if (!activePreset && Object.keys(updatedPresets).length > 0) {
+        const firstPresetId = Object.keys(updatedPresets)[0];
+        setPosition(updatedPresets[firstPresetId]);
+      }
     }
-  }, [screenSize, settings.resizeWindow?.windowSizePercentages]);
+  }, [screenSize, settings.resizeWindow?.windowSizePercentages, activePreset]);
 
   // Only initialize presets once when settings are loaded
   useEffect(() => {
@@ -196,16 +239,24 @@ function UnifiedTabContent(): React.ReactElement {
       if (settings.resizeWindow.windowSizePercentages.length > 0) {
         const defaultPresets: Presets = {};
         settings.resizeWindow.windowSizePercentages.forEach((preset, index) => {
+          const width = (preset.width / 100) * screenSize.width;
+          const height = (preset.height / 100) * screenSize.height;
           defaultPresets[`Preset ${index + 1}`] = {
-            width: (preset.width / 100) * screenSize.width,
-            height: (preset.height / 100) * screenSize.height,
-            x: (screenSize.width - (preset.width / 100) * screenSize.width) / 2,
-            y:
-              (screenSize.height - (preset.height / 100) * screenSize.height) /
-              2,
+            width: Math.round(width),
+            height: Math.round(height),
+            // Calculate x position to maintain the window's relative position from the left edge
+            x: Math.round((preset.x / 100) * (screenSize.width - width)),
+            // Calculate y position to maintain the window's relative position from the top edge
+            y: Math.round((preset.y / 100) * (screenSize.height - height)),
           };
         });
         setPresets(defaultPresets);
+
+        // Set the first preset as the initial position
+        if (Object.keys(defaultPresets).length > 0) {
+          const firstPresetId = Object.keys(defaultPresets)[0];
+          setPosition(defaultPresets[firstPresetId]);
+        }
       }
       initializedRef.current = true;
     }
@@ -231,7 +282,7 @@ function UnifiedTabContent(): React.ReactElement {
           className="save-preset-button"
           onClick={() => handleSavePreset(position)}
         >
-          Save Current Position
+          {isEditing ? 'Update Current Preset' : 'Save as New Preset'}
         </button>
       </div>
       <div className="presets-section">
