@@ -128,6 +128,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
         );
         dispatch({ type: 'SAVE_CENTER_SETTINGS', payload: { centerKeybind } });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error saving center settings:', error);
       }
     };
@@ -146,6 +147,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
           payload: { keybinding, windowSizePercentages },
         });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error saving resize settings:', error);
       }
     };
@@ -154,6 +156,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
       try {
         await window.electron.ipcRenderer.invoke('save-settings', state);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error saving all settings:', error);
       }
     };
@@ -163,6 +166,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
         await window.electron.ipcRenderer.invoke('reset-settings');
         dispatch({ type: 'RESET_SETTINGS' });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error resetting settings:', error);
       }
     };
