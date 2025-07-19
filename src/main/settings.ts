@@ -7,18 +7,53 @@ import defaultSettings from '../constants/defaultSettings.json';
 import { reloadAutoHotkey } from './autohotkey';
 import { getMainWindow } from './window';
 
+interface Preset {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  shortcut: string;
+  unit: 'px' | '%';
+  enabled: boolean;
+}
+
+interface ToggleGroup {
+  id: string;
+  name: string;
+  shortcut: string;
+  presetIds: string[];
+  currentIndex: number;
+  enabled: boolean;
+}
+
+interface AppSettings {
+  centeringEnabled: boolean;
+  resizingEnabled: boolean;
+  positioningEnabled: boolean;
+  startWithWindows: boolean;
+  showNotifications: boolean;
+  darkMode: boolean;
+}
+
 interface Settings {
-  centerWindow: {
-    keybinding: string;
-  };
-  resizeWindow: {
-    keybinding: string;
-    windowSizePercentages: Array<{
-      width: number;
-      height: number;
-      x: number;
-      y: number;
-    }>;
+  presets: Preset[];
+  toggleGroups: ToggleGroup[];
+  settings: AppSettings;
+  legacy: {
+    centerWindow: {
+      keybinding: string;
+    };
+    resizeWindow: {
+      keybinding: string;
+      windowSizePercentages: Array<{
+        width: number;
+        height: number;
+        x: number;
+        y: number;
+      }>;
+    };
   };
 }
 
@@ -98,14 +133,65 @@ export async function saveSettings(
   }
 }
 
+export async function savePresets(
+  _event: IpcMainInvokeEvent,
+  presets: Preset[],
+) {
+  try {
+    const currentSettings = await readSettingsFile();
+    currentSettings.presets = presets;
+    await writeSettingsFile(currentSettings);
+    reloadAutoHotkey();
+    const mainWindow = getMainWindow();
+    mainWindow?.webContents.send('settings-changed');
+  } catch (err) {
+    handleError(`Error while saving presets at ${settingsPath}`, err);
+  }
+}
+
+export async function saveToggleGroups(
+  _event: IpcMainInvokeEvent,
+  toggleGroups: ToggleGroup[],
+) {
+  try {
+    const currentSettings = await readSettingsFile();
+    currentSettings.toggleGroups = toggleGroups;
+    await writeSettingsFile(currentSettings);
+    reloadAutoHotkey();
+    const mainWindow = getMainWindow();
+    mainWindow?.webContents.send('settings-changed');
+  } catch (err) {
+    handleError(`Error while saving toggle groups at ${settingsPath}`, err);
+  }
+}
+
+export async function saveAppSettings(
+  _event: IpcMainInvokeEvent,
+  appSettings: AppSettings,
+) {
+  try {
+    const currentSettings = await readSettingsFile();
+    currentSettings.settings = appSettings;
+    await writeSettingsFile(currentSettings);
+    reloadAutoHotkey();
+    const mainWindow = getMainWindow();
+    mainWindow?.webContents.send('settings-changed');
+  } catch (err) {
+    handleError(`Error while saving app settings at ${settingsPath}`, err);
+  }
+}
+
 export async function saveCenterSettings(
   _event: IpcMainInvokeEvent,
   centerKeybind: string,
 ) {
   try {
     const currentSettings = await readSettingsFile();
-    currentSettings.centerWindow.keybinding = centerKeybind;
+    currentSettings.legacy.centerWindow.keybinding = centerKeybind;
     await writeSettingsFile(currentSettings);
+    reloadAutoHotkey();
+    const mainWindow = getMainWindow();
+    mainWindow?.webContents.send('settings-changed');
   } catch (err) {
     handleError(`Error while saving center settings at ${settingsPath}`, err);
   }
@@ -125,8 +211,11 @@ export async function saveResizeSettings(
 ) {
   try {
     const currentSettings = await readSettingsFile();
-    currentSettings.resizeWindow = data;
+    currentSettings.legacy.resizeWindow = data;
     await writeSettingsFile(currentSettings);
+    reloadAutoHotkey();
+    const mainWindow = getMainWindow();
+    mainWindow?.webContents.send('settings-changed');
   } catch (err) {
     handleError(`Error while saving resize settings at ${settingsPath}`, err);
   }

@@ -1,25 +1,12 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import AppContainer from './components/AppContainer/AppContainer';
+import AppV2 from './App-v2';
 import './App.css';
-import Footer from './components/Footer/Footer';
-import TabsView from './components/tabs/TabsView/TabsView';
-
-function MyApp() {
-  return (
-    <div>
-      <AppContainer>
-        <TabsView />
-        <Footer />
-      </AppContainer>
-    </div>
-  );
-}
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<MyApp />} />
+        <Route path="/" element={<AppV2 />} />
       </Routes>
     </Router>
   );

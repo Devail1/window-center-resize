@@ -1,28 +1,102 @@
 {
-  "centerWindow": {
-    "keybinding": "CTRL + SHIFT + C"
+  "presets": [
+    {
+      "id": "1",
+      "name": "Center Large",
+      "x": 20,
+      "y": 10,
+      "width": 60,
+      "height": 80,
+      "shortcut": "Ctrl+Alt+C",
+      "unit": "%",
+      "enabled": true
+    },
+    {
+      "id": "2",
+      "name": "Left Half",
+      "x": 0,
+      "y": 0,
+      "width": 50,
+      "height": 100,
+      "shortcut": "Ctrl+Alt+L",
+      "unit": "%",
+      "enabled": true
+    },
+    {
+      "id": "3",
+      "name": "Right Half",
+      "x": 50,
+      "y": 0,
+      "width": 50,
+      "height": 100,
+      "shortcut": "Ctrl+Alt+R",
+      "unit": "%",
+      "enabled": true
+    },
+    {
+      "id": "4",
+      "name": "Center Small",
+      "x": 25,
+      "y": 25,
+      "width": 50,
+      "height": 50,
+      "shortcut": "F9",
+      "unit": "%",
+      "enabled": true
+    }
+  ],
+  "toggleGroups": [
+    {
+      "id": "1",
+      "name": "Work Layout",
+      "shortcut": "Ctrl+Alt+Tab",
+      "presetIds": ["1", "2"],
+      "currentIndex": 0,
+      "enabled": true
+    },
+    {
+      "id": "2",
+      "name": "Split Views",
+      "shortcut": "Ctrl+Alt+Space",
+      "presetIds": ["2", "3"],
+      "currentIndex": 0,
+      "enabled": true
+    }
+  ],
+  "settings": {
+    "centeringEnabled": true,
+    "resizingEnabled": true,
+    "positioningEnabled": true,
+    "startWithWindows": false,
+    "showNotifications": true,
+    "darkMode": false
   },
-  "resizeWindow": {
-    "keybinding": "F9",
-    "windowSizePercentages": [
-      {
-        "width": 50.00,
-        "height": 50.00,
-        "x": 50.0,
-        "y": 50.0
-      },
-      {
-        "width": 75.00,
-        "height": 75.00,
-        "x": 50.0,
-        "y": 50.0
-      },
-      {
-        "width": 100.00,
-        "height": 100.00,
-        "x": 50.0,
-        "y": 50.0
-      }
-    ]
+  "legacy": {
+    "centerWindow": {
+      "keybinding": "CTRL + SHIFT + C"
+    },
+    "resizeWindow": {
+      "keybinding": "F9",
+      "windowSizePercentages": [
+        {
+          "width": 50.0,
+          "height": 50.0,
+          "x": 50.0,
+          "y": 50.0
+        },
+        {
+          "width": 75.0,
+          "height": 75.0,
+          "x": 50.0,
+          "y": 50.0
+        },
+        {
+          "width": 100.0,
+          "height": 100.0,
+          "x": 50.0,
+          "y": 50.0
+        }
+      ]
+    }
   }
 }

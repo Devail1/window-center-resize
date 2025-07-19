@@ -9,20 +9,32 @@ let autohotkeyProcess: child.ChildProcess | null = null;
 async function stopAutoHotkeyProcess() {
   if (autohotkeyProcess) {
     try {
-      autohotkeyProcess.kill();
-      autohotkeyProcess.on('exit', () => {
-        autohotkeyProcess = null;
+      console.log('Stopping AutoHotkey process...');
+      autohotkeyProcess.kill('SIGTERM');
+
+      // Wait a bit for graceful shutdown
+      await new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), 1000);
       });
+
+      // Force kill if still running
+      if (!autohotkeyProcess.killed) {
+        console.log('Force killing AutoHotkey process...');
+        autohotkeyProcess.kill('SIGKILL');
+      }
+
+      autohotkeyProcess = null;
+      console.log('AutoHotkey process stopped');
     } catch (error) {
       console.error('Error killing AutoHotkey process:', error);
+      autohotkeyProcess = null;
     }
   }
 }
 
 async function startAutoHotkeyProcess() {
-  if (autohotkeyProcess) {
-    await stopAutoHotkeyProcess();
-  }
+  // Ensure the old process is stopped first
+  await stopAutoHotkeyProcess();
 
   const { isPackaged } = app;
 
@@ -34,13 +46,31 @@ async function startAutoHotkeyProcess() {
   const scriptPath = path.join(resourcesPath, 'center-window-resize.ahk');
 
   try {
-    autohotkeyProcess = child.spawn(autohotkeyPath, [scriptPath]);
+    console.log('Starting AutoHotkey process...');
+    autohotkeyProcess = child.spawn(autohotkeyPath, [scriptPath], {
+      detached: false, // Keep attached so we can manage it
+      stdio: 'ignore',
+    });
+
+    autohotkeyProcess.on('error', (error) => {
+      console.error('AutoHotkey process error:', error);
+    });
+
+    autohotkeyProcess.on('exit', (code, signal) => {
+      console.log(
+        `AutoHotkey process exited with code ${code} and signal ${signal}`,
+      );
+      autohotkeyProcess = null;
+    });
+
+    console.log('AutoHotkey process started successfully');
   } catch (error) {
     console.error('Error starting AutoHotkey process:', error);
   }
 }
 
 async function reloadAutoHotkey() {
+  console.log('Reloading AutoHotkey...');
   await startAutoHotkeyProcess();
 }
 

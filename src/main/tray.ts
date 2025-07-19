@@ -7,8 +7,8 @@ let tray: Tray | null = null;
 
 const showNotification = async (): Promise<void> => {
   const settings = await getSettings();
-  if (settings) {
-    const { centerWindow, resizeWindow } = settings;
+  if (settings && settings.legacy) {
+    const { centerWindow, resizeWindow } = settings.legacy;
 
     const notification = new Notification({
       title: 'Window Snapper',

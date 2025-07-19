@@ -7,7 +7,7 @@ interface Position {
   height: number;
 }
 
-interface ScreenSize {
+interface ContainerSize {
   width: number;
   height: number;
 }
@@ -26,19 +26,22 @@ const DEFAULT_CONSTRAINTS: WindowConstraints = {
 
 const getBoundedPosition = (
   position: Position,
-  screenSize: ScreenSize,
+  containerSize: ContainerSize,
   constraints: WindowConstraints = DEFAULT_CONSTRAINTS,
 ): Position => {
   const {
     minWidth = 100,
     minHeight = 100,
-    maxWidth = screenSize.width,
-    maxHeight = screenSize.height,
+    maxWidth = containerSize.width,
+    maxHeight = containerSize.height,
   } = constraints;
 
   return {
-    x: Math.max(0, Math.min(position.x, screenSize.width - position.width)),
-    y: Math.max(0, Math.min(position.y, screenSize.height - position.height)),
+    x: Math.max(0, Math.min(position.x, containerSize.width - position.width)),
+    y: Math.max(
+      0,
+      Math.min(position.y, containerSize.height - position.height),
+    ),
     width: Math.max(minWidth, Math.min(position.width, maxWidth)),
     height: Math.max(minHeight, Math.min(position.height, maxHeight)),
   };
@@ -47,95 +50,94 @@ const getBoundedPosition = (
 export const useNativeDragResize = (
   containerRef: React.RefObject<HTMLDivElement>,
   windowRef: React.RefObject<HTMLDivElement>,
-  screenSize: ScreenSize,
   onPositionChange: (position: Position) => void,
 ) => {
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  const resizeStartMousePos = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const resizeDirection = useRef('');
   const containerRect = useRef<DOMRect | null>(null);
-  const scaleFactors = useRef({ x: 1, y: 1 });
   const [isActive, setIsActive] = useState(false);
 
-  // Cache container dimensions and scale factors
+  // Cache container dimensions
   useEffect(() => {
     const updateContainerRect = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         containerRect.current = rect;
-        scaleFactors.current = {
-          x: screenSize.width / rect.width,
-          y: screenSize.height / rect.height,
-        };
       }
     };
 
     updateContainerRect();
-    window.addEventListener('resize', updateContainerRect);
-    return () => window.removeEventListener('resize', updateContainerRect);
-  }, [screenSize, containerRef]);
 
-  const getScaledPosition = useCallback(
-    (position: Position) => {
-      if (!containerRect.current) return position;
-      const scaleX = screenSize.width / containerRect.current.width;
-      const scaleY = screenSize.height / containerRect.current.height;
+    // Set up resize observer to update container rect when size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateContainerRect();
+    });
 
-      return {
-        x: position.x / scaleX,
-        y: position.y / scaleY,
-        width: position.width / scaleX,
-        height: position.height / scaleY,
-      };
-    },
-    [screenSize],
-  );
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
 
-  const getUnscaledPosition = useCallback(
-    (x: number, y: number, width: number, height: number) => {
-      if (!containerRect.current) return { x, y, width, height };
+    // Cleanup
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [containerRef]);
 
-      return {
-        x: Math.round(x * scaleFactors.current.x),
-        y: Math.round(y * scaleFactors.current.y),
-        width: Math.round(width * scaleFactors.current.x),
-        height: Math.round(height * scaleFactors.current.y),
-      };
-    },
-    [],
-  );
+  const getScaledPosition = useCallback((position: Position) => {
+    // No scaling needed - return position as is for display
+    return position;
+  }, []);
 
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
-      if (!windowRef.current) return;
+      if (!windowRef.current || !containerRect.current) return;
       const rect = windowRef.current.getBoundingClientRect();
+
+      // Store the initial mouse position
       dragStartPos.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: e.clientX,
+        y: e.clientY,
       };
+
+      // Store the initial window position
       resizeStartPos.current = {
         width: rect.width,
         height: rect.height,
-        x: rect.left,
-        y: rect.top,
+        x: rect.left - containerRect.current.left,
+        y: rect.top - containerRect.current.top,
+      };
+      resizeStartMousePos.current = {
+        x: e.clientX,
+        y: e.clientY,
       };
       isDragging.current = true;
       setIsActive(true);
+
+      console.log('Drag started:', {
+        mousePos: dragStartPos.current,
+        windowPos: resizeStartPos.current,
+      });
     },
     [windowRef],
   );
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, direction: string) => {
-      if (!windowRef.current) return;
+      if (!windowRef.current || !containerRect.current) return;
       const rect = windowRef.current.getBoundingClientRect();
       resizeStartPos.current = {
-        x: rect.left,
-        y: rect.top,
+        x: rect.left - containerRect.current.left,
+        y: rect.top - containerRect.current.top,
         width: rect.width,
         height: rect.height,
+      };
+      resizeStartMousePos.current = {
+        x: e.clientX,
+        y: e.clientY,
       };
       resizeDirection.current = direction;
       isResizing.current = true;
@@ -150,40 +152,46 @@ export const useNativeDragResize = (
 
       if (isDragging.current) {
         const currentRect = containerRect.current;
-        const newX = e.clientX - currentRect.left - dragStartPos.current.x;
-        const newY = e.clientY - currentRect.top - dragStartPos.current.y;
 
-        const newPosition = getUnscaledPosition(
-          newX,
-          newY,
-          resizeStartPos.current.width,
-          resizeStartPos.current.height,
-        );
-        const boundedPosition = getBoundedPosition(newPosition, screenSize);
+        // Calculate the mouse movement delta
+        const deltaX = e.clientX - dragStartPos.current.x;
+        const deltaY = e.clientY - dragStartPos.current.y;
+
+        // Apply the delta to the initial window position
+        const newX = resizeStartPos.current.x + deltaX;
+        const newY = resizeStartPos.current.y + deltaY;
+
+        const newPosition = {
+          x: newX,
+          y: newY,
+          width: resizeStartPos.current.width,
+          height: resizeStartPos.current.height,
+        };
+        const boundedPosition = getBoundedPosition(newPosition, {
+          width: currentRect.width,
+          height: currentRect.height,
+        });
+
+        console.log('Drag move:', {
+          delta: { x: deltaX, y: deltaY },
+          newPos: { x: newX, y: newY },
+          bounded: boundedPosition,
+        });
+
         onPositionChange(boundedPosition);
       } else if (isResizing.current) {
         const currentContainerBounds = containerRect.current;
         if (!currentContainerBounds) return;
 
-        const scaleX = screenSize.width / currentContainerBounds.width;
-        const scaleY = screenSize.height / currentContainerBounds.height;
+        // Calculate deltas from the initial mouse position
+        const deltaX = e.clientX - resizeStartMousePos.current.x;
+        const deltaY = e.clientY - resizeStartMousePos.current.y;
 
-        const mouseX = (e.clientX - currentContainerBounds.left) * scaleX;
-        const mouseY = (e.clientY - currentContainerBounds.top) * scaleY;
-
-        const startX =
-          (resizeStartPos.current.x - currentContainerBounds.left) * scaleX;
-        const startY =
-          (resizeStartPos.current.y - currentContainerBounds.top) * scaleY;
-        const deltaX = mouseX - startX;
-        const deltaY = mouseY - startY;
-
-        let newWidth = resizeStartPos.current.width * scaleX;
-        let newHeight = resizeStartPos.current.height * scaleY;
-        let newX =
-          (resizeStartPos.current.x - currentContainerBounds.left) * scaleX;
-        let newY =
-          (resizeStartPos.current.y - currentContainerBounds.top) * scaleY;
+        // Start with the original window dimensions
+        let newWidth = resizeStartPos.current.width;
+        let newHeight = resizeStartPos.current.height;
+        let newX = resizeStartPos.current.x;
+        let newY = resizeStartPos.current.y;
 
         switch (resizeDirection.current) {
           case 'right':
@@ -230,12 +238,14 @@ export const useNativeDragResize = (
           width: newWidth,
           height: newHeight,
         };
-
-        const boundedPosition = getBoundedPosition(newPosition, screenSize);
+        const boundedPosition = getBoundedPosition(newPosition, {
+          width: currentContainerBounds.width,
+          height: currentContainerBounds.height,
+        });
         onPositionChange(boundedPosition);
       }
     },
-    [windowRef, getUnscaledPosition, screenSize, onPositionChange],
+    [windowRef, onPositionChange],
   );
 
   const throttledMouseMove = useCallback(
@@ -263,13 +273,7 @@ export const useNativeDragResize = (
   }, [throttledMouseMove, handleMouseUp]);
 
   const NativeWindow = useCallback(
-    ({
-      children,
-      position,
-    }: {
-      children: React.ReactNode;
-      position: Position;
-    }) => {
+    ({ position }: { position: Position }) => {
       const scaledPos = getScaledPosition(position);
 
       return (
@@ -288,7 +292,7 @@ export const useNativeDragResize = (
           tabIndex={0}
           aria-label="Draggable window"
         >
-          <div className="native-window-content">{children}</div>
+          <div className="native-window-content" />
           <div className="resize-handles">
             <div
               role="button"
