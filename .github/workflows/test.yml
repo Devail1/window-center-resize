@@ -1,48 +1,33 @@
-name: Test
-
+name: tests
 on: [push, pull_request]
-
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [windows-latest]
-
+    runs-on: windows-latest
     env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
+      AHK_VERSION: 2.0.26
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Node.js and NPM
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: npm
-
-      - name: Install dependencies
+      - name: Install AutoHotkey v2 (pinned, from official GitHub release)
+        shell: pwsh
         run: |
-          npm install
+          $ErrorActionPreference = "Stop"
+          $url = "https://github.com/AutoHotkey/AutoHotkey/releases/download/v$env:AHK_VERSION/AutoHotkey_$env:AHK_VERSION.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "AutoHotkey.zip"
+          $dest = Join-Path $env:RUNNER_TEMP "AutoHotkey"
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          $exe = Join-Path $dest "AutoHotkey64.exe"
+          if (-not (Test-Path $exe)) { throw "AutoHotkey64.exe not found after extracting $url" }
+          "AHK_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Run Prettier
+      - name: Run unit tests
+        shell: pwsh
         run: |
-          npx prettier --write .
-
-      - name: Lint code
-        run: |
-          npm run lint
-
-      - name: Compile TypeScript
-        run: |
-          npm exec tsc
-
-      - name: Package application
-        run: |
-          npm run package
-
-      - name: Run tests
-        run: |
-          npm test
+          $failed = 0
+          Get-ChildItem tests\test_*.ahk | ForEach-Object {
+            Write-Host "--- $($_.Name)"
+            & $env:AHK_EXE /ErrorStdOut $_.FullName
+            if ($LASTEXITCODE -ne 0) { $failed = 1 }
+          }
+          exit $failed
