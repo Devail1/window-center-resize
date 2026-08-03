@@ -1,3 +1,8 @@
+dist/
+settings.ini
+build/hello.exe
+build/hello.ahk
+.superpowers/
 # Logs
 logs
 *.log
