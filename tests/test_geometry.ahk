@@ -1,5 +1,5 @@
 #Requires AutoHotkey v2.0
-#Include "..\tests\_harness.ahk"
+#Include "_harness.ahk"
 #Include "..\src\lib\Geometry.ahk"
 
 ; A 1920x1080 monitor at origin with a 40px taskbar: work area 1920x1040 at (0,0).
@@ -14,7 +14,8 @@ AssertEqual(r.y, 260,  "centered y")
 r2 := CenteredRect(1920, 0, 1280, 1024, 50, 50)
 AssertEqual(r2.w, 640,  "secondary monitor sizes off its own width")
 AssertEqual(r2.h, 512,  "secondary monitor sizes off its own height")
-AssertEqual(r2.x, 2240, "secondary monitor centers within its own bounds")
+AssertEqual(r2.x, 2240, "secondary monitor centers horizontally within its own bounds")
+AssertEqual(r2.y, 256,  "secondary monitor centers vertically within its own bounds")
 
 ; Bug B: at 100% the rect must exactly fill the work area and never exceed it.
 r3 := CenteredRect(0, 0, 1920, 1040, 100, 100)
