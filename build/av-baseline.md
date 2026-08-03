@@ -25,3 +25,47 @@ known-good baseline so a future detection can be compared against it rather than
 
 1.21 MB is the **floor**, not the app — a compiled AHK binary is the interpreter plus the script.
 This measurement is why the project's size gate moved from 1 MB to 2 MB.
+
+### VirusTotal result — 2026-08-03
+
+**3 of ~70 engines. All generic ML / behavioural. No specific-family detection.**
+
+| Engine | Verdict |
+|---|---|
+| Microsoft | `Trojan:Win32/Wacatac.B!ml` |
+| Skyhigh (SWG) | `BehavesLike.Win64.Dropper.th` |
+| Zillya | `Trojan.GenKryptik.Win64.70405` |
+
+**Undetected by every major vendor:** Kaspersky, BitDefender, ESET, Sophos, Symantec,
+Avast, AVG, McAfee, TrendMicro, Malwarebytes, CrowdStrike, SentinelOne, Palo Alto, GData,
+Fortinet, DrWeb, Emsisoft, Google, Elastic, DeepInstinct.
+
+**Diagnosis.** `!ml` denotes a machine-learning heuristic; `Wacatac.B!ml` is Microsoft's
+best-known generic signature and a frequent false positive on unsigned binaries that embed
+an interpreter. Verified: the **official `AutoHotkey64.exe` is itself unsigned**, so the
+compile does not break a signature — the trigger is *unsigned + zero reputation*, not
+AutoHotkey specifically. ⭐ **Switching implementation language would NOT fix this** — a
+fresh unsigned binary of any language trips the same heuristics. Code signing is the fix.
+
+**Counter-evidence that matters most:** local Windows Defender real-time protection did
+**not** block or quarantine this binary. It compiled, executed (`hello-from-ahk`, exit 0),
+and stayed on disk. VirusTotal's Microsoft engine is more aggressive than real-time
+protection.
+
+**GATE VERDICT: conditional FAIL against the pre-registered threshold** (0–2 detections,
+Defender clean). Not silently redefined after the fact.
+
+**DECISION — Liav, 2026-08-03: proceed and ship free 2.0.0 unsigned.** Rationale: the free
+flagship exists to test whether *directory submission* works, not to earn money; the
+directories list many AHK tools; local Defender does not act. Accepted risk: some users may
+see a Defender warning, and the current Electron build has no AV issue at all — so this is a
+genuine regression on that one axis, traded for a 50x size reduction.
+
+**Consequent actions:**
+1. Submit a false-positive report to Microsoft — https://www.microsoft.com/en-us/wdsi/filesubmission
+   (submit as a software developer, "incorrectly detected"). Free; often clears within days.
+2. **Re-scan the REAL binary at Task 8.** This stub is not the product; the score may differ.
+3. ⛔ **Code signing is now REQUIRED before any PAID product**, promoted from "confirm
+   eligibility". Azure Trusted Signing ($9.99/mo) is US/Canada-gated and likely unavailable
+   in Israel → a CA certificate at roughly $200–600/year. Verify Israeli eligibility before
+   committing to utility #2.
