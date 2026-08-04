@@ -1,11 +1,10 @@
 <div align="left">
-  <img align="left" src="https://raw.githubusercontent.com/Devail1/window-center-resize/main/assets/icons-copy/logo.png" alt="Logo" width="70" height="70">
+  <img align="left" src="https://raw.githubusercontent.com/Devail1/window-center-resize/main/assets/icon.png" alt="Logo" width="70" height="70">
   <h3 style="margin-left:100px;">Window Center & Resizer</h3>
 
   <div>
     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
     <img src="https://img.shields.io/github/release/Devail1/window-center-resize.svg?color=purple" alt="GitHub release">
-    <img src="https://img.shields.io/badge/dynamic/json?color=blue&label=downloads&query=$.download_count&url=https://api.github.com/repos/Devail1/window-center-resize/releases/assets/174204247" alt="Download Count">
     <a href="https://snyk.io/test/github/Devail1/window-center-resize">
       <img src="https://snyk.io/test/github/Devail1/window-center-resize/badge.svg" alt="Known Vulnerabilities">
     </a>
@@ -18,7 +17,7 @@
   <img src="https://res.cloudinary.com/di41jhirl/image/upload/v1722415826/fpcyvkh9llcwvrexelbz.png" alt="Resize Window" style="width: 49%;"/>
 
 ## Features
-Window Center & Resizer is a utility application for Windows that allows you to easily center and resize windows on your desktop using customizable keyboard shortcuts. This project is built upon the [Electron React Boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate), which provides a solid foundation for Electron and React development.
+Window Center & Resizer is a utility application for Windows that allows you to easily center and resize windows on your desktop using customizable keyboard shortcuts. It is a single portable executable — around 1.6 MB, with nothing to install and no runtime to bring along.
 
 - **Center Window**: Quickly center the active window on your screen.
 - **Resize Window**: Resize the active window to predefined sizes (small, medium, large) with customizable keyboard shortcuts.
@@ -32,16 +31,28 @@ To use Window Center & Resizer, [download](https://github.com/devail1/window-cen
 
 1. **Center Window**: Press the specified key combination to center the active window.
 2. **Resize Window**: Press the specified key combination to resize the active window to small, medium, or large sizes.
-3. **Customization**: Edit the `settings.json` file to customize keybinds and window sizes.
+3. **Customization**: Open **Settings** from the tray icon, or edit the `settings.ini` file that sits next to the executable.
+
+### Portability
+
+The app is portable and keeps `settings.ini` **next to the executable**. Two consequences worth knowing:
+
+- Moving the executable to a different folder starts it with default settings, because the old `settings.ini` stays behind.
+- Two copies in two folders run independently, each with its own settings.
+
+## Building from source
+
+Requires [AutoHotkey v2](https://www.autohotkey.com/) installed **with the compiler** (Ahk2Exe). There is no other build chain and no runtime dependencies.
+
+```
+powershell -ExecutionPolicy Bypass -File build\build.ps1
+```
+
+The compiled executable is written to `dist\WindowCenterResizer.exe`.
 
 ## Inspiration
 
 This project is inspired by the window centering helper freeware by [Kamil Szymborski](https://kamilszymborski.github.io/). Window Center & Resizer offers a modern approach to window management with additional features and extensive customization capabilities.
-
-## Feature Roadmap
-- ~**Feature Enable/Disable**: Add the ability to enable or disable every feature in the app, such as centering and resizing.~
-- **Label Sizes**: Provide an option to rename, add, or remove sizes for more flexibility in window resizing.
-- **Improved Settings UI**: Enhance the user interface for settings to make it more intuitive and user-friendly.
 
 ## Contributing
 
