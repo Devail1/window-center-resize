@@ -17,6 +17,12 @@ if ($running) {
           "Exit it from the tray, then rebuild."
 }
 
+# Remove the previous binary first. Test-Path and Get-Item would otherwise succeed against
+# the STALE file while Ahk2Exe is still writing, so the size gate could measure the PREVIOUS
+# build - a gate that silently fails to fail. Observed 2026-08-04: reported 1.57 MB for a
+# binary that was actually 1.23 MB.
+if (Test-Path $outExe) { Remove-Item $outExe -Force }
+
 & $ahk2exe /in (Join-Path $root "src\main.ahk") `
            /out $outExe `
            /base $base `
