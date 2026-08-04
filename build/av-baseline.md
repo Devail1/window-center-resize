@@ -96,3 +96,46 @@ thing you ship, not a proxy for it.**
 Standing: the single remaining hit is one behavioural/ML engine on an unsigned binary.
 Code signing remains **required before any paid product** (see above), but is not blocking
 this free release.
+
+### VirusTotal — the 2.0.0 release binary, 2026-08-04
+
+`dist/WindowCenterResizer.exe`, 1,289,216 bytes
+SHA-256 `b2adcd403b945fbbb14d7c997cdd820608a14ea712974965e7a6d6865290dd65`
+
+**4 of 70.** All generic ML/heuristic; no named malware family.
+
+| Engine | Verdict |
+|---|---|
+| Microsoft | `Trojan:Win32/Wacatac.C!ml` |
+| Malwarebytes | `Malware.Heuristic.2099` |
+| Skyhigh (SWG) | `BehavesLike.Win64.Dropper.th` |
+| Zillya | `Trojan.GenKryptik.Win64.70405` |
+
+**The number moves with the binary** — three scans, three results:
+stub **3/70** → build with the old Electron icon **1/70** → this build **4/70**.
+⭐ That is why the rule is *scan the artifact you upload*, not a proxy for it. Publishing the
+1/70 build's reputation alongside a 4/70 file would have been a false claim.
+
+**Hypothesis tested and FALSIFIED.** I suspected the PNG-compressed icon frames raised the
+resource section's entropy. Measured: PNG frames 7.829 bits/byte, BMP frames 7.863 — the BMP
+variant is marginally *higher*. The candidate was discarded unscanned rather than spending a
+scan on a disproven idea. ⛔ **Do not iterate the binary against these heuristics** — 70
+non-deterministic engines, one scan per attempt, no mechanism to reason about. That is
+cargo-culting, not debugging.
+
+**Counter-evidence, and it is the load-bearing one:** local Windows Defender has
+`RealTimeProtectionEnabled = True` and **no detection recorded for this file**, on a machine
+where the binary has been built and run repeatedly. VirusTotal's Microsoft engine is far more
+aggressive than the Defender a user actually runs.
+
+**GATE VERDICT: FAILS the pre-registered threshold** (0–2 detections, Defender clean). Recorded
+as a failure, not redefined.
+
+**DECISION — Liav, 2026-08-04: publish anyway.** Reasoning, stated so it can be judged later:
+the gate was a *proxy* for "will users be blocked", and direct measurement of that says no; all
+four hits are generic ML with no family attribution; every other major vendor is clean; the
+source is public and independently buildable; and the product is free, so no one is paying for
+a warning. ⛔ **The root cause is unsigned + zero reputation. Code signing remains REQUIRED
+before any paid product** — that is not deferred by this decision, only unblocked for a free one.
+
+**Action taken:** false-positive reports to be submitted to Microsoft and Malwarebytes.
