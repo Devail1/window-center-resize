@@ -21,13 +21,50 @@ jobs:
           if (-not (Test-Path $exe)) { throw "AutoHotkey64.exe not found after extracting $url" }
           "AHK_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      # AutoHotkey64.exe is a GUI-subsystem binary, so PowerShell's `&` operator does NOT
+      # block on it - it launches the process and returns immediately, leaving $LASTEXITCODE
+      # holding whatever it held before. This job previously read four exit codes from four
+      # processes that had not finished: it FAILED on a fully green suite, and would equally
+      # have PASSED on a red one.
+      #
+      # Piping through Out-String forces PowerShell to drain the process's output stream,
+      # which cannot complete until the process exits. Measured both directions: a passing
+      # suite yields exit 0, and a deliberately broken assertion yields exit 1 with the
+      # failure text captured.
+      #
+      # This step exists so that if the wait mechanism ever regresses, CI says so HERE rather
+      # than silently passing every future run. It must stay before the real tests.
+      - name: Self-check - prove the runner can detect a failing test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $probe = Join-Path $env:RUNNER_TEMP "_exit_probe.ahk"
+          @"
+          #Requires AutoHotkey v2.0
+          FileAppend("probe: deliberately failing`n", "*")
+          ExitApp(1)
+          "@ | Set-Content -Path $probe -Encoding UTF8
+          $out = & $env:AHK_EXE /ErrorStdOut $probe 2>&1 | Out-String
+          Write-Host "probe output : $($out.Trim())"
+          Write-Host "probe exit   : $LASTEXITCODE"
+          if ($LASTEXITCODE -ne 1) {
+            throw "SELF-CHECK FAILED: a script that exits 1 was observed as $LASTEXITCODE. " +
+                  "The runner is not waiting for AutoHotkey to finish, so every test result " +
+                  "below is meaningless. Fix the invocation before trusting this job."
+          }
+          Write-Host "Self-check passed - a failing test will be detected."
+
       - name: Run unit tests
         shell: pwsh
         run: |
           $failed = 0
           Get-ChildItem tests\test_*.ahk | ForEach-Object {
             Write-Host "--- $($_.Name)"
-            & $env:AHK_EXE /ErrorStdOut $_.FullName
-            if ($LASTEXITCODE -ne 0) { $failed = 1 }
+            $out = & $env:AHK_EXE /ErrorStdOut $_.FullName 2>&1 | Out-String
+            Write-Host $out.Trim()
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "    ^ FAILED (exit $LASTEXITCODE)"
+              $failed = 1
+            }
           }
           exit $failed
