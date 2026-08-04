@@ -10,6 +10,8 @@
 
 <hr/>
 
+<img src="assets/settings-window.png" alt="The settings window" width="346">
+
 ## Features
 
 Window Center & Resizer is a utility application for Windows that allows you to easily center and resize windows on your desktop using customizable keyboard shortcuts. It is a **single portable executable of about 1.2 MB** — nothing to install, and no runtime to bring along.
