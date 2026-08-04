@@ -97,4 +97,12 @@ A_TrayMenu.Add("Exit", (*) => ExitApp())
 A_TrayMenu.Default := "Settings"
 A_IconTip := APP_NAME " " APP_VERSION
 
+; The compiled exe embeds assets\icon.ico via Ahk2Exe /icon, and AutoHotkey uses that for
+; the tray automatically. Running from SOURCE there is no embedded icon, so load it from
+; the repo — otherwise development shows AutoHotkey's default green H in the tray.
+; Guarded and wrapped: a missing or unreadable icon must never stop the app starting.
+if !A_IsCompiled {
+    try TraySetIcon(A_ScriptDir "\..\assets\icon.ico")
+}
+
 RegisterHotkeys(SETTINGS)

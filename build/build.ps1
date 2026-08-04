@@ -8,6 +8,15 @@ $outExe   = Join-Path $outDir "WindowCenterResizer.exe"
 
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
+# Fail fast if the target is running. Ahk2Exe cannot overwrite a locked file and does not
+# error - it blocks indefinitely, which looks like a broken toolchain rather than "your app
+# is open". Observed 2026-08-04: a test instance left running hung the build until killed.
+$running = Get-Process -Name "WindowCenterResizer" -ErrorAction SilentlyContinue
+if ($running) {
+    throw ("Cannot build: WindowCenterResizer.exe is running (PID {0}). " -f ($running.Id -join ", ")) +
+          "Exit it from the tray, then rebuild."
+}
+
 & $ahk2exe /in (Join-Path $root "src\main.ahk") `
            /out $outExe `
            /base $base `
