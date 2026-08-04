@@ -34,7 +34,14 @@ AutoHotkey v2 executable.
 - **Manual update check** from the tray menu. It reads the latest published version number
   and offers to open the releases page in your browser. It never downloads anything.
 - **Settings simplified** — the tabs are gone. One window: two hotkeys and three size
-  presets.
+  presets, with **Save**, **Reset** and **Close**.
+- **Shortcuts are captured, not typed.** Click a hotkey field and press the combination —
+  it is shown as keys, not as `^+c`. Windows-key combinations cannot be captured by that
+  field; set those in `settings.ini` and the settings window leaves them alone rather than
+  overwriting them.
+- **Reset** puts the default hotkeys and presets back into the window. Nothing is written
+  until you press Save, so a reset can be abandoned with Close.
+- The title bar read `Window Center && Resizer`. It reads `Window Center & Resizer`.
 
 ## 1.0.2
 

@@ -28,7 +28,7 @@ Window Center & Resizer is a utility application for Windows that allows you to 
 2. **Resize Window** — press the resize shortcut (default `F9`) to cycle through the size presets.
 3. **Customization** — open **Settings** from the tray icon, or edit `settings.ini` next to the executable.
 
-Hotkeys use AutoHotkey syntax: `^` is Ctrl, `+` is Shift, `!` is Alt, `#` is Win. So `Ctrl+Shift+C` is written `^+c`.
+To change a shortcut, click its field in Settings and press the keys you want — the combination is captured as you press it. **Windows-key combinations are the one exception:** the field cannot capture them, so set those by editing `settings.ini` directly, using AutoHotkey syntax (`#` is Win, `^` Ctrl, `+` Shift, `!` Alt — for example `Center=#Up`). A Win-key shortcut set that way is kept, not overwritten, if you later open and save Settings.
 
 ### Windows running as administrator
 

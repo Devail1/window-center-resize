@@ -6,7 +6,7 @@
 #Include "lib\UpdateCheck.ahk"
 #Include "gui\SettingsWindow.ahk"
 
-global APP_NAME := "Window Center && Resizer"
+global APP_NAME := "Window Center & Resizer"
 global APP_VERSION := "2.0.0"
 global INI_PATH := A_ScriptDir "\settings.ini"
 ; An unhandled runtime error in a GUI app is a modal AutoHotkey dialog with a line number
