@@ -39,14 +39,22 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $probe = Join-Path $env:RUNNER_TEMP "_exit_probe.ahk"
-          @"
+          # LITERAL here-string (@' '@), not @" "@. AutoHotkey's newline escape is a backtick-n,
+          # which is ALSO PowerShell's newline escape - an expanding here-string consumes it and
+          # splits the AHK string literal across two lines, producing a syntax error instead of
+          # the intended exit 1. Same trap as an em dash in a .ps1: one character, two layers.
+          @'
           #Requires AutoHotkey v2.0
           FileAppend("probe: deliberately failing`n", "*")
           ExitApp(1)
-          "@ | Set-Content -Path $probe -Encoding UTF8
+          '@ | Set-Content -Path $probe -Encoding UTF8
           $out = & $env:AHK_EXE /ErrorStdOut $probe 2>&1 | Out-String
           Write-Host "probe output : $($out.Trim())"
           Write-Host "probe exit   : $LASTEXITCODE"
+          if ($LASTEXITCODE -eq 2) {
+            throw "SELF-CHECK FAILED: the probe script did not parse (AutoHotkey exit 2). " +
+                  "The probe itself is broken, not the runner. Output above shows the syntax error."
+          }
           if ($LASTEXITCODE -ne 1) {
             throw "SELF-CHECK FAILED: a script that exits 1 was observed as $LASTEXITCODE. " +
                   "The runner is not waiting for AutoHotkey to finish, so every test result " +
