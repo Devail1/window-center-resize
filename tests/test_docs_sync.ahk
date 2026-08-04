@@ -11,18 +11,31 @@ root := A_ScriptDir "\.."
 ; PNG IHDR: 8-byte signature, 4-byte length, 4-byte type, then width as a BIG-ENDIAN uint32
 ; at byte offset 16.
 PngWidth(path) {
-    f := FileOpen(path, "r")
-    if (!f)
+    ; FileOpen throws an OSError (not a falsy return) when the file doesn't exist, so the
+    ; whole body is wrapped: any failure to open or read means "not a readable PNG" -> 0.
+    try {
+        f := FileOpen(path, "r")
+        if (!f)
+            return 0
+        b := Buffer(24, 0)
+        f.RawRead(b, 24)
+        f.Close()
+        return (NumGet(b, 16, "UChar") << 24) | (NumGet(b, 17, "UChar") << 16)
+             | (NumGet(b, 18, "UChar") << 8)  |  NumGet(b, 19, "UChar")
+    } catch {
         return 0
-    b := Buffer(24, 0)
-    f.RawRead(b, 24)
-    f.Close()
-    return (NumGet(b, 16, "UChar") << 24) | (NumGet(b, 17, "UChar") << 16)
-         | (NumGet(b, 18, "UChar") << 8)  |  NumGet(b, 19, "UChar")
+    }
 }
 
 BytesEqual(pathA, pathB) {
-    a := FileRead(pathA, "RAW"), b := FileRead(pathB, "RAW")
+    ; AssertEqual doesn't stop the script on failure, so this runs even when a prior
+    ; readability assertion has already failed - a missing file must read as "not equal",
+    ; not crash the suite before ReportAndExit can report the earlier failure by name.
+    try {
+        a := FileRead(pathA, "RAW"), b := FileRead(pathB, "RAW")
+    } catch {
+        return false
+    }
     if (a.Size != b.Size)
         return false
     loop a.Size {
@@ -46,6 +59,7 @@ docsPng   := root "\docs\settings-window.png"
 
 w := PngWidth(assetsPng)
 AssertEqual(w > 0, true, "the assets screenshot is a readable PNG")
+AssertEqual(PngWidth(docsPng) > 0, true, "the docs screenshot is a readable PNG")
 AssertEqual(PngWidth(docsPng), w, "both screenshot copies are the same pixel width")
 AssertEqual(BytesEqual(assetsPng, docsPng), true
           , "THE ONE THAT MATTERS: the two screenshot copies are byte-identical")
