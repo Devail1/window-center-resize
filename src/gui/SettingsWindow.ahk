@@ -100,11 +100,15 @@ ShowSettingsWindow(iniPath, onSaved) {
         }
     }
 
-    ; Right-aligned, Save last: Windows places the primary action rightmost, and `Default`
-    ; makes it the accent-filled button Windows 11 draws for the default push button.
-    ; 360 content - (3 x 96) - (2 x 8 gap) = 56px left offset.
-    btnReset := g.Add("Button", "xm+56 y+24 w96", "Reset")
-    btnClose := g.Add("Button", "x+8 w96", "Close")
+    ; Reset repopulates every field from defaults and cannot be undone by the user once it
+    ; runs, so it must not sit adjacent to the commit pair where a misclick lands on it
+    ; instead of Close or Save. It gets its own position at the left margin; Close and Save
+    ; stay right-aligned as a pair, with Save last since Windows places the primary action
+    ; rightmost, and `Default` makes it the accent-filled button Windows 11 draws for the
+    ; default push button.
+    ; 360 content, right-hand pair = 96 + 8 + 96 = 200, so the pair starts at 360 - 200 = 160.
+    btnReset := g.Add("Button", "xm y+24 w96", "Reset")
+    btnClose := g.Add("Button", "xm+160 yp w96", "Close")
     btnSave  := g.Add("Button", "x+8 w96 Default", "Save")
 
     btnSave.OnEvent("Click", (*) => _Save())
@@ -171,5 +175,10 @@ ShowSettingsWindow(iniPath, onSaved) {
     _settingsGui := g
     _settingsPopulate := _Populate
     _Populate(s)
+    ; A settings window should open with focus in its first field, not on a button. In Win32
+    ; a focused button takes over Enter even when another button carries `Default`, so
+    ; without this, Enter could fire whichever button happened to hold focus — and Reset
+    ; discarding the user's settings on a stray Enter is the worst available outcome.
+    hCenter.Focus()
     g.Show()
 }
