@@ -1,19 +1,15 @@
 ---
 name: Question
-about: Ask a question.❓
+about: How do I…?
 labels: 'question'
 ---
 
-## Summary
+**What are you trying to do?**
 
-<!-- What do you need help with? -->
+<!-- Ask away. A few things that come up often:
 
-<!---
-❗️❗️ Also, please consider donating (https://opencollective.com/electron-react-boilerplate-594) ❗️❗️
-
-Donations will ensure the following:
-
-🔨 Long term maintenance of the project
-🛣 Progress on the roadmap
-🐛 Quick responses to bug reports and help requests
- -->
+     - Settings live in `settings.ini`, in the same folder as the .exe.
+     - Hotkeys use AutoHotkey syntax: ^ is Ctrl, + is Shift, ! is Alt, # is Win.
+       So Ctrl+Shift+C is written as ^+c.
+     - The app is portable: move the .exe somewhere else and it starts with default
+       settings, because settings.ini stays behind in the old folder. -->
