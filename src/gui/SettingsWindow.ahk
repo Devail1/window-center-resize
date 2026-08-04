@@ -62,10 +62,10 @@ ShowSettingsWindow(iniPath, onSaved) {
     g.Add("Text", "xm y+2 w300", "Click a field and press the keys you want.")
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
-    g.Add("Text", "xm y+12 w76", "Center")
-    hCenter := g.Add("Hotkey", "x+18 yp-3 w206")
-    g.Add("Text", "xm y+10 w76", "Resize")
-    hResize := g.Add("Hotkey", "x+18 yp-3 w206")
+    g.Add("Text", "xm y+12 w106", "Center")
+    hCenter := g.Add("Hotkey", "x+18 yp-3 w176")
+    g.Add("Text", "xm y+10 w106", "Resize")
+    hResize := g.Add("Hotkey", "x+18 yp-3 w176")
 
     ; --- Size presets ----------------------------------------------------------------------
     g.SetFont("s11 w600 c" th["header"], "Segoe UI")
@@ -77,13 +77,13 @@ ShowSettingsWindow(iniPath, onSaved) {
     edits := []
     loop 3 {
         i := A_Index
-        g.Add("Text", "xm y+10 w76", "Preset " i)
-        ew := g.Add("Edit", "x+18 yp-3 w88 Number")
+        g.Add("Text", "xm y+10 w106", "Preset " i)
+        ew := g.Add("Edit", "x+18 yp-3 w73 Number")
         ; The multiplication sign, not the letter x — this is a dimension, not a form field.
         g.SetFont("s10 w400 c" th["hint"], "Segoe UI")
         g.Add("Text", "x+6 yp+3 w18 Center", "×")
         g.SetFont("s10 w400 c" th["text"], "Segoe UI")
-        eh := g.Add("Edit", "x+6 yp-3 w88 Number")
+        eh := g.Add("Edit", "x+6 yp-3 w73 Number")
         edits.Push({ w: ew, h: eh })
     }
 
