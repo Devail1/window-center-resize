@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Window Center &amp; Resizer — centre and resize any window with a keystroke</title>
+<meta name="description" content="A 1.2 MB Windows utility that centres and resizes the active window from a keyboard shortcut. One portable executable. No installer, no runtime, no telemetry. Free and open source.">
+<link rel="icon" href="icon.png">
+<meta property="og:title" content="Window Center &amp; Resizer">
+<meta property="og:description" content="Centre and resize any window with a keystroke. 1.2 MB, one portable executable, free.">
+<meta property="og:image" content="settings-window.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16181a; --ink-2:#4a5054; --ink-3:#8b9296;
+  --paper:#f4f3f0; --paper-2:#eceae5; --rule:#c9c6bf;
+  --hair:.5px;
+  --sans:"IBM Plex Sans",-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --ink:#e8e6e1; --ink-2:#a3a8ab; --ink-3:#6b7175;
+         --paper:#121415; --paper-2:#191c1d; --rule:#2e3335; }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    linear-gradient(var(--rule) var(--hair),transparent var(--hair)),
+    linear-gradient(90deg,var(--rule) var(--hair),transparent var(--hair));
+  background-size:96px 96px; background-position:-1px -1px;
+}
+body::before{ /* paper grain */
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:99; opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.sheet{max-width:920px;margin:0 auto;padding:0 28px;
+  border-left:var(--hair) solid var(--rule); border-right:var(--hair) solid var(--rule);
+  background:var(--paper);}
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.rule{border-top:var(--hair) solid var(--rule)}
+
+/* ── masthead ───────────────────────────────────────── */
+header{display:flex;align-items:flex-start;gap:18px;padding:38px 0 26px}
+header img{width:46px;height:46px;flex:none;image-rendering:auto}
+h1{font-size:22px;font-weight:600;letter-spacing:-.015em;line-height:1.2}
+.sub{color:var(--ink-2);font-size:14px;margin-top:2px}
+.meta{margin-left:auto;text-align:right;flex:none}
+
+/* ── hero: the product, demonstrated ────────────────── */
+.stage{position:relative;padding:52px 0 44px;text-align:center}
+.viewport{
+  position:relative;width:min(420px,84vw);aspect-ratio:16/10;margin:0 auto;
+  border:var(--hair) solid var(--rule);background:var(--paper-2);
+}
+.viewport::before,.viewport::after{ /* crosshair */
+  content:"";position:absolute;background:var(--rule);opacity:0;
+  animation:cross 6s cubic-bezier(.2,.9,.2,1) infinite;
+}
+.viewport::before{left:50%;top:0;bottom:0;width:var(--hair)}
+.viewport::after{top:50%;left:0;right:0;height:var(--hair)}
+.win{
+  position:absolute;width:46%;height:46%;background:var(--paper);
+  border:1px solid var(--ink-2);
+  left:8%;top:10%;
+  animation:centre 6s cubic-bezier(.2,.9,.2,1) infinite;
+}
+.win span{position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;
+  border-radius:50%;background:var(--ink-2)}
+@keyframes centre{
+  0%,26%   {left:8%;   top:10%}
+  46%,72%  {left:27%;  top:27%}
+  92%,100% {left:8%;   top:10%}
+}
+@keyframes cross{ 0%,30%{opacity:0} 46%,70%{opacity:1} 86%,100%{opacity:0} }
+@media (prefers-reduced-motion:reduce){
+  .win{animation:none;left:27%;top:27%}
+  .viewport::before,.viewport::after{animation:none;opacity:1}
+}
+.tick{position:absolute;width:9px;height:9px;border:var(--hair) solid var(--ink-3)}
+.tick.tl{left:-1px;top:-1px;border-right:0;border-bottom:0}
+.tick.tr{right:-1px;top:-1px;border-left:0;border-bottom:0}
+.tick.bl{left:-1px;bottom:-1px;border-right:0;border-top:0}
+.tick.br{right:-1px;bottom:-1px;border-left:0;border-top:0}
+.pitch{font-size:clamp(26px,5vw,40px);font-weight:500;letter-spacing:-.03em;line-height:1.15;margin:34px auto 0;max-width:16ch}
+.pitch em{font-style:normal;color:var(--ink-3)}
+.stage p.lede{color:var(--ink-2);margin:14px auto 0;max-width:46ch;font-size:15px}
+
+/* ── download ───────────────────────────────────────── */
+.get{display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px 0 40px}
+.btn{
+  display:inline-flex;align-items:center;gap:12px;
+  background:var(--ink);color:var(--paper);text-decoration:none;
+  font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  padding:15px 30px;border:1px solid var(--ink);
+  transition:background .16s ease,color .16s ease;
+}
+.btn:hover{background:transparent;color:var(--ink)}
+.btn svg{width:13px;height:13px}
+.get small{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em}
+
+/* ── spec table ─────────────────────────────────────── */
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));border-top:var(--hair) solid var(--rule)}
+.spec div{padding:20px 20px 20px 0;border-bottom:var(--hair) solid var(--rule)}
+.spec dt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.spec dd{font-size:19px;font-weight:500;letter-spacing:-.01em}
+.spec dd small{display:block;font-size:12px;font-weight:400;color:var(--ink-2);letter-spacing:0;margin-top:3px}
+
+/* ── shot + prose ───────────────────────────────────── */
+section{padding:44px 0;border-top:var(--hair) solid var(--rule)}
+h2{font-size:12px;font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:20px}
+.shot{border:var(--hair) solid var(--rule);background:var(--paper-2);padding:26px;display:flex;justify-content:center}
+.shot img{max-width:100%;height:auto;display:block}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:26px;margin-top:22px}
+.cols h3{font-size:15px;font-weight:600;margin-bottom:5px}
+.cols p{font-size:14px;color:var(--ink-2)}
+kbd{font-family:var(--mono);font-size:12px;border:var(--hair) solid var(--rule);padding:1px 6px;background:var(--paper-2)}
+.note{font-size:13px;color:var(--ink-2);border-left:2px solid var(--rule);padding-left:16px;margin-top:22px}
+footer{padding:34px 0 60px;display:flex;flex-wrap:wrap;gap:14px 26px;align-items:baseline;border-top:var(--hair) solid var(--rule)}
+footer a{color:var(--ink);text-decoration:none;border-bottom:var(--hair) solid var(--rule);font-size:14px}
+footer a:hover{border-bottom-color:var(--ink)}
+footer .mono{margin-left:auto}
+@media(max-width:640px){ header{flex-wrap:wrap} .meta{margin-left:0;text-align:left;width:100%} footer .mono{margin-left:0;width:100%} }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <img src="icon.png" alt="">
+    <div>
+      <h1>Window Center &amp; Resizer</h1>
+      <div class="sub">A Windows utility that does one thing.</div>
+    </div>
+    <div class="meta mono">v2.0.0 · 1.23 MB<br>MIT · free</div>
+  </header>
+
+  <div class="stage">
+    <div class="viewport">
+      <i class="tick tl"></i><i class="tick tr"></i><i class="tick bl"></i><i class="tick br"></i>
+      <div class="win"><span></span></div>
+    </div>
+    <h2 class="pitch">Centre any window.<br><em>One keystroke.</em></h2>
+    <p class="lede">Press a shortcut and the active window snaps to the middle of your screen — or cycles through size presets. That is the entire program.</p>
+  </div>
+
+  <div class="get">
+    <a class="btn" href="https://github.com/Devail1/window-center-resize/releases/latest/download/Window-Center-Resize.exe">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1v10M4 7.5 8 11.5l4-4M2 14h12"/></svg>
+      Download for Windows
+    </a>
+    <small>1.23 MB · no installer · Windows 10 &amp; 11</small>
+  </div>
+
+  <dl class="spec">
+    <div><dt>Size</dt><dd>1.23 MB<small>One file. Version 1.x was 64 MB.</small></dd></div>
+    <div><dt>Install</dt><dd>None<small>Portable. Run it from anywhere.</small></dd></div>
+    <div><dt>Dependencies</dt><dd>Zero<small>No runtime, no .NET, no Electron.</small></dd></div>
+    <div><dt>Price</dt><dd>Free<small>MIT licensed. Source on GitHub.</small></dd></div>
+  </dl>
+
+  <section>
+    <h2>Settings</h2>
+    <div class="shot"><img src="settings-window.png" alt="The settings window: hotkey fields for Center and Resize, three size presets, and Save, Reset and Close buttons." width="346" loading="lazy"></div>
+    <div class="cols">
+      <div><h3>One screen</h3><p>Two shortcuts and three size presets. There is no second tab, and there will not be one.</p></div>
+      <div><h3>Press the keys</h3><p>Click a field and press the combination you want. No syntax to memorise.</p></div>
+      <div><h3>Lives beside the app</h3><p>Settings are written to <kbd>settings.ini</kbd> next to the executable, so a USB stick carries them with it.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Defaults</h2>
+    <div class="cols">
+      <div><h3><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>C</kbd></h3><p>Centre the active window without changing its size.</p></div>
+      <div><h3><kbd>F9</kbd></h3><p>Cycle the active window through 50%, 75% and 90% of the screen's work area.</p></div>
+    </div>
+    <p class="note">The executable is unsigned, so Windows may show a SmartScreen prompt the first time you run it. The full source is on GitHub and builds with a single command.</p>
+  </section>
+
+  <footer>
+    <a href="https://github.com/Devail1/window-center-resize">Source on GitHub</a>
+    <a href="https://github.com/Devail1/window-center-resize/releases">All releases</a>
+    <a href="https://github.com/Devail1/window-center-resize/issues">Report a problem</a>
+    <span class="mono">Built by Liav Edry</span>
+  </footer>
+
+</div>
+</body>
+</html>
