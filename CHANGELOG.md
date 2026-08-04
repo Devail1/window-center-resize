@@ -7,12 +7,16 @@ remains unchanged.
 
 ### Interface
 
-- **Settings window redesigned.** Section headers now have grey hint lines instead of
-  inline text. Action buttons repositioned to the bottom right, with **Save** as default.
-  Content width 320 → 360 pixels, margins 14/12 → 16/16. Width–height separator is `×`
-  instead of `x`.
-- **Font fallback for Windows 10.** The UI now correctly renders with Segoe UI Variable
-  on Windows 11 and Segoe UI on Windows 10.
+- **Settings window redesigned.** Each section now has a bold heading with a short grey
+  caption underneath, instead of an inline sentence, and the Hotkeys and Size-presets rows
+  share one column grid with more space between labels and their fields. The window itself
+  is narrower, and body text is slightly larger than in 2.0.0.
+- **Reset separated from Save and Close.** Reset now sits alone at the bottom left; Close
+  and Save are grouped at the bottom right, with **Save** as the default button. The
+  window also opens with focus on Save instead of a hotkey field, so Enter saves right
+  away.
+- No behaviour changed — hotkeys, presets, saving and validation all work exactly as
+  before.
 
 ## 2.0.0
 
