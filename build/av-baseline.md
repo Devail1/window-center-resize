@@ -69,3 +69,30 @@ genuine regression on that one axis, traded for a 50x size reduction.
    eligibility". Azure Trusted Signing ($9.99/mo) is US/Canada-gated and likely unavailable
    in Israel → a CA certificate at roughly $200–600/year. Verify Israeli eligibility before
    committing to utility #2.
+
+### VirusTotal — THE REAL BINARY, 2026-08-04
+
+`dist/WindowCenterResizer.exe`, 1.57 MB
+SHA-256 `378895686239aeac2d3fab93a9cf56bbeda38b6f7025f9abd0b9d2af4dbec469`
+
+**1 of 70. Microsoft: UNDETECTED.**
+
+| Engine | Verdict |
+|---|---|
+| Skyhigh (SWG) | `BehavesLike.Win64.Dropper.th` |
+| **Microsoft** | **Undetected** |
+| Everything else (Kaspersky, BitDefender, ESET, Sophos, Symantec, CrowdStrike, SentinelOne, …) | Undetected |
+
+⭐ **The real product scores BETTER than the hello-world stub** (3/70 including
+`Trojan:Win32/Wacatac.B!ml`). Microsoft went from a detection to clean once the binary
+contained the real icon and 348 lines of actual code — the empty stub read as more
+suspicious to Defender's ML than the finished app does.
+
+✅ **GATE PASSES.** The pre-registered threshold was 0–2 detections with Defender clean.
+The stub failed it (3, Microsoft flagging); the shipping artifact passes it (1, Microsoft
+clean). Not a waiver and not a redefinition — the artifact changed. ⭐ **Lesson: scan the
+thing you ship, not a proxy for it.**
+
+Standing: the single remaining hit is one behavioural/ML engine on an unsigned binary.
+Code signing remains **required before any paid product** (see above), but is not blocking
+this free release.
