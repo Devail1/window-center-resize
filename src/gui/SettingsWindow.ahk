@@ -62,7 +62,11 @@ ShowSettingsWindow(iniPath, onSaved) {
     g.Add("Text", "xm y+2 w300", "Click a field and press the keys you want.")
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
-    g.Add("Text", "xm y+12 w106", "Center")
+    ; Spacing ladder, each distinguishable from its neighbour: 2 (header->subtitle) /
+    ; 10 (row->row) / 20 (subtitle->first row) / 24 (section->section). The subtitle sat only
+    ; 2px further from "Center" than "Center" sits from "Resize", so it read as another form
+    ; row instead of a caption under the bold header. Do not collapse this back to a constant.
+    g.Add("Text", "xm y+20 w106", "Center")
     hCenter := g.Add("Hotkey", "x+18 yp-3 w176")
     g.Add("Text", "xm y+10 w106", "Resize")
     hResize := g.Add("Hotkey", "x+18 yp-3 w176")
@@ -77,7 +81,10 @@ ShowSettingsWindow(iniPath, onSaved) {
     edits := []
     loop 3 {
         i := A_Index
-        g.Add("Text", "xm y+10 w106", "Preset " i)
+        ; Same ladder as the Hotkeys section above: only the first preset row sits directly
+        ; under the subtitle (20px), rows 2 and 3 follow the normal row-to-row gap (10px).
+        rowGap := (i = 1) ? 20 : 10
+        g.Add("Text", "xm y+" rowGap " w106", "Preset " i)
         ew := g.Add("Edit", "x+18 yp-3 w73 Number")
         ; The multiplication sign, not the letter x — this is a dimension, not a form field.
         g.SetFont("s10 w400 c" th["hint"], "Segoe UI")
