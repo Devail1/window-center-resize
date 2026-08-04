@@ -12,7 +12,7 @@
 
 <hr/>
 
-<img src="assets/settings-window.png" alt="The settings window" width="346">
+<img src="assets/settings-window.png" alt="The settings window" width="334">
 
 ## Features
 
