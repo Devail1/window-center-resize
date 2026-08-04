@@ -33,7 +33,8 @@ while (-not (Test-Path $outExe) -and $waited -lt 5000) {
 }
 if (-not (Test-Path $outExe)) { throw "Compilation produced no output" }
 
+$maxMB  = 2.0
 $sizeMB = (Get-Item $outExe).Length / 1MB
 Write-Host ("Built {0} — {1:N2} MB" -f $outExe, $sizeMB)
-if ($sizeMB -gt 2.0) { throw ("SIZE GATE FAILED: {0:N2} MB exceeds the 2 MB target" -f $sizeMB) }
+if ($sizeMB -gt $maxMB) { throw ("SIZE GATE FAILED: {0:N2} MB exceeds the {1:N2} MB target" -f $sizeMB, $maxMB) }
 Write-Host "Size gate passed."

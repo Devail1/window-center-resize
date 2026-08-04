@@ -16,6 +16,14 @@ IsValidHotkey(hk) {
     bare := RegExReplace(hk, "[\^\+\!\#\<\>\*\~\$]", "")
     if (bare = "")
         return false
+    ; A bare SINGLE PRINTABLE CHARACTER with no modifier (e.g. "c") registers `c::`, which
+    ; suppresses the native keypress SYSTEM-WIDE — including inside the settings box where
+    ; the user would type "^+c" to undo it — and it persists to the INI, so a restart
+    ; reapplies it. Reject it. NAMED keys are unaffected because their names are longer than
+    ; one character: F9 (the DEFAULT resize hotkey), Up, PrintScreen all stay valid without
+    ; a modifier.
+    if (StrLen(bare) = 1 && !RegExMatch(hk, "[\^\+\!\#]"))
+        return false
     try {
         HotIf(_HotkeyProbeContext)
         Hotkey(hk, (*) => 0, "Off")

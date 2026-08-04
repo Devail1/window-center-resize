@@ -12,6 +12,17 @@ global INI_PATH := A_ScriptDir "\settings.ini"
 global SETTINGS := SettingsLoad(INI_PATH)
 global SIZE_INDEX := 0        ; 0 so the FIRST press selects preset 1 (fixes Bug D)
 
+; An unhandled runtime error in a GUI app is a modal AutoHotkey dialog with a line number
+; on a stranger's desktop. Catch anything that escapes and say something a human can act on.
+OnError(_UncaughtAppError)
+_UncaughtAppError(err, mode) {
+    MsgBox("Something went wrong:`n`n" err.Message
+         . "`n`nThe app will keep running. If this repeats, please report it at`n"
+         . "https://github.com/Devail1/window-center-resize/issues"
+         , APP_NAME, "Icon!")
+    return 1        ; non-zero return suppresses AutoHotkey's default error dialog
+}
+
 _ReportStatus(status) {
     if (status = "no-window")
         TrayTip(APP_NAME, "No active window found.")
@@ -30,11 +41,16 @@ DoCenter(*) {
 
 DoResize(*) {
     global SIZE_INDEX, SETTINGS
-    SIZE_INDEX += 1
-    if (SIZE_INDEX > SETTINGS["sizes"].Length)
-        SIZE_INDEX := 1
-    p := SETTINGS["sizes"][SIZE_INDEX]
-    _ReportStatus(ApplyRectToActiveWindow(p.w, p.h))
+    ; Advance a CANDIDATE index and only commit it once the move succeeds — otherwise three
+    ; failed presses on an elevated window silently skip three presets.
+    next := SIZE_INDEX + 1
+    if (next > SETTINGS["sizes"].Length)
+        next := 1
+    p := SETTINGS["sizes"][next]
+    status := ApplyRectToActiveWindow(p.w, p.h)
+    if (status = "ok")
+        SIZE_INDEX := next
+    _ReportStatus(status)
 }
 
 RegisterHotkeys(s) {
@@ -71,8 +87,16 @@ CheckForUpdates(*) {
     }
     if (CompareVersions(latest, APP_VERSION) > 0) {
         if (MsgBox("Version " latest " is available. You have " APP_VERSION ".`n`n"
-                 . "Open the download page?", APP_NAME, "YesNo Iconi") = "Yes")
-            Run(RELEASES_PAGE)
+                 . "Open the download page?", APP_NAME, "YesNo Iconi") = "Yes") {
+            ; Run throws if the machine has no registered https handler. Show the URL so the
+            ; user can copy it rather than letting a raw error dialog escape.
+            try {
+                Run(RELEASES_PAGE)
+            } catch {
+                MsgBox("Couldn't open your browser. The download page is:`n`n"
+                     . RELEASES_PAGE, APP_NAME, "Icon!")
+            }
+        }
     } else {
         MsgBox("You're up to date (" APP_VERSION ").", APP_NAME, "Iconi")
     }

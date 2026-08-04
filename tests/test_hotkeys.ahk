@@ -11,6 +11,16 @@ AssertEqual(IsValidHotkey("^"),    false, "modifiers alone are invalid")
 AssertEqual(IsValidHotkey("^+!#"), false, "only modifiers is invalid")
 AssertEqual(IsValidHotkey("NotAKey"), false, "an unknown key name is invalid")
 
+; A bare single printable character registers `c::` and SWALLOWS that key system-wide —
+; including in the settings box where the user would type the replacement — and it persists
+; to the INI, so a restart reapplies it. It must be rejected.
+; ⚠️ NAMED keys with no modifier must still pass: F9 is the DEFAULT resize hotkey.
+AssertEqual(IsValidHotkey("c"),  false, "a bare single letter with no modifier is invalid")
+AssertEqual(IsValidHotkey("1"),  false, "a bare single digit with no modifier is invalid")
+AssertEqual(IsValidHotkey("^c"), true,  "the same letter WITH a modifier is valid")
+AssertEqual(IsValidHotkey("F9"), true,  "F9 (the default resize hotkey) stays valid bare")
+AssertEqual(IsValidHotkey("Up"), true,  "a bare named key is valid")
+
 ; REGRESSION GUARD: AHK v2 cannot unregister a hotkey, so a validation probe registered in
 ; the DEFAULT context would permanently overwrite a live binding's callback and leave it
 ; disabled. Validation must therefore leave nothing addressable in the default context.
