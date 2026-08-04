@@ -35,7 +35,12 @@ an existing userbase.
 
 ## 4. Scan that exact file on VirusTotal, publish that hash
 
-⚠️ **The binary is not byte-reproducible.** Ahk2Exe embeds a build timestamp, so two builds
+4. Scan **that exact file** on VirusTotal and publish that hash. (The build IS deterministic:
+   two consecutive builds from unchanged source produce an identical SHA-256 — verified
+   2026-08-04. An earlier note here claimed otherwise; the differing hashes it was based on
+   came from source changes between builds, not from the compiler.) ⛔ Scan the artifact you
+   will actually upload — measured 2026-08-04: the stub scored 3/70, the build with the old
+   icon 1/70, and the shipping build 4/70. The number moves with the binary.
 of identical source have the same byte length and a different SHA-256.
 
 Therefore: build once → scan **that** file → upload **that** file → publish **that** hash.
