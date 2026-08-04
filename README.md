@@ -61,3 +61,8 @@ Contributions are welcome! If you have any suggestions, bug reports, or feature 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
+
+## Acknowledgements
+
+Versions 1.x were built on [electron-react-boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate).
+Version 2.0.0 is a ground-up rewrite in AutoHotkey v2 and no longer contains any of that code.
