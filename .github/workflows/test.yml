@@ -61,6 +61,11 @@ jobs:
                   "below is meaningless. Fix the invocation before trusting this job."
           }
           Write-Host "Self-check passed - a failing test will be detected."
+          # GitHub's pwsh runner appends `exit $LASTEXITCODE` to every step. This step
+          # deliberately runs a process that exits 1 - that is the entire point of it - so
+          # without an explicit exit the step inherits the probe's failure as its own verdict.
+          # It passed its own assertions and still failed the job until this line existed.
+          exit 0
 
       - name: Run unit tests
         shell: pwsh
