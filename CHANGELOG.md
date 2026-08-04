@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0
+
+This is a presentation release — the interface has been refreshed, but all functionality remains unchanged.
+
+### Interface
+
+- **Settings window redesigned.** Section headers display with grey hint lines instead of inline text. Action buttons repositioned to the bottom right corner, with **Save** as the default button. Content width expanded from 320 to 360 pixels, margins adjusted from 14/12 to 16/16. The width–height separator is now `×` instead of `x`.
+- **Font fallback for Windows 10.** The UI now uses Segoe UI Variable where available (Windows 11+), with fallback to Segoe UI. Without this fallback, Windows 10 users would experience silent font substitution by AutoHotkey, resulting in unintended rendering.
+
 ## 2.0.0
 
 Complete rewrite. The app was an Electron application; it is now a single compiled
