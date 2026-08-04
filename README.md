@@ -1,37 +1,38 @@
 <div align="left">
-  <img align="left" src="https://raw.githubusercontent.com/Devail1/window-center-resize/main/assets/icon.png" alt="Logo" width="70" height="70">
+  <img align="left" src="assets/icon.png" alt="Logo" width="70" height="70">
   <h3 style="margin-left:100px;">Window Center & Resizer</h3>
 
   <div>
     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
     <img src="https://img.shields.io/github/release/Devail1/window-center-resize.svg?color=purple" alt="GitHub release">
-    <a href="https://snyk.io/test/github/Devail1/window-center-resize">
-      <img src="https://snyk.io/test/github/Devail1/window-center-resize/badge.svg" alt="Known Vulnerabilities">
-    </a>
   <h3>The Open-Source Utility for Centering and Resizing Windows</h3>
 </div>
 
 <hr/>
 
-  <img align="top" src="https://res.cloudinary.com/di41jhirl/image/upload/v1722415826/mb3jp3gaherwkgme6vi4.png" alt="Center Window" style="width: 49%;"/>
-  <img src="https://res.cloudinary.com/di41jhirl/image/upload/v1722415826/fpcyvkh9llcwvrexelbz.png" alt="Resize Window" style="width: 49%;"/>
-
 ## Features
-Window Center & Resizer is a utility application for Windows that allows you to easily center and resize windows on your desktop using customizable keyboard shortcuts. It is a single portable executable — around 1.6 MB, with nothing to install and no runtime to bring along.
+
+Window Center & Resizer is a utility application for Windows that allows you to easily center and resize windows on your desktop using customizable keyboard shortcuts. It is a **single portable executable of about 1.2 MB** — nothing to install, and no runtime to bring along.
 
 - **Center Window**: Quickly center the active window on your screen.
-- **Resize Window**: Resize the active window to predefined sizes (small, medium, large) with customizable keyboard shortcuts.
-- **Customizable Keybinds**: Easily configure your preferred key combinations for centering and resizing windows.
+- **Resize Window**: Cycle the active window through three size presets, given as a percentage of the screen's work area. The defaults are 50%, 75% and 90%, and all three are editable.
+- **Customizable Keybinds**: Configure your preferred key combinations for centering and resizing.
 
 ## Installation
 
-To use Window Center & Resizer, [download](https://github.com/devail1/window-center-resize/releases/latest/download/Window-Center-Resize.exe) the latest release from the [GitHub repository](https://github.com/devail1/window-center-resize) and run the executable file.
+[Download](https://github.com/devail1/window-center-resize/releases/latest/download/Window-Center-Resize.exe) the latest release and run it. There is no installer — it is one executable.
 
 ## Usage
 
-1. **Center Window**: Press the specified key combination to center the active window.
-2. **Resize Window**: Press the specified key combination to resize the active window to small, medium, or large sizes.
-3. **Customization**: Open **Settings** from the tray icon, or edit the `settings.ini` file that sits next to the executable.
+1. **Center Window** — press the centering shortcut (default `Ctrl+Shift+C`) to center the active window without changing its size.
+2. **Resize Window** — press the resize shortcut (default `F9`) to cycle through the size presets.
+3. **Customization** — open **Settings** from the tray icon, or edit `settings.ini` next to the executable.
+
+Hotkeys use AutoHotkey syntax: `^` is Ctrl, `+` is Shift, `!` is Alt, `#` is Win. So `Ctrl+Shift+C` is written `^+c`.
+
+### Windows running as administrator
+
+A program that runs as administrator — Task Manager, an elevated terminal — cannot be moved by a program that does not. If you press a shortcut on one of those, the app will say so and offer **Restart as administrator** from the tray menu.
 
 ### Portability
 
@@ -60,9 +61,10 @@ Contributions are welcome! If you have any suggestions, bug reports, or feature 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements
 
-Versions 1.x were built on [electron-react-boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate).
-Version 2.0.0 is a ground-up rewrite in AutoHotkey v2 and no longer contains any of that code.
+The icon is [`square-dot`](https://lucide.dev/icons/square-dot) from [Lucide](https://lucide.dev), used under the [ISC License](https://github.com/lucide-icons/lucide/blob/main/LICENSE).
+
+Versions 1.x were built on [electron-react-boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate). Version 2.0.0 is a ground-up rewrite in AutoHotkey v2 and no longer contains any of that code.
