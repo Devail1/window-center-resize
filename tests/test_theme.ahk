@@ -24,14 +24,4 @@ AssertEqual(Theme("chartreuse")["bg"], Theme("light")["bg"]
 AssertEqual(Theme("")["bg"], Theme("light")["bg"]
           , "an empty mode falls back to light")
 
-; --- ResolveUiFont ---------------------------------------------------------------------------
-; A font that certainly exists must be returned unchanged.
-AssertEqual(ResolveUiFont("Segoe UI", "Tahoma"), "Segoe UI"
-          , "an installed family is used as-is")
-
-; NEGATIVE CONTROL. Without this the function could 'return preferred' unconditionally and
-; every other assertion here would still pass.
-AssertEqual(ResolveUiFont("ZZ No Such Face", "Segoe UI"), "Segoe UI"
-          , "THE ONE THAT MATTERS: a missing family falls back instead of being used silently")
-
 ReportAndExit()

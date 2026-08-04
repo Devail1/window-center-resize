@@ -49,42 +49,41 @@ ShowSettingsWindow(iniPath, onSaved) {
     loadedCenter := "", loadedResize := ""
 
     th := Theme("light")
-    uiFont := ResolveUiFont("Segoe UI Variable Text", "Segoe UI")
 
     g := Gui("-MaximizeBox -MinimizeBox", APP_TITLE)
     g.MarginX := 16, g.MarginY := 16
     g.BackColor := th["bg"]
-    g.SetFont("s10 w400 c" th["text"], uiFont)
+    g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
     ; --- Hotkeys ---------------------------------------------------------------------------
-    g.SetFont("s11 w600 c" th["header"], uiFont)
-    g.Add("Text", "xm w360", "Hotkeys")
-    g.SetFont("s9 w400 c" th["hint"], uiFont)
-    g.Add("Text", "xm y+2 w360", "Click a field and press the keys you want.")
-    g.SetFont("s10 w400 c" th["text"], uiFont)
+    g.SetFont("s11 w600 c" th["header"], "Segoe UI")
+    g.Add("Text", "xm w300", "Hotkeys")
+    g.SetFont("s9 w400 c" th["hint"], "Segoe UI")
+    g.Add("Text", "xm y+2 w300", "Click a field and press the keys you want.")
+    g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
     g.Add("Text", "xm y+12 w76", "Center")
-    hCenter := g.Add("Hotkey", "x+6 yp-3 w150")
+    hCenter := g.Add("Hotkey", "x+6 yp-3 w218")
     g.Add("Text", "xm y+10 w76", "Resize")
-    hResize := g.Add("Hotkey", "x+6 yp-3 w150")
+    hResize := g.Add("Hotkey", "x+6 yp-3 w218")
 
     ; --- Size presets ----------------------------------------------------------------------
-    g.SetFont("s11 w600 c" th["header"], uiFont)
-    g.Add("Text", "xm y+24 w360", "Size presets")
-    g.SetFont("s9 w400 c" th["hint"], uiFont)
-    g.Add("Text", "xm y+2 w360", "Percentage of the screen work area.")
-    g.SetFont("s10 w400 c" th["text"], uiFont)
+    g.SetFont("s11 w600 c" th["header"], "Segoe UI")
+    g.Add("Text", "xm y+24 w300", "Size presets")
+    g.SetFont("s9 w400 c" th["hint"], "Segoe UI")
+    g.Add("Text", "xm y+2 w300", "Percentage of the screen work area.")
+    g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
     edits := []
     loop 3 {
         i := A_Index
         g.Add("Text", "xm y+10 w76", "Preset " i)
-        ew := g.Add("Edit", "x+6 yp-3 w58 Number")
+        ew := g.Add("Edit", "x+6 yp-3 w72 Number")
         ; The multiplication sign, not the letter x — this is a dimension, not a form field.
-        g.SetFont("s10 w400 c" th["hint"], uiFont)
+        g.SetFont("s10 w400 c" th["hint"], "Segoe UI")
         g.Add("Text", "x+4 yp+3 w18 Center", "×")
-        g.SetFont("s10 w400 c" th["text"], uiFont)
-        eh := g.Add("Edit", "x+4 yp-3 w58 Number")
+        g.SetFont("s10 w400 c" th["text"], "Segoe UI")
+        eh := g.Add("Edit", "x+4 yp-3 w72 Number")
         edits.Push({ w: ew, h: eh })
     }
 
@@ -106,10 +105,10 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; stay right-aligned as a pair, with Save last since Windows places the primary action
     ; rightmost, and `Default` makes it the accent-filled button Windows 11 draws for the
     ; default push button.
-    ; 360 content, right-hand pair = 96 + 8 + 96 = 200, so the pair starts at 360 - 200 = 160.
-    btnReset := g.Add("Button", "xm y+24 w96", "Reset")
-    btnClose := g.Add("Button", "xm+160 yp w96", "Close")
-    btnSave  := g.Add("Button", "x+8 w96 Default", "Save")
+    ; 300 content, right-hand pair = 88 + 8 + 88 = 184, so the pair starts at 300 - 184 = 116.
+    btnReset := g.Add("Button", "xm y+24 w88", "Reset")
+    btnClose := g.Add("Button", "xm+116 yp w88", "Close")
+    btnSave  := g.Add("Button", "x+8 w88 Default", "Save")
 
     btnSave.OnEvent("Click", (*) => _Save())
     ; Reset fills the CONTROLS from the defaults and stops there. It must not touch the INI:

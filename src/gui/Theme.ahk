@@ -22,29 +22,3 @@ Theme(mode) {
         "header", "101010"
     )
 }
-
-; Segoe UI Variable ships with Windows 11 ONLY, and this app supports Windows 10 as well.
-; AHK's SetFont with a family that is not installed does NOT error — Windows silently
-; substitutes — so it would look right on a Windows 11 machine and wrong for every Windows 10
-; user, with no signal at all. Hence an actual presence check rather than an OS-version proxy.
-ResolveUiFont(preferred, fallback) {
-    return (_FaceActuallyUsed(preferred) = preferred) ? preferred : fallback
-}
-
-; GetTextFace reports the face the GDI mapper ACTUALLY resolved, which is what exposes
-; substitution. GetObject on the HFONT would return the face we ASKED for and can never
-; detect this — do not swap it in.
-_FaceActuallyUsed(request) {
-    g := Gui()                          ; created, never shown; destroyed below
-    g.SetFont("s10", request)
-    t := g.Add("Text", "w10", "M")
-    hFont := SendMessage(0x0031, 0, 0, , "ahk_id " t.Hwnd)     ; WM_GETFONT
-    hdc := DllCall("GetDC", "ptr", t.Hwnd, "ptr")
-    old := DllCall("gdi32\SelectObject", "ptr", hdc, "ptr", hFont, "ptr")
-    buf := Buffer(64 * 2, 0)
-    DllCall("gdi32\GetTextFaceW", "ptr", hdc, "int", 64, "ptr", buf)
-    DllCall("gdi32\SelectObject", "ptr", hdc, "ptr", old)
-    DllCall("ReleaseDC", "ptr", t.Hwnd, "ptr", hdc)
-    g.Destroy()
-    return StrGet(buf, "UTF-16")
-}
