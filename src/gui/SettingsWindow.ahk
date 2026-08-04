@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 #Include "..\lib\Settings.ahk"
 #Include "..\lib\Hotkeys.ahk"
+#Include "Theme.ahk"
 
 ; The one place the product name is spelled, for the window title and every MsgBox raised
 ; from this file. It deliberately does NOT reuse main.ahk's APP_NAME: tests\manual_settings_gui.ahk
@@ -47,24 +48,43 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; nested function gets its own copy.
     loadedCenter := "", loadedResize := ""
 
+    th := Theme("light")
+    uiFont := ResolveUiFont("Segoe UI Variable Text", "Segoe UI")
+
     g := Gui("-MaximizeBox -MinimizeBox", APP_TITLE)
-    g.MarginX := 14, g.MarginY := 12
-    g.SetFont("s9", "Segoe UI")
+    g.MarginX := 16, g.MarginY := 16
+    g.BackColor := th["bg"]
+    g.SetFont("s10 c" th["text"], uiFont)
 
-    g.Add("Text", "xm w320", "Hotkeys — click a field and press the keys you want.")
-    g.Add("Text", "xm y+8 w70", "Center:")
-    hCenter := g.Add("Hotkey", "x+6 yp-3 w120")
-    g.Add("Text", "xm y+8 w70", "Resize:")
-    hResize := g.Add("Hotkey", "x+6 yp-3 w120")
+    ; --- Hotkeys ---------------------------------------------------------------------------
+    g.SetFont("s11 w600 c" th["header"], uiFont)
+    g.Add("Text", "xm w360", "Hotkeys")
+    g.SetFont("s9 c" th["hint"], uiFont)
+    g.Add("Text", "xm y+2 w360", "Click a field and press the keys you want.")
+    g.SetFont("s10 c" th["text"], uiFont)
 
-    g.Add("Text", "xm y+16 w320", "Size presets (% of the screen work area)")
+    g.Add("Text", "xm y+12 w76", "Center")
+    hCenter := g.Add("Hotkey", "x+6 yp-3 w150")
+    g.Add("Text", "xm y+10 w76", "Resize")
+    hResize := g.Add("Hotkey", "x+6 yp-3 w150")
+
+    ; --- Size presets ----------------------------------------------------------------------
+    g.SetFont("s11 w600 c" th["header"], uiFont)
+    g.Add("Text", "xm y+24 w360", "Size presets")
+    g.SetFont("s9 c" th["hint"], uiFont)
+    g.Add("Text", "xm y+2 w360", "Percentage of the screen work area.")
+    g.SetFont("s10 c" th["text"], uiFont)
+
     edits := []
     loop 3 {
         i := A_Index
-        g.Add("Text", "xm y+8 w70", "Preset " i ":")
-        ew := g.Add("Edit", "x+6 yp-3 w50 Number")
-        g.Add("Text", "x+4 yp+3 w14", "x")
-        eh := g.Add("Edit", "x+4 yp-3 w50 Number")
+        g.Add("Text", "xm y+10 w76", "Preset " i)
+        ew := g.Add("Edit", "x+6 yp-3 w58 Number")
+        ; The multiplication sign, not the letter x — this is a dimension, not a form field.
+        g.SetFont("s10 c" th["hint"], uiFont)
+        g.Add("Text", "x+4 yp+3 w18 Center", "×")
+        g.SetFont("s10 c" th["text"], uiFont)
+        eh := g.Add("Edit", "x+4 yp-3 w58 Number")
         edits.Push({ w: ew, h: eh })
     }
 
@@ -80,9 +100,12 @@ ShowSettingsWindow(iniPath, onSaved) {
         }
     }
 
-    btnSave := g.Add("Button", "xm y+18 w90 Default", "Save")
-    btnReset := g.Add("Button", "x+8 w90", "Reset")
-    btnClose := g.Add("Button", "x+8 w90", "Close")
+    ; Right-aligned, Save last: Windows places the primary action rightmost, and `Default`
+    ; makes it the accent-filled button Windows 11 draws for the default push button.
+    ; 360 content - (3 x 96) - (2 x 8 gap) = 56px left offset.
+    btnReset := g.Add("Button", "xm+56 y+24 w96", "Reset")
+    btnClose := g.Add("Button", "x+8 w96", "Close")
+    btnSave  := g.Add("Button", "x+8 w96 Default", "Save")
 
     btnSave.OnEvent("Click", (*) => _Save())
     ; Reset fills the CONTROLS from the defaults and stops there. It must not touch the INI:
