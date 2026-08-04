@@ -53,6 +53,11 @@ ShowSettingsWindow(iniPath, onSaved) {
     g := Gui("-MaximizeBox -MinimizeBox", APP_TITLE)
     g.MarginX := 16, g.MarginY := 16
     g.BackColor := th["bg"]
+    ; Base font for the window. Currently overwritten immediately below, before any control is
+    ; added, because the first thing on screen is a header — so this line is dead today. It
+    ; becomes live the moment a control is inserted above that first header. Every block below
+    ; restates size, weight and colour explicitly rather than relying on this default, so it is
+    ; safe to leave in place either way.
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
     ; --- Hotkeys ---------------------------------------------------------------------------
@@ -184,10 +189,12 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; Focus must not start in a Hotkey control: it captures every keystroke (that is its whole
     ; purpose — building a key combination from whatever you press) including Tab, so the user
     ; could not type or even tab away without reaching for the mouse. Focus must also not be
-    ; left to fall through to Reset, which is what an unset focus defaults to here: a stray
-    ; Enter would repopulate every field from defaults and discard the user's settings. Save is
-    ; safe on both counts — Enter commits what is already on screen, Escape still closes, Tab
-    ; cycles normally, and nothing swallows input.
+    ; left to fall through to hCenter, which is what an unset focus defaults to here: with no
+    ; explicit Focus() call, Win32 gives focus to the first control with WS_TABSTOP in creation
+    ; order, and hCenter is that control (the three Text controls before it are not tabstops).
+    ; That would trap the user in the same Hotkey control described above. Save is safe on both
+    ; counts — Enter commits what is already on screen, Escape still closes, Tab cycles
+    ; normally, and nothing swallows input.
     btnSave.Focus()
     g.Show()
 }

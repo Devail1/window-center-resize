@@ -2,8 +2,8 @@
 
 ## 2.1.0
 
-This is a presentation release — the interface has been refreshed, but all functionality
-remains unchanged.
+This is a presentation release — the interface has been refreshed. The only interaction
+change is where keyboard focus starts — see below.
 
 ### Interface
 
@@ -15,8 +15,7 @@ remains unchanged.
   and Save are grouped at the bottom right, with **Save** as the default button. The
   window also opens with focus on Save instead of a hotkey field, so Enter saves right
   away.
-- No behaviour changed — hotkeys, presets, saving and validation all work exactly as
-  before.
+- Hotkeys, presets, saving and validation are unchanged.
 
 ## 2.0.0
 
