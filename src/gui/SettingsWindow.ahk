@@ -54,14 +54,14 @@ ShowSettingsWindow(iniPath, onSaved) {
     g := Gui("-MaximizeBox -MinimizeBox", APP_TITLE)
     g.MarginX := 16, g.MarginY := 16
     g.BackColor := th["bg"]
-    g.SetFont("s10 c" th["text"], uiFont)
+    g.SetFont("s10 w400 c" th["text"], uiFont)
 
     ; --- Hotkeys ---------------------------------------------------------------------------
     g.SetFont("s11 w600 c" th["header"], uiFont)
     g.Add("Text", "xm w360", "Hotkeys")
-    g.SetFont("s9 c" th["hint"], uiFont)
+    g.SetFont("s9 w400 c" th["hint"], uiFont)
     g.Add("Text", "xm y+2 w360", "Click a field and press the keys you want.")
-    g.SetFont("s10 c" th["text"], uiFont)
+    g.SetFont("s10 w400 c" th["text"], uiFont)
 
     g.Add("Text", "xm y+12 w76", "Center")
     hCenter := g.Add("Hotkey", "x+6 yp-3 w150")
@@ -71,9 +71,9 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; --- Size presets ----------------------------------------------------------------------
     g.SetFont("s11 w600 c" th["header"], uiFont)
     g.Add("Text", "xm y+24 w360", "Size presets")
-    g.SetFont("s9 c" th["hint"], uiFont)
+    g.SetFont("s9 w400 c" th["hint"], uiFont)
     g.Add("Text", "xm y+2 w360", "Percentage of the screen work area.")
-    g.SetFont("s10 c" th["text"], uiFont)
+    g.SetFont("s10 w400 c" th["text"], uiFont)
 
     edits := []
     loop 3 {
@@ -81,9 +81,9 @@ ShowSettingsWindow(iniPath, onSaved) {
         g.Add("Text", "xm y+10 w76", "Preset " i)
         ew := g.Add("Edit", "x+6 yp-3 w58 Number")
         ; The multiplication sign, not the letter x — this is a dimension, not a form field.
-        g.SetFont("s10 c" th["hint"], uiFont)
+        g.SetFont("s10 w400 c" th["hint"], uiFont)
         g.Add("Text", "x+4 yp+3 w18 Center", "×")
-        g.SetFont("s10 c" th["text"], uiFont)
+        g.SetFont("s10 w400 c" th["text"], uiFont)
         eh := g.Add("Edit", "x+4 yp-3 w58 Number")
         edits.Push({ w: ew, h: eh })
     }
