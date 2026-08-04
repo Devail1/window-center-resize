@@ -1,4 +1,4 @@
-#Requires AutoHotkey v2.0
+﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 #Include "lib\Settings.ahk"
 #Include "lib\Hotkeys.ahk"
@@ -9,9 +9,6 @@
 global APP_NAME := "Window Center && Resizer"
 global APP_VERSION := "2.0.0"
 global INI_PATH := A_ScriptDir "\settings.ini"
-global SETTINGS := SettingsLoad(INI_PATH)
-global SIZE_INDEX := 0        ; 0 so the FIRST press selects preset 1 (fixes Bug D)
-
 ; An unhandled runtime error in a GUI app is a modal AutoHotkey dialog with a line number
 ; on a stranger's desktop. Catch anything that escapes and say something a human can act on.
 OnError(_UncaughtAppError)
@@ -22,6 +19,10 @@ _UncaughtAppError(err, mode) {
          , APP_NAME, "Icon!")
     return 1        ; non-zero return suppresses AutoHotkey's default error dialog
 }
+
+global SETTINGS := SettingsLoad(INI_PATH)
+global SIZE_INDEX := 0        ; 0 so the FIRST press selects preset 1 (fixes Bug D)
+
 
 _ReportStatus(status) {
     if (status = "no-window")
