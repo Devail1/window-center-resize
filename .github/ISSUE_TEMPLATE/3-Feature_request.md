@@ -1,15 +1,18 @@
 ---
 name: Feature request
-about: You want something added to the boilerplate. 🎉
+about: An idea for the app
 labels: 'enhancement'
 ---
 
-<!---
-❗️❗️ Also, please consider donating (https://opencollective.com/electron-react-boilerplate-594) ❗️❗️
+**What would you like it to do?**
 
-Donations will ensure the following:
+<!-- Worth knowing before you write: this app deliberately stays small. It does one job —
+     center and resize the active window from a keyboard shortcut — and it has one settings
+     screen. An earlier rebuild grew a visual layout editor with tabs and drag-resize, ended
+     up harder to use than the version it replaced, and was abandoned.
 
-🔨 Long term maintenance of the project
-🛣 Progress on the roadmap
-🐛 Quick responses to bug reports and help requests
- -->
+     So ideas that fit inside "one job, one hotkey, one settings screen" have a good chance.
+     Ideas that need a whole new screen probably belong in a different tool — which isn't a
+     criticism of the idea. -->
+
+**What do you do today instead?**

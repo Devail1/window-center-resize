@@ -1,48 +1,83 @@
-name: Test
-
+name: tests
 on: [push, pull_request]
-
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [windows-latest]
-
+    runs-on: windows-latest
     env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
+      AHK_VERSION: 2.0.26
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Node.js and NPM
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: npm
-
-      - name: Install dependencies
+      - name: Install AutoHotkey v2 (pinned, from official GitHub release)
+        shell: pwsh
         run: |
-          npm install
+          $ErrorActionPreference = "Stop"
+          $url = "https://github.com/AutoHotkey/AutoHotkey/releases/download/v$env:AHK_VERSION/AutoHotkey_$env:AHK_VERSION.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "AutoHotkey.zip"
+          $dest = Join-Path $env:RUNNER_TEMP "AutoHotkey"
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          $exe = Join-Path $dest "AutoHotkey64.exe"
+          if (-not (Test-Path $exe)) { throw "AutoHotkey64.exe not found after extracting $url" }
+          "AHK_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Run Prettier
+      # AutoHotkey64.exe is a GUI-subsystem binary, so PowerShell's `&` operator does NOT
+      # block on it - it launches the process and returns immediately, leaving $LASTEXITCODE
+      # holding whatever it held before. This job previously read four exit codes from four
+      # processes that had not finished: it FAILED on a fully green suite, and would equally
+      # have PASSED on a red one.
+      #
+      # Piping through Out-String forces PowerShell to drain the process's output stream,
+      # which cannot complete until the process exits. Measured both directions: a passing
+      # suite yields exit 0, and a deliberately broken assertion yields exit 1 with the
+      # failure text captured.
+      #
+      # This step exists so that if the wait mechanism ever regresses, CI says so HERE rather
+      # than silently passing every future run. It must stay before the real tests.
+      - name: Self-check - prove the runner can detect a failing test
+        shell: pwsh
         run: |
-          npx prettier --write .
+          $ErrorActionPreference = "Stop"
+          $probe = Join-Path $env:RUNNER_TEMP "_exit_probe.ahk"
+          # LITERAL here-string (@' '@), not @" "@. AutoHotkey's newline escape is a backtick-n,
+          # which is ALSO PowerShell's newline escape - an expanding here-string consumes it and
+          # splits the AHK string literal across two lines, producing a syntax error instead of
+          # the intended exit 1. Same trap as an em dash in a .ps1: one character, two layers.
+          @'
+          #Requires AutoHotkey v2.0
+          FileAppend("probe: deliberately failing`n", "*")
+          ExitApp(1)
+          '@ | Set-Content -Path $probe -Encoding UTF8
+          $out = & $env:AHK_EXE /ErrorStdOut $probe 2>&1 | Out-String
+          Write-Host "probe output : $($out.Trim())"
+          Write-Host "probe exit   : $LASTEXITCODE"
+          if ($LASTEXITCODE -eq 2) {
+            throw "SELF-CHECK FAILED: the probe script did not parse (AutoHotkey exit 2). " +
+                  "The probe itself is broken, not the runner. Output above shows the syntax error."
+          }
+          if ($LASTEXITCODE -ne 1) {
+            throw "SELF-CHECK FAILED: a script that exits 1 was observed as $LASTEXITCODE. " +
+                  "The runner is not waiting for AutoHotkey to finish, so every test result " +
+                  "below is meaningless. Fix the invocation before trusting this job."
+          }
+          Write-Host "Self-check passed - a failing test will be detected."
+          # GitHub's pwsh runner appends `exit $LASTEXITCODE` to every step. This step
+          # deliberately runs a process that exits 1 - that is the entire point of it - so
+          # without an explicit exit the step inherits the probe's failure as its own verdict.
+          # It passed its own assertions and still failed the job until this line existed.
+          exit 0
 
-      - name: Lint code
+      - name: Run unit tests
+        shell: pwsh
         run: |
-          npm run lint
-
-      - name: Compile TypeScript
-        run: |
-          npm exec tsc
-
-      - name: Package application
-        run: |
-          npm run package
-
-      - name: Run tests
-        run: |
-          npm test
+          $failed = 0
+          Get-ChildItem tests\test_*.ahk | ForEach-Object {
+            Write-Host "--- $($_.Name)"
+            $out = & $env:AHK_EXE /ErrorStdOut $_.FullName 2>&1 | Out-String
+            Write-Host $out.Trim()
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "    ^ FAILED (exit $LASTEXITCODE)"
+              $failed = 1
+            }
+          }
+          exit $failed
