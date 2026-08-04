@@ -7,7 +7,7 @@ AutoHotkey v2 executable.
 
 ### The rewrite
 
-- **64 MB → 1.57 MB.** One portable `.exe`, roughly 40x smaller than the Electron build.
+- **64 MB → 1.23 MB.** One portable `.exe`, roughly 52x smaller than the Electron build.
 - **No runtime.** Nothing to install, no Chromium, no Node — just the executable.
 - Settings live in **`settings.ini` beside the executable** (previously `settings.json` in
   the user profile). The app is portable: move the exe and it starts with defaults; two
