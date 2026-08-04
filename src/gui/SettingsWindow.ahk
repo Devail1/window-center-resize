@@ -78,12 +78,12 @@ ShowSettingsWindow(iniPath, onSaved) {
     loop 3 {
         i := A_Index
         g.Add("Text", "xm y+10 w76", "Preset " i)
-        ew := g.Add("Edit", "x+6 yp-3 w72 Number")
+        ew := g.Add("Edit", "x+6 yp-3 w96 Number")
         ; The multiplication sign, not the letter x — this is a dimension, not a form field.
         g.SetFont("s10 w400 c" th["hint"], "Segoe UI")
         g.Add("Text", "x+4 yp+3 w18 Center", "×")
         g.SetFont("s10 w400 c" th["text"], "Segoe UI")
-        eh := g.Add("Edit", "x+4 yp-3 w72 Number")
+        eh := g.Add("Edit", "x+4 yp-3 w96 Number")
         edits.Push({ w: ew, h: eh })
     }
 
@@ -174,10 +174,13 @@ ShowSettingsWindow(iniPath, onSaved) {
     _settingsGui := g
     _settingsPopulate := _Populate
     _Populate(s)
-    ; A settings window should open with focus in its first field, not on a button. In Win32
-    ; a focused button takes over Enter even when another button carries `Default`, so
-    ; without this, Enter could fire whichever button happened to hold focus — and Reset
-    ; discarding the user's settings on a stray Enter is the worst available outcome.
-    hCenter.Focus()
+    ; Focus must not start in a Hotkey control: it captures every keystroke (that is its whole
+    ; purpose — building a key combination from whatever you press) including Tab, so the user
+    ; could not type or even tab away without reaching for the mouse. Focus must also not be
+    ; left to fall through to Reset, which is what an unset focus defaults to here: a stray
+    ; Enter would repopulate every field from defaults and discard the user's settings. Save is
+    ; safe on both counts — Enter commits what is already on screen, Escape still closes, Tab
+    ; cycles normally, and nothing swallows input.
+    btnSave.Focus()
     g.Show()
 }
