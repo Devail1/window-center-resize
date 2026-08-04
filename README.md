@@ -5,6 +5,7 @@
   <div>
     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
     <img src="https://img.shields.io/github/release/Devail1/window-center-resize.svg?color=purple" alt="GitHub release">
+    <img src="https://img.shields.io/github/downloads/Devail1/window-center-resize/total?color=blue&label=downloads" alt="Downloads">
   <h3>The Open-Source Utility for Centering and Resizing Windows</h3>
 </div>
 
