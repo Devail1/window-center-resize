@@ -34,9 +34,23 @@ Window Center & Resizer is a utility application for Windows that allows you to 
 
 To change a shortcut, click its field in Settings and press the keys you want — the combination is captured as you press it. **Windows-key combinations are the one exception:** the field cannot capture them, so set those by editing `settings.ini` directly, using AutoHotkey syntax (`#` is Win, `^` Ctrl, `+` Shift, `!` Alt — for example `Center=#Up`). A Win-key shortcut set that way is kept, not overwritten, if you later open and save Settings.
 
+### Starting with Windows
+
+The shortcuts only work while the app is running, so most people want it to start with Windows. Put a **shortcut to** the executable in your Startup folder:
+
+1. Right-click `WindowCenterResizer.exe` and choose **Create shortcut** (on Windows 11 you may need **Show more options** first).
+2. Press <kbd>Win</kbd> + <kbd>R</kbd>, type `shell:startup`, and press Enter. That opens your own Startup folder. Use `shell:common startup` instead for every user on the machine — that folder needs administrator rights to write to.
+3. Move the shortcut into the folder that opened.
+
+⛔ **Put a shortcut in that folder, not the executable itself.** The app reads `settings.ini` from whichever folder it sits in, so moving the `.exe` into Startup leaves your `settings.ini` behind and the app starts with default hotkeys and presets — silently, with no error, because a missing settings file is not treated as a problem. Leave the executable where it is.
+
+The shortcut does not need a **Start in** folder set: the app locates `settings.ini` relative to the executable, not to the working directory, so it finds its settings wherever it is launched from.
+
 ### Windows running as administrator
 
 A program that runs as administrator — Task Manager, an elevated terminal — cannot be moved by a program that does not. If you press a shortcut on one of those, the app will say so and offer **Restart as administrator** from the tray menu.
+
+Anything launched from the Startup folder runs without administrator rights, so a copy started that way is subject to the same limit on every boot. If you want it elevated from the start instead, create a Task Scheduler task that runs it at logon with **Run with highest privileges** — the Startup folder cannot do that.
 
 ### Portability
 
