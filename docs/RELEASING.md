@@ -35,20 +35,39 @@ an existing userbase.
 
 ## 4. Scan that exact file on VirusTotal, publish that hash
 
-4. Scan **that exact file** on VirusTotal and publish that hash. (The build IS deterministic:
-   two consecutive builds from unchanged source produce an identical SHA-256 — verified
-   2026-08-04. An earlier note here claimed otherwise; the differing hashes it was based on
-   came from source changes between builds, not from the compiler.) ⛔ Scan the artifact you
-   will actually upload — measured 2026-08-04: the stub scored 3/70, the build with the old
-   icon 1/70, and the shipping build 4/70. The number moves with the binary.
-of identical source have the same byte length and a different SHA-256.
+Scan **that exact file** on VirusTotal and publish that hash.
+
+The build **is** deterministic: two consecutive builds from unchanged source produce an
+identical SHA-256, verified 2026-08-04. (An earlier version of this file claimed the
+opposite. The differing hashes it was based on came from source changes between builds, not
+from the compiler.)
+
+Determinism is not why this step is strict. ⛔ **The detection count moves with the binary,
+and it is a roll rather than a floor** — measured across four scans of the same toolchain:
+the hello-world stub 3/70, the build with the old icon 1/70, the shipping 2.0.0 build 4/70,
+the shipping 2.1.0 build 3/71. So publishing one build's score alongside a different build's
+bytes is a false claim, even when both builds came from the same commit.
 
 Therefore: build once → scan **that** file → upload **that** file → publish **that** hash.
 Rebuilding at any point after scanning invalidates the published hash and it will not match
 what people download.
 
-This matters more than usual here: the binary is unsigned and has zero reputation, so at
-least one engine flags it generically. Record the result in `build/av-baseline.md`.
+⛔ Do **not** iterate the binary against these heuristics. Seventy-odd non-deterministic
+engines, one scan per attempt, and no mechanism to reason about — a lower number on the next
+build is noise, not progress. The root cause is *unsigned + zero reputation*; code signing is
+the only real fix, and it is required before any paid product.
+
+From WSL, using `vt-cli` (installed at `~/bin/vt`, API key in `~/.vt.toml`):
+
+```
+vt scan file dist/WindowCenterResizer.exe    # prints an analysis id
+vt analysis <id>                             # poll until status: "completed"
+```
+
+Record the result in `build/av-baseline.md`, including a gate verdict — the pre-registered
+threshold is 0–2 detections with local Defender clean. Both shipped releases have exceeded
+it and been published anyway on an explicit decision. Log that as a failure the decision
+overrode, never as a passing score.
 
 ## 5. Tag format — three numeric segments only
 
