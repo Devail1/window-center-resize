@@ -1,5 +1,18 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
+
+; Window Center & Resizer - centre and resize windows from a keyboard shortcut.
+; Copyright (C) 2024-2026 Liav Edry
+;
+; This program is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License version 2, as published by the Free
+; Software Foundation. It is distributed WITHOUT ANY WARRANTY; without even the
+; implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+; the LICENSE file for the full text.
+;
+; Releases up to and including 2.1.0 were published under the MIT licence and
+; remain available under it.
+
 #Include "lib\Settings.ahk"
 #Include "lib\Hotkeys.ahk"
 #Include "lib\WindowOps.ahk"

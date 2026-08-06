@@ -3,7 +3,7 @@
   <h3 style="margin-left:100px;">Window Center & Resizer</h3>
 
   <div>
-    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+    <img src="https://img.shields.io/badge/license-GPLv2-green.svg" alt="License">
     <img src="https://img.shields.io/github/release/Devail1/window-center-resize.svg?color=purple" alt="GitHub release">
     <img src="https://img.shields.io/github/downloads/Devail1/window-center-resize/total?color=blue&label=downloads" alt="Downloads">
   <h3>The Open-Source Utility for Centering and Resizing Windows</h3>
@@ -78,9 +78,15 @@ Contributions are welcome! If you have any suggestions, bug reports, or feature 
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Copyright © 2024–2026 Liav Edry. Licensed under the **GNU General Public License, version 2** — see the [LICENSE](LICENSE) file for the full text.
+
+A compiled AutoHotkey program is the interpreter plus the script in one executable, so every release of this app contains [AutoHotkey](https://www.autohotkey.com/), which is itself GPLv2. Matching that licence keeps the distributed binary coherent.
+
+**Releases up to and including 2.1.0 were published under the MIT licence and remain available under it.** The change applies from 2.2.0 onward; it does not and cannot affect copies already distributed.
 
 ## Acknowledgements
+
+Built with [AutoHotkey v2](https://www.autohotkey.com/) by Steve Gray, Chris Mallett and contributors, licensed under the GNU GPL version 2. The compiled executable includes the AutoHotkey interpreter; its source is available from the [AutoHotkey repository](https://github.com/AutoHotkey/AutoHotkey). AutoHotkey bundles [PCRE](https://www.pcre.org/) by the University of Cambridge, used under the BSD licence.
 
 The icon is [`square-dot`](https://lucide.dev/icons/square-dot) from [Lucide](https://lucide.dev), used under the [ISC License](https://github.com/lucide-icons/lucide/blob/main/LICENSE).
 

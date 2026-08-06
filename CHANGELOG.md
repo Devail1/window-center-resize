@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Licence
+
+- **The project is now licensed under the GNU General Public License, version 2**, changed from
+  MIT. A compiled AutoHotkey executable contains the AutoHotkey interpreter, which is GPLv2, so
+  every release already shipped GPL code inside the binary; the licences now match. Practically
+  this means anyone distributing a modified version must publish their source under the same
+  terms. Using the app, at home or at work, is unaffected.
+- **Releases up to and including 2.1.0 stay MIT** and remain available under it. A licence change
+  applies going forward and cannot be applied retroactively to copies already distributed.
+- The README now credits AutoHotkey and PCRE, which it previously omitted.
+
 ## 2.1.0
 
 This is a presentation release — the interface has been refreshed. The only interaction
