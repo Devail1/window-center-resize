@@ -139,3 +139,41 @@ a warning. ⛔ **The root cause is unsigned + zero reputation. Code signing rema
 before any paid product** — that is not deferred by this decision, only unblocked for a free one.
 
 **Action taken:** false-positive reports to be submitted to Microsoft and Malwarebytes.
+
+### VirusTotal — the 2.1.0 release binary, 2026-08-06
+
+`dist/WindowCenterResizer.exe`, 1,290,240 bytes
+SHA-256 `9fed2a6acbd9fa3d8647124b6fabe4cb82fa43a6a6a76b9c33e662b29e570553`
+Scanned with `vt-cli` 1.3.1 (`vt scan file`), first submission of this hash — VirusTotal had
+not seen it before, so this is a fresh analysis and not a cached verdict.
+
+**3 of 71 engines that returned a verdict** (67 undetected, 3 malicious, 1 engine error —
+Ikarus; 4 further engines reported the type as unsupported). All generic ML/heuristic; no
+named malware family.
+
+| Engine | Verdict |
+|---|---|
+| Microsoft | `Program:Win32/Wacapew.C!ml` |
+| Malwarebytes | `Malware.Heuristic.2099` |
+| Skyhigh (SWG) | `BehavesLike.Win64.Dropper.th` |
+| Zillya | **Undetected** (flagged 2.0.0, clean here) |
+
+**Better than the binary that actually shipped as 2.0.0** (4/70), and Microsoft's
+classification moved down a severity class: `Trojan:Win32/Wacatac.C!ml` → `Program:Win32/
+Wacapew.C!ml`. `Program:` is Microsoft's potentially-unwanted-application prefix, not a trojan
+verdict — it is the label Defender gives unsigned installers and packers generically. ⛔ This
+is **not** evidence that anything was fixed: the count moves with the binary on every scan
+(stub 3/70 → old-icon build 1/70 → 2.0.0 build 4/70 → this build 3/71) and nothing in this
+release touched packaging. It is one more draw from the same distribution, and a slightly
+better one.
+
+**Counter-evidence, the load-bearing one, re-measured today:** local Windows Defender has
+`RealTimeProtectionEnabled = True` and **no threat detection recorded for this file**, which
+has been on disk since it was compiled. Neither copy was quarantined.
+
+**GATE VERDICT: FAILS the pre-registered threshold** (0–2 detections, Defender clean).
+Recorded as a failure, not redefined — the same verdict 2.0.0 received at 4/70.
+
+**Precedent, not a new decision:** Liav's 2026-08-04 ruling on the 2.0.0 gate failure applies
+unchanged here, and this artifact is strictly better than the one that ruling cleared. ⛔ Code
+signing remains **REQUIRED before any paid product**; this release is free.
