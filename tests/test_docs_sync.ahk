@@ -93,6 +93,10 @@ AssertEqual(DeclaredWidth(root "\README.md", "settings-window\.png"), w
 AssertEqual(DeclaredWidth(root "\docs\index.html", "settings-window\.png"), w
           , "the landing page declares the screenshot's real width")
 
+; Both extractors return "" when their regex stops matching, and "" == "" passes. Without this
+; pre-assertion the version check below is vacuous: rename APP_VERSION and the suite stays green.
+AssertEqual(AppVersion(root "\src\main.ahk") != "", true, "src/main.ahk declares a version")
+
 AssertEqual(DocsVersion(root "\docs\index.html"), AppVersion(root "\src\main.ahk")
           , "the landing page's advertised version matches APP_VERSION")
 
