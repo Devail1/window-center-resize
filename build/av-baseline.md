@@ -177,3 +177,71 @@ Recorded as a failure, not redefined — the same verdict 2.0.0 received at 4/70
 **Precedent, not a new decision:** Liav's 2026-08-04 ruling on the 2.0.0 gate failure applies
 unchanged here, and this artifact is strictly better than the one that ruling cleared. ⛔ Code
 signing remains **REQUIRED before any paid product**; this release is free.
+
+⚠️ **Superseded six days later — see the next section.** The two claims above that read as
+reassuring ("moved down a severity class", "no threat detection recorded") were both true when
+measured and are both false now, on the same bytes.
+
+### 2026-08-12 — POST-PUBLISH ESCALATION on the unchanged 2.1.0 hash
+
+⛔⛔ **A scan result is a snapshot of the SCANNERS, not a property of the binary.** Every
+section above this one records a *pre-publish* scan, which quietly assumes the result belongs
+to the artifact and therefore keeps. It does not. `9fed2a6a…` was never modified — both
+release assets still carry `updatedAt 2026-08-06T09:25:13Z` and 1,290,240 bytes — and
+Microsoft re-scored it anyway, six days after publish, from a class Defender ignores to one it
+acts on.
+
+| When | Microsoft engine | Verdict | Defender enforces? |
+|---|---|---|---|
+| 2026-08-06 12:14 IDT — first submission | — | `Program:Win32/Wacapew.C!ml` | no (`Program:` = PUA prefix) |
+| **2026-08-11 23:00 IDT — reanalysis** | **1.26070** | **`Trojan:Win32/Phonzy.A!ml`** | **YES — Severe, auto-quarantine** |
+
+Aggregate is unchanged at **3 of 71** (67 undetected, 1 failure, 4 type-unsupported), so the
+count did not move — only the class did. ⛔ **The count is therefore not a sufficient gate
+statistic.** A gate reading "0–2 detections" would have scored this event as no change at all,
+while distribution was breaking.
+
+**It is a reputation call, not a content match.** VirusTotal's own aggregate label for the hash
+is `trojan.phonzy/reputation` and `reputation: 0`. All three detections are generic rather than
+identifications: Microsoft's `!ml` suffix marks a machine-learning classification, Sophos
+reports `Generic Reputation PUA`, Malwarebytes `Malware.Heuristic.2099`.
+
+⚠️ **Do not restate this as "no engine names a family."** Earlier sections of this file use that
+phrasing and it no longer holds — `Phonzy.A` *is* a family label in Microsoft's taxonomy. The
+defensible claim is about **method** (`!ml` / `Heuristic` / `Generic Reputation` = classifier
+output, not a signature match on a known sample), not about the absence of a name. ⛔ Likewise
+do not cite the sandbox verdict as exoneration: there is exactly one on record (C2AE) and it
+reads `UNKNOWN_VERDICT`, which is an absence of evidence, not evidence of absence.
+
+⭐ **Measured 2026-08-12 — signing is not sufficient, and prevalence is the variable doing the
+work.** `Get-AuthenticodeSignature` on the local AutoHotkey 2.0 install returns `NotSigned` for
+all three of `v2\AutoHotkey64.exe`, `UX\AutoHotkeyUX.exe` and `Compiler\Ahk2Exe.exe`. So the
+interpreter this project is built on is **unsigned and unflagged**, while a binary made of that
+same interpreter is flagged. The difference between them is installed prevalence, not a
+certificate. ⚠️ This qualifies the claim in `docs/RELEASING.md` step 4 that "code signing is
+the only real fix" — it is the only lever *available to purchase*, which is not the same thing,
+and a cert on a utility with 150 downloads buys a publisher identity with no reputation
+attached to it yet.
+
+**Observed off the build box.** The quarantine fired on a machine whose Windows profile is
+`C:\Users\ledry`; this repo's build machine is `C:\Users\97254` and has no such profile. So it
+is a cloud-side verdict reaching real downloads, not a local cache artifact on the developer's
+own PC.
+
+⛔ **Do NOT rebuild to dodge it.** The verdict is driven by low prevalence on an unsigned
+binary, so a fresh hash starts at reputation 0 and is a *worse* draw, not a better one. This is
+the same ⛔ already recorded in `docs/RELEASING.md` step 4, now with a direct measurement
+behind it.
+
+**The remedy that exists and was declined:** a false-positive submission to
+<https://www.microsoft.com/en-us/wdsi/filesubmission> under the **Software developer** persona
+corrects the cloud verdict for all users within roughly a day, with no rebuild and no new
+release. **Liav declined to submit on 2026-08-12.** Recorded as a decision, not an oversight —
+so a future session does not "discover" the option and re-litigate it. The two levers that
+change what Defender *does* are that submission and a signing certificate; both are declined,
+therefore the standing posture is to document the false positive and give blocked users a
+source-based route (README → *If Windows flags the download*), not to fight the detection.
+
+**Watch signal:** the Softpedia and MajorGeeks listings re-scan independently (MajorGeeks with
+Bitdefender + ESET). A PUA-class label survives that; a Trojan-class one may not. A pulled
+listing — not the download count — is the signal that this stopped being cosmetic.

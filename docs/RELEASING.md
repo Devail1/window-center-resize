@@ -69,6 +69,23 @@ threshold is 0–2 detections with local Defender clean. Both shipped releases h
 it and been published anyway on an explicit decision. Log that as a failure the decision
 overrode, never as a passing score.
 
+⛔ **A clean-enough scan at publish time does not keep.** Measured 2026-08-12: Microsoft
+re-scored the *unchanged* 2.1.0 hash from `Program:Win32/Wacapew.C!ml` (a PUA prefix Defender
+ignores) to `Trojan:Win32/Phonzy.A!ml` (Severe, auto-quarantined) six days after publish, with
+the aggregate count sitting still at 3/71 the whole time. So **the count is not a sufficient
+gate statistic — read the Microsoft class as well**, and expect any release to be re-scored at
+any point after it ships. Full record in `build/av-baseline.md`.
+
+Two consequences for this step:
+
+- **Refresh the VirusTotal link in the README.** The *If Windows flags the download* section
+  pins the hash of a specific release. It is labelled with its version so it cannot silently
+  go stale, but it still needs updating here, and so does the detection name it quotes.
+- **Neither remedy is in play.** A WDSI software-developer false-positive submission and a
+  code-signing certificate are the only two levers that change what Defender *does*; both are
+  declined standing decisions (see `build/av-baseline.md`, 2026-08-12). Document the false
+  positive, do not fight it, and ⛔ never rebuild to chase a better draw.
+
 ## 5. Tag format — three numeric segments only
 
 ⛔ **Never publish a prerelease tag or a four-segment version tag to this repo.**

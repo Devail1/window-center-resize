@@ -26,6 +26,23 @@ Window Center & Resizer is a utility application for Windows that allows you to 
 
 [Download](https://github.com/devail1/window-center-resize/releases/latest/download/Window-Center-Resize.exe) the latest release and run it. There is no installer — it is one executable.
 
+### If Windows flags the download
+
+Windows Defender may quarantine the executable, currently as `Trojan:Win32/Phonzy.A!ml`. It is a false positive, and it is a known, long-standing problem for **every** compiled AutoHotkey program rather than something specific to this one.
+
+A compiled AutoHotkey program is the AutoHotkey interpreter with the script appended to it, so all of them share a single PE layout — the same shape a generic script dropper has. Defender's machine-learning classifiers score that shape, not the code. A hello-world AutoHotkey build that does nothing but print one line is flagged the same way; that measurement, and every antivirus scan this project has run, is recorded in [`build/av-baseline.md`](build/av-baseline.md).
+
+The detection is reputation-based rather than a match on anything in the file. On VirusTotal, [the v2.1.0 binary](https://www.virustotal.com/gui/file/9fed2a6acbd9fa3d8647124b6fabe4cb82fa43a6a6a76b9c33e662b29e570553) is flagged by 3 of 71 engines, and all three verdicts are generic rather than identifications: Microsoft's `!ml` suffix marks a machine-learning classification, Malwarebytes reports `Malware.Heuristic.2099`, and Sophos reports `Generic Reputation PUA`. VirusTotal's own summary label for the file is `trojan.phonzy/reputation`.
+
+The binary is unsigned, because a code-signing certificate is a recurring cost this project does not carry. It is free, and it stays free. Signing would not be the whole story anyway: AutoHotkey itself is unsigned — `Get-AuthenticodeSignature` reports `NotSigned` for the interpreter and for the compiler that builds this app — and it attracts no warnings, because it is installed widely enough to have a reputation. Prevalence, not signatures, is most of what separates a flagged binary from an unflagged one, and a utility this size will never have much of it.
+
+Two ways forward — and since "just switch your antivirus off" is exactly what real malware would tell you, the second one is here for anyone who would rather not take the first on trust:
+
+1. **Restore it.** Windows Security → Protection history → the entry → Actions → **Restore**, then add the executable as an exclusion.
+2. **Skip the executable and run the source instead.** Install [AutoHotkey v2](https://www.autohotkey.com/), download **Source code (zip)** from the [releases page](https://github.com/Devail1/window-center-resize/releases/latest), and run `src\main.ahk`. Same application, no compiled binary anywhere in the picture — you run the mainstream AutoHotkey interpreter over plain script files you can read first.
+
+Every line of this program is in this repository and the build is a single PowerShell script, `build\build.ps1`, so compiling it yourself and comparing hashes is also on the table.
+
 ## Usage
 
 1. **Center Window** — press the centering shortcut (default `Ctrl+Shift+C`) to center the active window without changing its size.
