@@ -118,7 +118,14 @@ CheckForUpdates(*) {
 
 RestartElevated(*) {
     try {
-        Run('*RunAs "' A_ScriptFullPath '"')
+        ; Compiled, the exe IS the program. Running from a script the exe is the AutoHotkey
+        ; interpreter, so the script has to be passed as an argument - handing Windows a bare
+        ; .ahk path launches whichever AutoHotkey is *installed*, not the copy shipped here,
+        ; and on a machine with none it opens a "how do you want to open this file" dialog.
+        if A_IsCompiled
+            Run('*RunAs "' A_ScriptFullPath '"')
+        else
+            Run('*RunAs "' A_AhkPath '" "' A_ScriptFullPath '"')
         ExitApp()
     } catch {
         MsgBox("Couldn't restart with administrator rights.", APP_NAME, "Icon!")
@@ -136,11 +143,18 @@ A_TrayMenu.Default := "Settings"
 A_IconTip := APP_NAME " " APP_VERSION
 
 ; The compiled exe embeds assets\icon.ico via Ahk2Exe /icon, and AutoHotkey uses that for
-; the tray automatically. Running from SOURCE there is no embedded icon, so load it from
-; the repo — otherwise development shows AutoHotkey's default green H in the tray.
+; the tray automatically. Running from a script there is no embedded icon, so load it from
+; disk — otherwise the tray shows AutoHotkey's default green H. Two locations, because there
+; are two ways to run from a script: beside the script in a portable release, or up in the
+; repo when running out of a working tree.
 ; Guarded and wrapped: a missing or unreadable icon must never stop the app starting.
 if !A_IsCompiled {
-    try TraySetIcon(A_ScriptDir "\..\assets\icon.ico")
+    for candidate in [A_ScriptDir "\icon.ico", A_ScriptDir "\..\assets\icon.ico"] {
+        if FileExist(candidate) {
+            try TraySetIcon(candidate)
+            break
+        }
+    }
 }
 
 RegisterHotkeys(SETTINGS)
