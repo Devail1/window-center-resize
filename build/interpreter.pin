@@ -1,0 +1,18 @@
+# The AutoHotkey release this project ships AND tests against.
+#
+# Read by build/build-portable.ps1 (which refuses to ship anything else) and by
+# .github/workflows/test.yml (which tests against exactly this version). One file, so the two
+# cannot drift: before this existed, CI pinned a version in its own YAML while the build copied
+# whatever happened to be installed on the build machine, and nothing compared them.
+#
+# The sha256 is AutoHotkey64.exe as extracted from the official release zip at
+# https://github.com/AutoHotkey/AutoHotkey/releases/download/v<version>/AutoHotkey_<version>.zip
+# CI re-derives it from that download on every run, so a wrong value here fails rather than
+# being taken on trust.
+#
+# ⛔ Bumping this is a RELEASE DECISION, not a chore. The shipped interpreter's reputation is
+# what keeps the download from being quarantined, and reputation comes from prevalence, so a
+# just-released AutoHotkey version is the same zero-prevalence problem that got 2.1.0 flagged.
+# See docs/RELEASING.md step 2 and build/av-baseline.md.
+version=2.0.26
+sha256=a2a54b8abc476d7671d4de0771bb54bf5f2373d79ff6871d0ba6a62c3b88ae00

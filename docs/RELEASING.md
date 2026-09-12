@@ -36,13 +36,19 @@ green H is not a bug to fix; it is the cost that buys a download that works.
 binary's *reputation* is what keeps the download clean, and reputation accrues with
 prevalence, so:
 
+`build/interpreter.pin` records that release — version and SHA-256 — and is the only place
+either appears. The build refuses to run if the installed interpreter does not match it, and CI
+re-derives the hash from AutoHotkey's official release zip on every push, so a wrong pin fails
+rather than being believed. Upgrading means editing that file deliberately:
+
 - ⛔ **Do not ship a just-released AutoHotkey version.** A fresh interpreter build has the same
   zero-prevalence problem the compiled exe had. Let a version circulate before shipping it.
+- Get the new hash from the official release zip, not from your local install:
+  `https://github.com/AutoHotkey/AutoHotkey/releases/download/v<version>/AutoHotkey_<version>.zip`
+  → hash `AutoHotkey64.exe` inside it. CI checks this, so an invented value fails the build.
 - Record the interpreter version **and hash** in `build/av-baseline.md` with every release, and
   check the hash on VirusTotal before publishing (step 4). It is a third-party binary that can
   be re-scored without anything in this repo changing — exactly what happened to 2.1.0.
-- CI pins `AHK_VERSION` in `.github/workflows/test.yml`. Keep the shipped interpreter and the
-  tested one on the same version, or the suite is not testing what users run.
 
 ## 3. Attach the zip, and generate the notes
 

@@ -3,10 +3,27 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: windows-latest
-    env:
-      AHK_VERSION: 2.0.26
     steps:
       - uses: actions/checkout@v4
+
+      # The version used to be pinned HERE while build-portable.ps1 shipped whatever was
+      # installed on the build machine, and nothing compared the two - so one `winget upgrade`
+      # would have shipped an interpreter this suite never ran against. build/interpreter.pin is
+      # now the only place the version exists.
+      - name: Read the pinned AutoHotkey release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $pin = @{}
+          foreach ($line in Get-Content build/interpreter.pin) {
+            if ($line -match '^\s*([a-z0-9]+)\s*=\s*(\S+)\s*$') { $pin[$Matches[1]] = $Matches[2] }
+          }
+          foreach ($k in @("version", "sha256")) {
+            if (-not $pin.ContainsKey($k)) { throw "build/interpreter.pin has no '$k=' line" }
+          }
+          Write-Host "pinned AutoHotkey $($pin['version'])  sha256 $($pin['sha256'])"
+          "AHK_VERSION=$($pin['version'])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AHK_SHA256=$($pin['sha256'])"   | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Install AutoHotkey v2 (pinned, from official GitHub release)
         shell: pwsh
@@ -19,6 +36,19 @@ jobs:
           Expand-Archive -Path $zip -DestinationPath $dest -Force
           $exe = Join-Path $dest "AutoHotkey64.exe"
           if (-not (Test-Path $exe)) { throw "AutoHotkey64.exe not found after extracting $url" }
+
+          # ⛔ THE ONE THAT MATTERS. The shipped .exe IS this file. The whole packaging change
+          # rests on it being the binary AutoHotkey publishes rather than something this project
+          # built, and that claim is made in the README, the release notes and av-baseline.md.
+          # So it is checked against the real download instead of taken on trust: a wrong value
+          # in interpreter.pin fails here rather than propagating into those claims.
+          $actual = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $env:AHK_SHA256.ToLower()) {
+            throw ("INTERPRETER PIN MISMATCH: $url extracted an AutoHotkey64.exe hashing to " +
+                   "$actual, but build/interpreter.pin records $env:AHK_SHA256. Either the pin " +
+                   "is wrong, or the upstream release asset changed.")
+          }
+          Write-Host "Verified: AutoHotkey $env:AHK_VERSION matches the pinned sha256."
           "AHK_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       # AutoHotkey64.exe is a GUI-subsystem binary, so PowerShell's `&` operator does NOT

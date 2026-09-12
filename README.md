@@ -6,6 +6,7 @@
     <img src="https://img.shields.io/badge/license-GPLv2-green.svg" alt="License">
     <img src="https://img.shields.io/github/release/Devail1/window-center-resize.svg?color=purple" alt="GitHub release">
     <img src="https://img.shields.io/github/downloads/Devail1/window-center-resize/total?color=blue&label=downloads" alt="Downloads">
+    <a href="https://github.com/Devail1/window-center-resize/actions/workflows/test.yml"><img src="https://github.com/Devail1/window-center-resize/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
   <h3>The Open-Source Utility for Centering and Resizing Windows</h3>
   <p><a href="https://devail1.github.io/window-center-resize/"><strong>devail1.github.io/window-center-resize</strong></a></p>
 </div>
@@ -117,7 +118,9 @@ Requires [AutoHotkey v2](https://www.autohotkey.com/). There is no other build c
 powershell -ExecutionPolicy Bypass -File build\build-portable.ps1
 ```
 
-This writes the distributable folder to `dist\portable\` and zips it to `dist\Window-Center-Resize-portable.zip`. The build flattens the `#Include` tree in [`src/`](src/) into one script, copies the installed AutoHotkey interpreter beside it, and **fails if the copied interpreter's SHA-256 does not match the installed one** — that single property is the reason the build exists, so it is checked rather than assumed.
+This writes the distributable folder to `dist\portable\` and zips it to `dist\Window-Center-Resize-portable.zip`. The build flattens the `#Include` tree in [`src/`](src/) into one script and copies the AutoHotkey interpreter beside it.
+
+It **refuses to build** unless the interpreter it is about to ship is the exact AutoHotkey release recorded in [`build/interpreter.pin`](build/interpreter.pin) — by version *and* by SHA-256. That is the property the whole packaging rests on, so it is checked rather than assumed, and CI re-derives the same hash from AutoHotkey's official release download on every push. If you have a different AutoHotkey installed, the build tells you so instead of quietly shipping it.
 
 You can also just run the app straight from the sources with `AutoHotkey64.exe src\main.ahk`, with no build step at all.
 
