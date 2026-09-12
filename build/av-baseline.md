@@ -434,3 +434,31 @@ and its class; treat everything else as background.**
 ⚠️ And the corollary worth holding onto: Electron "just working" for two years was never a
 property of Electron. It was one engine's coin-flip from looking exactly like this problem, on a
 file that was unsigned and unknown by every measure this project used to reason about risk.
+
+### 2.2.0 — the first release that passes its own gate, 2026-09-12
+
+| Artifact | SHA-256 | Result |
+|---|---|---|
+| `Window-Center-Resize-portable.zip` (646,917 B) | `4a95d0284cc4792c463c387b0f299ee9c199dd9d12646cbbe010138a7e68d09c` | **0 malicious of 75.** Microsoft undetected. |
+| `WindowCenterResizer.ahk` (25,578 B) | `298e56fe19fc074534417fc66f03c64d36ae508bdafcecf5427453f22ab86dde` | — |
+| `WindowCenterResizer.exe` (1,272,832 B) | `a2a54b8abc476d7671d4de0771bb54bf5f2373d79ff6871d0ba6a62c3b88ae00` | **0 of 70.** Microsoft undetected. Stock AutoHotkey 2.0.26, verified byte-identical by the build's interpreter gate. |
+
+Interpreter re-checked at publish time per `docs/RELEASING.md` step 2, not assumed from the
+earlier measurement in this file.
+
+✅ **GATE PASSES, and this is the first time that sentence appears in this file without a
+qualification.** 2.0.0 (4/70) and 2.1.0 (3/71) both failed and were published anyway on explicit
+decisions; the hello-world stub failed too. Nothing was waived here and the threshold was not
+redefined — the artifact changed.
+
+⚠️ **The zip hash is not reproducible.** `Compress-Archive` stores modification times, so
+rebuilding produces a different zip hash from identical source. The hash above belongs to the
+file that was scanned and uploaded, and to no other build. The two hashes inside it *are*
+stable and are the ones a third party can verify independently.
+
+⛔ **And this does not keep.** Every reassuring line in this file has been outlived by a
+re-scoring at least once — 2.1.0 was re-scored twice on unchanged bytes, the second time into a
+class Defender quarantines. The difference now is that the exposure is a third-party binary with
+years of prevalence rather than a one-off this project compiled, so a re-score is far less
+likely; it is not impossible. If it happens, the remedy is the same WDSI submission that remains
+declined, and the watch signal is unchanged: a pulled directory listing, not the download count.
