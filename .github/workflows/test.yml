@@ -4,7 +4,7 @@ jobs:
   test:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The version used to be pinned HERE while build-portable.ps1 shipped whatever was
       # installed on the build machine, and nothing compared the two - so one `winget upgrade`
