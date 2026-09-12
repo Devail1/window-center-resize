@@ -375,3 +375,62 @@ quarantine, and the README tells them to download the current release instead.
   binary can still raise *"Windows protected your PC"*; that is a one-click prompt, not a
   quarantine. ⚠️ Earlier sections of this file conflate the two. They are different systems with
   different triggers, and only the Defender one was deleting downloads.
+
+### 2026-09-12 — THE ELECTRON COMPARISON, and what it says about the gate
+
+⭐⭐ **The only cross-stack measurement this project has.** Liav asked why the Electron builds
+never triggered any of this. The v1.0.2 asset is still published, so it was measured rather than
+reasoned about.
+
+`Window-Center-Resize.exe` (v1.0.2, published 2024-06-17), 67,009,942 bytes
+SHA-256 `d37e343043290f60726e58496c51096c976ad1f541748c7bfe6c8c378b516a16`
+
+| | Electron v1.0.2 | Compiled AHK 2.1.0 |
+|---|---|---|
+| Microsoft | **undetected** | `Trojan:Win32/Wacatac.B!ml` |
+| Aggregate | 1 / 70 (NANO-Antivirus, `Trojan.Win32.Drop.kkxxag`) | 3 / 71 |
+| Signed | **no** | no |
+| VirusTotal reputation | **0** | 0 |
+| Packaging | Nullsoft Scriptable Install System | Ahk2Exe |
+| Size | 67 MB | 1.24 MB |
+
+⛔ **This falsifies most of what earlier sections of this file assumed.** The Electron build was
+**also unsigned**, **also reputation 0**, **also a single executable** rather than a folder, and
+**also a stub with a payload appended** — NSIS works the same way Ahk2Exe does. Every property
+the early entries blamed is shared by the artifact that was never flagged.
+
+What actually differs:
+
+1. **The prior on the shape, not the shape itself.** Millions of legitimate applications ship
+   NSIS installers, so that layout carries overwhelming benign evidence. Compiled AutoHotkey has
+   the opposite prior: AHK is popular with commodity stealers, RATs and game cheats because
+   keyboard and mouse automation is trivial in it, and almost no mainstream commercial software
+   compiles with it. Same technique, inverted base rate.
+2. **NSIS payloads are inspectable and Ahk2Exe payloads are not.** An engine can open an NSIS
+   archive and score the contents on their merits. It cannot readily extract the script Ahk2Exe
+   embeds, so the file is scored as an interpreter carrying a concealed script — which is the
+   description of a dropper.
+3. **Size.** 1.2 MB that is 98.6% interpreter plus a compressed blob fits the small-dropper
+   profile. 67 MB does not look packed.
+
+#### ⛔⛔ The gate was measuring the wrong statistic from the first entry in this file
+
+**The Electron build was not clean either — it was 1/70.** It shipped for two years anyway,
+because that one detection was NANO-Antivirus, which effectively nobody runs. The AHK build was
+3/71. The count barely moved between the stack that worked and the stack that broke; what
+changed is that one of the three was **Microsoft**, and Microsoft's verdict is the only one that
+deletes a download.
+
+So the pre-registered "0–2 detections" threshold at the top of this file could never have
+answered the question it was written to answer. It would have passed the Electron build (1) and
+the old-icon AHK build (1), failed the shipping 2.0.0 (4) and 2.1.0 (3), and been wrong about
+which of those actually reached users. The 2026-08-12 entry reached half of this conclusion
+("the count is not a sufficient gate statistic — read the Microsoft class"); this is the
+retroactive confirmation, and it extends further than that entry claimed:
+
+⭐ **The count is not merely insufficient, it is close to irrelevant. Read Microsoft's verdict
+and its class; treat everything else as background.**
+
+⚠️ And the corollary worth holding onto: Electron "just working" for two years was never a
+property of Electron. It was one engine's coin-flip from looking exactly like this problem, on a
+file that was unsigned and unknown by every measure this project used to reason about risk.
