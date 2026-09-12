@@ -44,9 +44,31 @@ prevalence, so:
 - CI pins `AHK_VERSION` in `.github/workflows/test.yml`. Keep the shipped interpreter and the
   tested one on the same version, or the suite is not testing what users run.
 
-## 3. Attach the zip
+## 3. Attach the zip, and generate the notes
 
 Upload `dist\Window-Center-Resize-portable.zip` as `Window-Center-Resize-portable.zip`.
+
+⛔ **Do not hand-write the release page.** It was hand-written up to 2.2.0, which made it a second
+copy of `CHANGELOG.md` kept in step by hand — and this copy is public, because Softpedia renders
+the CHANGELOG into its *What's New* panel. Two public texts saying the same thing drift, and the
+disagreement is visible. Generate it:
+
+```
+powershell -ExecutionPolicy Bypass -File build\release-notes.ps1 -Version 2.2.0 > dist\notes.md
+gh release create v2.2.0 dist\Window-Center-Resize-portable.zip ^
+   --title "2.2.0 - short factual phrase" --notes-file dist\notes.md
+```
+
+The generator takes the `## <version>` section of `CHANGELOG.md` verbatim, appends the
+version-independent install block, and computes the hashes **from the artifacts on disk** — so
+what is published cannot disagree with what was built. It refuses to run if the CHANGELOG has no
+section for the version, and `tests/test_docs_sync.ahk` fails on the same condition so you find
+out before the tag is pushed rather than after.
+
+**Titles are `<version> - short factual phrase`**, no `v` prefix — matching `2.0.0 - one portable
+exe, 64 MB smaller` and `2.1.0 - settings window refreshed`. Lead with what changed for the user.
+⛔ Keep antivirus wording out of the title: it propagates to the directory listings and invites
+exactly the association the 2.2.0 work existed to remove.
 
 ⛔ **Do not resurrect the `Window-Center-Resize.exe` asset name.** Up to 2.1.0 that name was
 load-bearing: the README, every software directory and every mirror linked to

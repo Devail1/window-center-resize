@@ -1,4 +1,4 @@
-#Requires AutoHotkey v2.0
+﻿#Requires AutoHotkey v2.0
 #Include "_harness.ahk"
 
 ; The settings-window screenshot exists TWICE - assets/ for the README, docs/ for the GitHub
@@ -99,5 +99,31 @@ AssertEqual(AppVersion(root "\src\main.ahk") != "", true, "src/main.ahk declares
 
 AssertEqual(DocsVersion(root "\docs\index.html"), AppVersion(root "\src\main.ahk")
           , "the landing page's advertised version matches APP_VERSION")
+
+; The release page is GENERATED from the CHANGELOG section for the current version
+; (build/release-notes.ps1), so the two cannot drift - but only if the section exists. Tagging a
+; version the CHANGELOG never mentions makes the generator throw at release time, which is late:
+; the tag is usually already pushed by then. Fail here instead.
+;
+; Coverage limit: this guards that a section EXISTS and has content, not that the content
+; describes this release. A copied-and-not-edited entry passes.
+ChangelogSection(path, version) {
+    txt := FileRead(path, "UTF-8")
+    ; Everything under "## <version>" up to the next "## " heading.
+    if !RegExMatch(txt, "m)^##[ \t]+\Q" version "\E[ \t]*$", &m)
+        return ""
+    rest := SubStr(txt, m.Pos + m.Len)
+    if RegExMatch(rest, "m)^##[ \t]+\S", &n)
+        rest := SubStr(rest, 1, n.Pos - 1)
+    return Trim(rest, " `t`r`n")
+}
+
+appVer := AppVersion(root "\src\main.ahk")
+AssertEqual(ChangelogSection(root "\CHANGELOG.md", appVer) != "", true
+          , "CHANGELOG.md has a non-empty section for the current version")
+; Negative control: the same extractor must come back empty for a version that is not there,
+; otherwise the assertion above would pass for any input and guard nothing.
+AssertEqual(ChangelogSection(root "\CHANGELOG.md", "99.99.99"), ""
+          , "the changelog extractor returns nothing for a version that is absent")
 
 ReportAndExit()
