@@ -118,9 +118,24 @@ ChangelogSection(path, version) {
     return Trim(rest, " `t`r`n")
 }
 
+; The release page shows only the LEDE - the part before the first "###" subheading - so an
+; entry that starts straight at "### Fixed" publishes a release with no summary at all. The
+; generator throws on that, but only at release time; catch it here. Softpedia truncates the
+; CHANGELOG into its "What's New" panel too, so this text is load-bearing in two places.
+ChangelogLede(path, version) {
+    sec := ChangelogSection(path, version)
+    if (sec = "")
+        return ""
+    if RegExMatch(sec, "m)^###[ \t]+\S", &m)
+        sec := SubStr(sec, 1, m.Pos - 1)
+    return Trim(sec, " `t`r`n")
+}
+
 appVer := AppVersion(root "\src\main.ahk")
 AssertEqual(ChangelogSection(root "\CHANGELOG.md", appVer) != "", true
           , "CHANGELOG.md has a non-empty section for the current version")
+AssertEqual(ChangelogLede(root "\CHANGELOG.md", appVer) != "", true
+          , "that section opens with a lede, not straight into a ### subheading")
 ; Negative control: the same extractor must come back empty for a version that is not there,
 ; otherwise the assertion above would pass for any input and guard nothing.
 AssertEqual(ChangelogSection(root "\CHANGELOG.md", "99.99.99"), ""

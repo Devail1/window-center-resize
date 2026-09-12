@@ -2,9 +2,16 @@
 
 ## 2.2.0
 
-The download changes shape. Releases are no longer one compiled `.exe`; they are a small zip
-holding the AutoHotkey interpreter and this program beside it as a plain script. What the app
-does is unchanged — same hotkeys, same presets, same settings file.
+**Old download links no longer work, and that is deliberate.**
+`releases/latest/download/Window-Center-Resize.exe` is gone; the download is now
+`Window-Center-Resize-portable.zip`. That URL served a compiled executable which Windows
+Defender had begun quarantining on sight, so serving it would have meant handing people a file
+their antivirus deletes. If a copy of 2.1.0 or earlier was quarantined, download this release
+instead — there is nothing to restore or exclude.
+
+The app itself is unchanged: same hotkeys, same presets, same settings file. What changed is the
+shape of the download — the AutoHotkey interpreter, unmodified, with the program beside it as a
+plain script you can read before running it.
 
 ### Distribution
 

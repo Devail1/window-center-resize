@@ -25,13 +25,25 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
 if ($start -lt 0) {
     throw "CHANGELOG.md has no '## $Version' section. Write the changelog entry before releasing."
 }
+# Only the LEDE - everything before the section's first "### " subheading. The full entry is one
+# click away and duplicating it here made the release page longer than the changelog it copied.
+# This is also why the lede has to carry the most important thing: Softpedia truncates the
+# CHANGELOG into its "What's New" panel, so the opening lines are what most people read in both
+# places. Write them accordingly.
 $body = New-Object System.Collections.Generic.List[string]
 for ($i = $start; $i -lt $lines.Count; $i++) {
-    if ($lines[$i] -match '^##\s+\S') { break }
+    if ($lines[$i] -match '^##\s+\S' -or $lines[$i] -match '^###\s+\S') { break }
     $body.Add($lines[$i])
 }
 $notes = ($body -join "`n").Trim()
-if ($notes -eq "") { throw "The '## $Version' section in CHANGELOG.md is empty." }
+if ($notes -eq "") {
+    throw ("The '## $Version' section in CHANGELOG.md has no lede - it starts straight at a " +
+           "'###' subheading. The release page would have no summary. Write an opening " +
+           "paragraph that says what changed for the user.")
+}
+
+# GitHub heading anchors: lowercased, non-alphanumerics dropped. "2.2.0" -> "220".
+$anchor = ($Version.ToLower() -replace '[^a-z0-9 -]', '') -replace ' ', '-'
 
 $zip = Join-Path $root "dist\Window-Center-Resize-portable.zip"
 $exe = Join-Path $root "dist\portable\WindowCenterResizer.exe"
@@ -45,6 +57,8 @@ $hAhk = (Get-FileHash $ahk -Algorithm SHA256).Hash.ToLower()
 
 @"
 $notes
+
+**[Full changelog for $Version](https://github.com/Devail1/window-center-resize/blob/main/CHANGELOG.md#$anchor)**
 
 ## Installing
 
