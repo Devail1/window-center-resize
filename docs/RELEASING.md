@@ -90,7 +90,12 @@ vt analysis <id>                                       # poll until status: "com
 vt file <interpreter-sha256>                           # the shipped AutoHotkey64.exe
 ```
 
-Record both in `build/av-baseline.md`.
+Record both in `build/av-baseline.md`, and **refresh the two VirusTotal links in the README**
+(*Why the download is a zip with two files in it*). The zip link pins a specific release's hash
+and goes stale every release; the interpreter link only changes when the shipped AutoHotkey
+version does. ⛔ Links, never a badge — a badge claiming a detection count is a safety claim
+that silently becomes false the next time an engine re-scores, which this project has watched
+happen twice on unchanged bytes.
 
 ⛔ **Build once, scan that file, upload that file, publish that hash.** This was good practice
 for the compiled exe, which was byte-reproducible; for the zip it is the only thing that works.

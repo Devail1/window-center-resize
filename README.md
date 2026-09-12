@@ -56,6 +56,16 @@ So this release stops adding it. The zip contains:
 | `WindowCenterResizer.ahk` | This program, in plain text. The interpreter runs the script that shares its name. |
 | `icon.ico` | The tray icon. |
 
+Check it rather than believing it. Both links are live, so they show what the engines say
+**today** rather than what they said when this was written:
+
+- [`WindowCenterResizer.exe`](https://www.virustotal.com/gui/file/a2a54b8abc476d7671d4de0771bb54bf5f2373d79ff6871d0ba6a62c3b88ae00) — the interpreter. This is the useful one: it is AutoHotkey's own binary, so you can verify it against [the AutoHotkey project](https://www.autohotkey.com/) instead of taking anything here on trust.
+- [`Window-Center-Resize-portable.zip` 2.2.0](https://www.virustotal.com/gui/file/4a95d0284cc4792c463c387b0f299ee9c199dd9d12646cbbe010138a7e68d09c) — the download itself, 0 of 75 when published.
+
+⚠️ A scan result is a snapshot of the scanners, not a property of the file. This project has
+watched an unchanged binary be re-scored twice, once into a class Defender quarantines — which
+is why there is a link here and not a badge claiming a number.
+
 Three consequences worth knowing before you download it:
 
 - **The `.exe` shows AutoHotkey's green H icon, not this project's.** An icon lives inside the executable, so giving it ours would modify the file, change its identity, and bring the detection straight back. The tray icon is correct — that one is set at runtime. A cosmetic cost, paid deliberately.
