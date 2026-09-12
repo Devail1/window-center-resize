@@ -26,7 +26,30 @@ global INI_PATH := A_ScriptDir "\settings.ini"
 ; on a stranger's desktop. Catch anything that escapes and say something a human can act on.
 OnError(_UncaughtAppError)
 _UncaughtAppError(err, mode) {
-    MsgBox("Something went wrong:`n`n" err.Message
+    ; A Windows error code on its own is unactionable: "(6) The handle is invalid." says what
+    ; went wrong and nothing about where, so an issue reporting it cannot be investigated and
+    ; the reporter cannot be asked anything useful either. Append whatever location the error
+    ; object carries.
+    ;
+    ; Every read below is best-effort and separately guarded. A thrown value need not be an
+    ; Error at all - `throw "x"` is legal - and a handler that faults while describing a fault
+    ; turns a recoverable problem into AutoHotkey's own error dialog, which is the exact
+    ; outcome this function exists to prevent.
+    msg := "An unknown error occurred."
+    try msg := err.Message
+    detail := ""
+    try {
+        if (err.Line) {
+            detail := "`n`n" (err.What ? err.What "(), " : "") "line " err.Line
+            if (err.File)
+                detail .= " of " RegExReplace(err.File, ".*\\")
+        }
+    }
+    try {
+        if (err.Extra != "")
+            detail .= "`nSpecifically: " err.Extra
+    }
+    MsgBox("Something went wrong:`n`n" msg . detail
          . "`n`nThe app will keep running. If this repeats, please report it at`n"
          . "https://github.com/Devail1/window-center-resize/issues"
          , APP_NAME, "Icon!")

@@ -1,4 +1,4 @@
-#Requires AutoHotkey v2.0
+﻿#Requires AutoHotkey v2.0
 #Include "_harness.ahk"
 
 ; End-to-end check of the PORTABLE distribution - the thing users actually download - rather
@@ -61,7 +61,18 @@ MakeTarget(title) {
     g := Gui("+Resize", title)
     g.Add("Text", , "end-to-end target")
     g.Show("x20 y20 w600 h400")
-    WinWaitActive(title, , 5)
+    ; Assert activation rather than assuming it. This test drives the REAL keyboard, so if the
+    ; window does not take focus every Send lands somewhere else and every assertion below
+    ; fails - reporting nine product defects for one environmental problem. Observed: two runs
+    ; reported "the hotkey never reached the app" when the app was fine and something else had
+    ; stolen focus. Fail here, once, with the actual reason.
+    if !WinWaitActive(title, , 5) {
+        FileAppend("ABORT: '" title "' never became the active window after 5s.`n"
+                 . "       Something else holds focus, so the keystrokes this test sends would`n"
+                 . "       go to the wrong window. This is an environment problem, not a`n"
+                 . "       failure of the app - rerun with the desktop idle.`n", "*")
+        ExitApp(1)
+    }
     return g
 }
 
