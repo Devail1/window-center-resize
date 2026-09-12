@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Window Center &amp; Resizer — centre and resize any window with a keystroke</title>
-<meta name="description" content="A 1.2 MB Windows utility that centres and resizes the active window from a keyboard shortcut. One portable executable. No installer, no runtime, no telemetry. Free and open source.">
+<meta name="description" content="A 630 KB Windows utility that centres and resizes the active window from a keyboard shortcut. Portable, no installer, no runtime, no telemetry. Free and open source.">
 <link rel="icon" href="icon.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://devail1.github.io/window-center-resize/">
 <meta property="og:title" content="Window Center &amp; Resizer">
-<meta property="og:description" content="Centre and resize any window with a keystroke. 1.2 MB, one portable executable, free.">
+<meta property="og:description" content="Centre and resize any window with a keystroke. A 630 KB portable download, free.">
 <meta property="og:image" content="https://devail1.github.io/window-center-resize/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -145,7 +145,7 @@ footer .mono{margin-left:auto}
       <h1>Window Center &amp; Resizer</h1>
       <div class="sub">A Windows utility that does one thing.</div>
     </div>
-    <div class="meta mono">v2.1.0 · 1.23 MB<br>MIT · free</div>
+    <div class="meta mono">v2.2.0 · 630 KB<br>GPLv2 · free</div>
   </header>
 
   <div class="stage">
@@ -158,19 +158,19 @@ footer .mono{margin-left:auto}
   </div>
 
   <div class="get">
-    <a class="btn" href="https://github.com/Devail1/window-center-resize/releases/latest/download/Window-Center-Resize.exe">
+    <a class="btn" href="https://github.com/Devail1/window-center-resize/releases/latest/download/Window-Center-Resize-portable.zip">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1v10M4 7.5 8 11.5l4-4M2 14h12"/></svg>
       Download for Windows
     </a>
-    <small>1.23 MB · no installer · Windows 10 &amp; 11</small>
-    <small><a href="https://github.com/Devail1/window-center-resize#if-windows-flags-the-download">Windows may flag this as a false positive — why, and what to do</a></small>
+    <small>630 KB zip · no installer · Windows 10 &amp; 11</small>
+    <small><a href="https://github.com/Devail1/window-center-resize#why-the-download-is-a-zip-with-two-files-in-it">Why the download is a zip with two files in it</a></small>
   </div>
 
   <dl class="spec">
-    <div><dt>Size</dt><dd>1.23 MB<small>One file. Version 1.x was 64 MB.</small></dd></div>
+    <div><dt>Size</dt><dd>630 KB<small>1.3 MB unpacked. Version 1.x was 64 MB.</small></dd></div>
     <div><dt>Install</dt><dd>None<small>Portable. Run it from anywhere.</small></dd></div>
     <div><dt>Dependencies</dt><dd>Zero<small>No runtime, no .NET, no Electron.</small></dd></div>
-    <div><dt>Price</dt><dd>Free<small>MIT licensed. Source on GitHub.</small></dd></div>
+    <div><dt>Price</dt><dd>Free<small>GPLv2 licensed. Source on GitHub.</small></dd></div>
   </dl>
 
   <section>
@@ -179,7 +179,7 @@ footer .mono{margin-left:auto}
     <div class="cols">
       <div><h3>One screen</h3><p>Two shortcuts and three size presets. There is no second tab, and there will not be one.</p></div>
       <div><h3>Press the keys</h3><p>Click a field and press the combination you want. No syntax to memorise.</p></div>
-      <div><h3>Lives beside the app</h3><p>Settings are written to <kbd>settings.ini</kbd> next to the executable, so a USB stick carries them with it.</p></div>
+      <div><h3>Lives beside the app</h3><p>Settings are written to <kbd>settings.ini</kbd> inside the app’s folder, so a USB stick carries them with it.</p></div>
     </div>
   </section>
 
@@ -189,8 +189,8 @@ footer .mono{margin-left:auto}
       <div><h3><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>C</kbd></h3><p>Centre the active window without changing its size.</p></div>
       <div><h3><kbd>F9</kbd></h3><p>Cycle the active window through 50%, 75% and 90% of the screen's work area.</p></div>
     </div>
-    <p class="note">The executable is unsigned, so Windows may show a SmartScreen prompt the first time you run it. The full source is on GitHub and builds with a single command.</p>
-    <p class="note">The shortcuts work while the app is running. To start it with Windows, put a <em>shortcut</em> to the executable in your Startup folder — <a href="https://github.com/Devail1/window-center-resize#starting-with-windows">the README shows how</a>. Move the shortcut, not the executable: settings live beside it.</p>
+    <p class="note">The download is a zip holding two files that belong together: <kbd>WindowCenterResizer.exe</kbd> is the stock AutoHotkey interpreter, unmodified, and <kbd>WindowCenterResizer.ahk</kbd> beside it is this program, in plain text you can read before running it. Keep them in the same folder. The executable is unsigned, so Windows may still show a SmartScreen prompt the first time.</p>
+    <p class="note">The shortcuts work while the app is running. To start it with Windows, put a <em>shortcut</em> to the executable in your Startup folder — <a href="https://github.com/Devail1/window-center-resize#starting-with-windows">the README shows how</a>. Move the shortcut, never the folder’s contents: the program and its settings both live beside the executable.</p>
   </section>
 
   <footer>

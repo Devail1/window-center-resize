@@ -1,4 +1,20 @@
 ﻿# build/build.ps1 — compiles to a single portable exe. No UPX (antivirus false positives).
+#
+# ⛔⛔ RETIRED AT 2.2.0. DO NOT USE THIS TO BUILD A RELEASE.
+#
+# What this script produces is quarantined by Windows Defender on arrival. Ahk2Exe welds the
+# script into a copy of the AutoHotkey interpreter, and that shape is scored as a script
+# dropper - measured 2026-09-12 against the same Microsoft engine build, both unsigned:
+#
+#   stock AutoHotkey64.exe          0/70,  Microsoft undetected
+#   this script's output            3/71,  Microsoft Trojan:Win32/Wacatac.B!ml
+#
+# Chrome deletes the result mid-download. Releases are built by build-portable.ps1 instead,
+# which ships the interpreter byte-identical with the script beside it. Full record in
+# build/av-baseline.md; procedure in docs/RELEASING.md.
+#
+# Kept only so the retired artifact can be reproduced for comparison. If you are here to cut
+# a release, you want build-portable.ps1.
 $ErrorActionPreference = "Stop"
 $root     = Split-Path -Parent $PSScriptRoot
 $ahk2exe  = "$env:LOCALAPPDATA\Programs\AutoHotkey\Compiler\Ahk2Exe.exe"

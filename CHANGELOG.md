@@ -1,6 +1,43 @@
 # Changelog
 
-## Unreleased
+## 2.2.0
+
+The download changes shape. Releases are no longer one compiled `.exe`; they are a small zip
+holding the AutoHotkey interpreter and this program beside it as a plain script. What the app
+does is unchanged — same hotkeys, same presets, same settings file.
+
+### Distribution
+
+- **The compiled executable is gone, because Windows Defender had started deleting it.** On
+  2026-09-12 Microsoft's cloud classifier scored the unchanged 2.1.0 binary as
+  `Trojan:Win32/Wacatac.B!ml`, which Defender treats as Severe and quarantines on sight.
+  Chrome deletes such a file mid-download, so the release was effectively unobtainable —
+  including by its own author, which is how this was noticed.
+- **The fix is structural, not cosmetic.** AutoHotkey's compiler welds a script into a copy of
+  the interpreter, and that shape — not the code in it — is what the classifiers score, because
+  it is also how a great deal of real malware is packaged. Measured against the same Microsoft
+  engine build, both files unsigned: the stock interpreter is **0 of 70**, the compiled release
+  **3 of 71**. They differ by 17,920 bytes. This release ships the interpreter untouched and
+  keeps the script next to it, so there is no modified binary to score. The portable zip scans
+  **0 of 75**, Microsoft undetected.
+- **Old download links are broken on purpose.** `releases/latest/download/Window-Center-Resize.exe`
+  no longer exists. It served the compiled build, and serving it knowingly would hand people a
+  file their antivirus deletes. Software directories and mirrors that copied that URL will 404
+  until they are updated.
+- **The download is smaller:** 630 KB, down from 1.23 MB, because a script compresses far
+  better than an executable does.
+- **The `.exe` now shows AutoHotkey's icon rather than this project's.** An icon is stored
+  inside the executable, so applying ours would modify the file and reinstate the detection.
+  The tray icon is unaffected.
+
+### Fixed
+
+- **Restart as administrator** relaunches correctly when running as a script. It previously
+  passed a bare `.ahk` path to Windows, which would have opened whichever AutoHotkey was
+  *installed* — or a "how do you want to open this file" dialog on a machine with none —
+  instead of the interpreter shipped in the folder.
+- The tray icon is loaded from `icon.ico` beside the script, so it is correct in a release
+  folder as well as in a source checkout.
 
 ### Licence
 

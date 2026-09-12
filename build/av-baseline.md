@@ -1,7 +1,13 @@
-# Antivirus baseline — compiled AutoHotkey v2 binaries
+# Antivirus baseline — AutoHotkey v2 distribution
 
-Purpose: compiled AHK binaries are heuristically flagged by some engines. This file records a
-known-good baseline so a future detection can be compared against it rather than panicked over.
+Purpose: record every antivirus measurement this project has taken, so a future detection can be
+compared against a baseline rather than panicked over.
+
+⚠️ **Read the last section first.** Sections are in chronological order and the early ones are
+wrong in ways the later ones correct — most importantly, everything before 2026-09-12 assumes the
+product is a **compiled** binary and reasons about how to get a good antivirus roll for one. It is
+no longer compiled, and that reasoning no longer applies. The history is kept because the
+measurements are real and the mistakes are instructive, not because the conclusions still hold.
 
 ## 2026-08-03 — hello-world baseline
 
@@ -245,3 +251,127 @@ source-based route (README → *If Windows flags the download*), not to fight th
 **Watch signal:** the Softpedia and MajorGeeks listings re-scan independently (MajorGeeks with
 Bitdefender + ESET). A PUA-class label survives that; a Trojan-class one may not. A pulled
 listing — not the download count — is the signal that this stopped being cosmetic.
+
+### 2026-09-12 — IT STOPPED BEING COSMETIC, AND THE FIX WAS STRUCTURAL
+
+⭐⭐ **The compiled distribution is retired.** Everything above this section is the record of a
+project trying to get a good roll out of a slot machine. This section is the one where it stopped
+playing.
+
+**What happened.** Liav could not download his own release. Chrome reported *"Failed - Virus
+detected"* and deleted the file mid-download, from the canonical
+`releases/latest/download/Window-Center-Resize.exe` URL. Defender's own log, on the build
+machine:
+
+```
+InitialDetectionTime : 9/12/2026 12:55:00 PM
+ThreatID             : 2147772962          (Trojan:Win32/Wacatac.B!ml)
+Resources            : C:\Users\97254\Downloads\Window-Center-Resize (1).exe
+                       <- release-assets.githubusercontent.com
+```
+
+⛔ **On the build machine.** The 2026-08-12 entry noted the quarantine was observed *off* the
+build box and treated that as evidence it was cloud-side rather than local. It is now both.
+
+**Third Microsoft verdict on bytes that never changed.** `9fed2a6a…` has been re-scored twice
+since publication, and the aggregate count never moved off 3:
+
+| When | Microsoft verdict | Defender enforces? |
+|---|---|---|
+| 2026-08-06 | `Program:Win32/Wacapew.C!ml` | no (PUA prefix) |
+| 2026-08-11 | `Trojan:Win32/Phonzy.A!ml` | yes |
+| **2026-09-12** | **`Trojan:Win32/Wacatac.B!ml`** | **yes** |
+
+#### ⭐ The measurement that ended the argument
+
+Every earlier section reasoned about *"unsigned + zero reputation"* as one compound cause, and
+concluded code signing was the only purchasable lever. That framing hid the actual variable.
+Both files below are **unsigned**, scanned against the same Microsoft engine build (1.26080)
+within a day of each other:
+
+| | Stock `AutoHotkey64.exe` 2.0.26 | Compiled 2.1.0 release |
+|---|---|---|
+| SHA-256 | `a2a54b8abc476d7671d4de0771bb54bf5f2373d79ff6871d0ba6a62c3b88ae00` | `9fed2a6a…` |
+| Microsoft | **undetected** | `Trojan:Win32/Wacatac.B!ml` |
+| Aggregate | **0 / 70** | 3 / 71 |
+| Signed | no | no |
+| Size | 1,272,832 B | 1,290,240 B |
+
+**17,920 bytes apart — 1.4% of the file.** The other 98.6% is byte-identical to a binary
+Microsoft calls clean. ⭐ **So signing was never the variable.** What `Ahk2Exe` adds is a script
+welded into a copy of the interpreter, which is precisely how a great deal of real malware is
+packaged — the classifier is correct about the category and wrong about this file. The lever
+that was available the whole time was *stop producing a modified binary*, and no section above
+considered it.
+
+⚠️ **This qualifies, but does not delete, the earlier claim that rebuilding is futile.** Rebuilding
+the *same artifact shape* remains futile — a new hash starts at reputation 0. Changing the shape
+is a different act, and it works.
+
+#### The fix
+
+`build/build-portable.ps1`. Ships the interpreter **byte-identical** under the app's name
+(reputation follows contents, and renaming does not change contents) with the flattened script
+beside it as plain text. Verified: a renamed stock interpreter launched with no arguments runs
+the same-named `.ahk` next to it.
+
+**Verification, on the enforcement path rather than on VirusTotal alone.** Both artifacts tagged
+with Mark-of-the-Web (`ZoneId=3`, HostUrl a GitHub release), then force-scanned by the local
+Defender on the same machine in the same minute:
+
+| | Portable zip | Control: compiled 2.1.0 |
+|---|---|---|
+| `Start-MpScan` on the extracted folder | all files survive | — |
+| Reading the file | fine | *"the file contains a virus or potentially unwanted software"* |
+| Defender detections logged | **none** | held, unreadable |
+| VirusTotal | **0 / 75**, Microsoft undetected | 3 / 71 |
+
+Two independently built zips were scanned, on separate builds hours apart:
+`eb2fbb67…` (the prototype) and `5cc9c99e…` (post version-bump), plus the flattened script
+`c4686c0d…`. **All three: 0 detections, Microsoft undetected.**
+
+⚠️ **The zip hash is NOT reproducible, and this is a change from the compiled era.** Measured
+2026-09-12 — two consecutive builds from identical source:
+
+| Artifact | Build 1 | Build 2 | |
+|---|---|---|---|
+| `WindowCenterResizer.ahk` | `29db3182…` | `29db3182…` | **deterministic** |
+| `Window-Center-Resize-portable.zip` | `5cc9c99e…` | `6a712db9…` | **differs** |
+
+`Compress-Archive` stores file modification times, and the script is rewritten on every build,
+so the zip hash changes even when nothing else does. ⛔ `docs/RELEASING.md` previously recorded
+that "the build **is** deterministic" — that was measured on the compiled exe and does not carry
+over. The consequence is that *build once → scan that file → upload that file → publish that
+hash* is no longer merely good practice but the only thing that can work: a rebuild cannot
+reproduce a published zip hash. The three **contents** are stable and are the more useful things
+to publish.
+
+Functionally verified, not assumed: 84 unit assertions green, plus two end-to-end runs driving a
+real window through the real global hotkeys (`tests/manual_e2e_portable.ahk`) — centring to
+within 1px, and F9 cycling all three presets centred.
+
+#### Decisions
+
+**Liav, 2026-09-12: break the old download links rather than keep serving a flagged binary.**
+In his words: *"i prefer they would be broken rather than people think i'm trying to put malware
+on their pcs."* `RELEASING.md` step 3 had insisted for two releases that
+`Window-Center-Resize.exe` must never be dropped because directories and mirrors linked it. It is
+dropped at 2.2.0. ⛔ Do not re-add it.
+
+**The WDSI false-positive submission remains declined** (standing since 2026-08-12, re-raised and
+re-declined today). Consequence, stated plainly so nobody re-discovers it as a surprise: **2.1.0
+and earlier stay flagged forever.** Anyone arriving on an old link gets a 404 rather than a
+quarantine, and the README tells them to download the current release instead.
+
+#### ⛔ What this does NOT fix
+
+- **Signing is still required before any paid product.** Unchanged from every section above. This
+  release is free.
+- **The shipped interpreter is now a third-party dependency with its own reputation**, and it can
+  be re-scored without anything in this repo changing — which is exactly what happened to 2.1.0.
+  A new release must re-check the interpreter hash, and must not ship a just-released AutoHotkey
+  version, whose prevalence starts low. See `docs/RELEASING.md` step 2.
+- **SmartScreen is a separate mechanism** and was never the problem here. An unsigned, unknown
+  binary can still raise *"Windows protected your PC"*; that is a one-click prompt, not a
+  quarantine. ⚠️ Earlier sections of this file conflate the two. They are different systems with
+  different triggers, and only the Defender one was deleting downloads.
