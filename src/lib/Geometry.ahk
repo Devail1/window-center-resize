@@ -31,3 +31,61 @@ AnchoredRect(waLeft, waTop, waWidth, waHeight, pos, curW, curH) {
     y := waTop  + Round((waHeight - h) * pos.ay / 100)
     return { x: x, y: y, w: w, h: h }
 }
+
+; Pure. The INVERSE of AnchoredRect: a rectangle back to the anchor that produced it.
+;
+; The editor drags a rectangle around a PICTURE of the screen, and the picture is just another
+; work area — same arithmetic, so the same pair of functions serves both.
+;
+; ⛔ percent -> pixels -> percent is NOT the identity. Both directions round, and at some sizes
+; the midpoint falls the wrong way: h 60% of a 242px area is 145, leaving slack 97, so ay 50
+; places at Round(48.5) = 49 and reads back as Round(50.5) = 51. A position stored as 50 would
+; drift to 51 with the user never having touched that axis — and since the editor reads the
+; rectangle back on every drag frame, one nudge sideways would rewrite the other axis.
+;
+; So: if the rectangle is EXACTLY what prev already describes, prev IS the answer. Nothing
+; moved, so nothing changed. That also keeps a "keep current size" position (w/h = 0) from
+; being silently converted into a fixed size by a drag that never resized it.
+AnchorFromRect(waLeft, waTop, waWidth, waHeight, r, prev, curW, curH) {
+    was := AnchoredRect(waLeft, waTop, waWidth, waHeight, prev, curW, curH)
+    if (was.x = r.x && was.y = r.y && was.w = r.w && was.h = r.h)
+        return { ax: prev.ax, ay: prev.ay, w: prev.w, h: prev.h }
+    ; No slack means no anchor to read: a full-width window could be at any anchor at all, so
+    ; keep the one it had rather than reset it to zero with a division that cannot be done.
+    slackX := waWidth - r.w, slackY := waHeight - r.h
+    return { ax: (slackX > 0) ? Round((r.x - waLeft) / slackX * 100) : prev.ax
+           , ay: (slackY > 0) ? Round((r.y - waTop)  / slackY * 100) : prev.ay
+           , w:  Round(r.w / waWidth  * 100)
+           , h:  Round(r.h / waHeight * 100) }
+}
+
+; Pure. Position and size do NOT share a grid, and that asymmetry is the design, not an
+; oversight. Position wants to LAND: there are only a handful of placements anyone means
+; (flush, quarter, centre) and a coarse grid makes them decisive. A step of 0 means no grid.
+SnapAnchorPct(pct, step) {
+    v := (step > 0) ? Round(pct / step) * step : Round(pct)
+    return Max(0, Min(100, v))
+}
+
+; Pure. Size is a continuum, and the widths people ask for are NOT evenly spaced — a third is
+; 33.3%, which lands on no uniform grid. So a fine grid, plus magnets at the fractions that get
+; asked for, with a pull radius wider than the grid step.
+;
+; ⛔ The magnet must beat the RAW value, never the already-rounded one. Against a 1% grid,
+; rounding is always within half a percent while a magnet may be a whole radius away, so
+; comparing the two made the pull silently do nothing.
+SnapSizePct(pct, step, magnets, radius) {
+    found := false, best := 0, nearest := radius
+    for m in magnets {
+        d := Abs(m - pct)
+        if (d <= nearest) {
+            nearest := d
+            best := m
+            found := true
+        }
+    }
+    if (found)
+        return Max(0, Min(100, best))
+    v := (step > 0) ? Round(pct / step) * step : Round(pct)
+    return Max(0, Min(100, v))
+}
