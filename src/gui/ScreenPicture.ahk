@@ -24,7 +24,11 @@ global SP_GRAB_PX      := 7
 
 global SP_SLOT_H := 170                  ; the letterbox slot's fixed height, in layout units
 
-global _spGui := "", _spSlot := "", _spPic := "", _spBox := ""
+global _spGui := "", _spSlot := "", _spPic := "", _spBox := "", _spFill := ""
+; The border thickness of the drawn window, in pixels. The box Gui paints the border colour and
+; a single inset child paints the fill, which is the cheapest way to draw an outline without
+; GDI+ — one extra window rather than four edge strips.
+global SP_BORDER := 2
 global _spPos := { ax: 50, ay: 50, w: 0, h: 0 }
 global _spOnChange := ""
 global _spEnabled := false
@@ -38,8 +42,8 @@ global SP_KEEP_W := 40, SP_KEEP_H := 55
 ; Adds the slot, the picture and the box to `g` at the current layout cursor. Call
 ; ScreenPictureRelayout() after g.Show() — before the window is on screen it has a size but not
 ; yet a position, so nothing can be measured.
-ScreenPictureCreate(g, slotColor, screenColor, boxColor, onChange) {
-    global _spGui, _spSlot, _spPic, _spBox, _spOnChange
+ScreenPictureCreate(g, slotColor, screenColor, boxColor, fillColor, onChange) {
+    global _spGui, _spSlot, _spPic, _spBox, _spFill, _spOnChange
     _spGui := g, _spOnChange := onChange
 
     ; ⛔ WS_CLIPCHILDREN on the parent and WS_CLIPSIBLINGS on both Progress controls. Without
@@ -66,6 +70,19 @@ ScreenPictureCreate(g, slotColor, screenColor, boxColor, onChange) {
     ; The box must not be the SCREEN's colour. Painted the same, it is invisible against the
     ; picture and reads as "the whole screen is selected".
     _spBox.BackColor := boxColor
+    _spFill := _spBox.Add("Progress", "x0 y0 w10 h10 Background" fillColor, 0)
+    ; Without WS_CLIPCHILDREN the box repaints its own background over the fill, so the border
+    ; colour covers the whole box and the outline never appears.
+    _SpAddStyle(_spBox.Hwnd, 0x02000000)
+    _SpAddStyle(_spFill.Hwnd, 0x04000000)
+    ; ⛔ The fill covers the box's whole interior, so without this every click lands on the FILL
+    ; and the box never receives a hit-test: the drag silently stops working the moment the box
+    ; gains an inside. WS_EX_TRANSPARENT makes it invisible to the mouse while still painting.
+    _SpAddExStyle(_spFill.Hwnd, 0x00000020)
+    ; Belt and braces: a DISABLED child sends its mouse messages to its parent, which is the
+    ; behaviour relied on here. WS_EX_TRANSPARENT alone left WindowFromPoint still returning the
+    ; fill, and the fill is decoration — it should never be a mouse target by any route.
+    _spFill.Enabled := false
 
     ; ⛔ The handlers are registered BEFORE the box is shown and before its frame is
     ; recalculated. Registered after, _SpFrameChanged ran with NO WM_NCCALCSIZE handler in
@@ -74,6 +91,7 @@ ScreenPictureCreate(g, slotColor, screenColor, boxColor, onChange) {
     ; model believed, which changes the SLACK the anchor is a fraction of: merely pressing the
     ; mouse moved a 50/50 position to 56/100. Every handler already no-ops while _spBox is
     ; unset, so registering early is safe.
+    OnMessage(0x0005, _SpSize)            ; WM_SIZE
     OnMessage(0x0024, _SpGetMinMaxInfo)   ; WM_GETMINMAXINFO
     OnMessage(0x0083, _SpNcCalcSize)      ; WM_NCCALCSIZE
     OnMessage(0x0084, _SpNcHitTest)       ; WM_NCHITTEST
@@ -148,6 +166,7 @@ _SpRedrawBox() {
     else
         WinHide("ahk_id " _spBox.Hwnd)
     _SpMoveToScreen(_spBox.Hwnd, r.x, r.y, r.w, r.h)
+    _SpFitFill()
     _SpRaise()
 }
 
@@ -165,6 +184,12 @@ _SpRaise() {
     ; to be drawn again.
     static RDW := 0x0001 | 0x0004 | 0x0080 | 0x0100 | 0x0400
     DllCall("RedrawWindow", "ptr", _spGui.Hwnd, "ptr", 0, "ptr", 0, "uint", RDW)
+}
+
+_SpAddExStyle(hwnd, bits) {
+    static GWL_EXSTYLE := -20
+    cur := DllCall("GetWindowLongPtr", "ptr", hwnd, "int", GWL_EXSTYLE, "ptr")
+    DllCall("SetWindowLongPtr", "ptr", hwnd, "int", GWL_EXSTYLE, "ptr", cur | bits)
 }
 
 _SpAddStyle(hwnd, bits) {
@@ -202,6 +227,26 @@ _SpReadRect(lParam) {
 _SpWriteRect(lParam, l, t, r, b) {
     NumPut("int", l, lParam, 0), NumPut("int", t, lParam, 4)
     NumPut("int", r, lParam, 8), NumPut("int", b, lParam, 12)
+}
+
+; The fill is inset inside the box on every size change, which is what leaves the box's own
+; background showing as a border. WM_SIZE rather than a call from _SpRedrawBox, so it keeps up
+; DURING a resize drag and not only when the drag ends.
+_SpSize(wParam, lParam, msg, hwnd) {
+    if (_spBox = "" || hwnd != _spBox.Hwnd)
+        return
+    _SpFitFill()
+}
+
+; Insets the fill inside the box, which is what leaves the box's own background showing as a
+; border. Called from BOTH the redraw and WM_SIZE: the redraw is what guarantees it is right
+; after a programmatic move, and WM_SIZE is what keeps it right DURING a resize drag.
+_SpFitFill() {
+    if (_spBox = "" || _spFill = "")
+        return
+    WinGetPos(, , &w, &h, "ahk_id " _spBox.Hwnd)
+    WinMove(SP_BORDER, SP_BORDER
+          , Max(1, w - SP_BORDER * 2), Max(1, h - SP_BORDER * 2), "ahk_id " _spFill.Hwnd)
 }
 
 ; ⛔ A sizable window has an OS-enforced MINIMUM TRACKING SIZE, and it is far larger than a box

@@ -15,7 +15,8 @@ Theme(mode) {
             ; value: painted alike, the box is invisible and the picture reads as fully
             ; selected.
             "screen", "2B2B2B",
-            "accent", "4C8DF6"
+            "accent", "4C8DF6",
+            "fill",   "3A4658"
         )
     }
     ; Light is also the fallback for any unrecognised mode. A settings window that throws
@@ -26,6 +27,7 @@ Theme(mode) {
         "hint",   "5D5D5D",
         "header", "101010",
         "screen", "FFFFFF",
-        "accent", "3B82F6"
+        "accent", "3B82F6",
+        "fill",   "FDFDFE"
     )
 }

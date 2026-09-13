@@ -80,49 +80,92 @@ ShowSettingsWindow(iniPath, onSaved) {
     g.SetFont("s11 w600 c" th["header"], "Segoe UI")
     g.Add("Text", "xm w300", "Positions")
     g.SetFont("s9 w400 c" th["hint"], "Segoe UI")
-    g.Add("Text", "xm y+2 w300", "Drag the blue box inside your screen.")
+    g.Add("Text", "xm y+2 w300", "Drag the window where you want it. Give it a name and a key.")
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
     ; Spacing ladder, each distinguishable from its neighbour: 2 (header->subtitle) /
     ; 10 (row->row) / 20 (subtitle->first row) / 24 (section->section). The subtitle sat only
     ; 2px further from the first row than the rows sit from each other, so it read as another
     ; form row instead of a caption under the bold header. Do not collapse this to a constant.
-    g.Add("Text", "xm y+20 w300 h0")        ; spacer: the picture is added by ScreenPictureCreate
-    ScreenPictureCreate(g, th["hint"], th["screen"], th["accent"], _OnPictureDrag)
+    g.Add("Text", "xm y+20 w300 h0")        ; the picture is added by ScreenPictureCreate
+    ScreenPictureCreate(g, th["hint"], th["screen"], th["accent"], th["fill"], _OnPictureDrag)
 
-    lv := g.Add("ListView", "xm y+10 w300 r4 -Multi +Report", ["Position", "Hotkey"])
-    lv.ModifyCol(1, 196)
-    lv.ModifyCol(2, 80)
+    ; The numbers behind the drag. A picture is the fastest way to AIM and a hopeless way to
+    ; read back exactly what you aimed at, and these are the values that reach settings.ini.
+    g.SetFont("s9 w400 c" th["hint"], "Consolas")
+    txtReadout := g.Add("Text", "xm y+8 w180", "")
+    txtScreen  := g.Add("Text", "x+0 yp w120 Right", "")
+    g.SetFont("s10 w400 c" th["text"], "Segoe UI")
+    ; ⛔ Without this there is no way to give a keep-current-size position a size, and a
+    ; keep-size position cannot be resized BY DESIGN — its edges are all caption, because "keep
+    ; the size it has" is exactly what having no size to drag means. Dropping the checkbox
+    ; therefore did not remove an option, it removed the resize handles from the position every
+    ; user starts with, with nothing on screen to explain why the edges did nothing.
+    cbKeep := g.Add("CheckBox", "xm y+6 w300", "Keep the window's current size")
 
-    btnAdd := g.Add("Button", "xm y+10 w146", "Add")
-    btnRemove := g.Add("Button", "x+8 w146", "Remove")
+    ; One row per position, edited in place. There is no separate "selected row" panel: the row
+    ; IS the panel, which is a whole block of controls this window does not have to carry.
+    ;
+    ; All MAX_POSITIONS rows are created up front and the unused ones hidden, because AutoHotkey
+    ; cannot destroy a single control — only the whole window. _Reflow then moves everything
+    ; below them so hidden rows do not leave a hole.
+    rows := []
+    loop MAX_POSITIONS {
+        i := A_Index
+        yOpt := (i = 1) ? "xm y+10" : "xm y+4"
+        ; The swatch is the selection indicator. A border around the row would need custom
+        ; painting; a filled square does the same job with a colour.
+        ; A Text, not a Progress: Progress has no Click event, so the swatch could be drawn
+        ; but never used to select its row.
+        sw := g.Add("Text", yOpt " w22 h22 Background" th["hint"])
+        nm := g.Add("Edit", "x+6 yp-1 w120")
+        hk := g.Add("Hotkey", "x+6 yp w118")
+        dl := g.Add("Button", "x+6 yp-1 w22 h24", "x")
+        rows.Push({ swatch: sw, name: nm, hotkey: hk, del: dl })
+    }
 
-    g.Add("Text", "xm y+10 w106", "Name")
-    eName := g.Add("Edit", "x+18 yp-3 w176")
-    g.Add("Text", "xm y+10 w106", "Hotkey")
-    hPos := g.Add("Hotkey", "x+18 yp-3 w176")
-    cbKeep := g.Add("CheckBox", "xm y+10 w300", "Keep the window's current size")
+    ; ⛔ MEASURED, not declared. The reflow shifts everything below by (rows removed) x pitch,
+    ; and a pitch guessed at 30 against a real 26 put the last row on top of the Add button.
+    ; The controls' own geometry is the only thing that cannot drift out of step with itself.
+    rows[1].swatch.GetPos(, &r1y)
+    rows[2].swatch.GetPos(, &r2y)
+    ROW_H := r2y - r1y
+
+    btnAdd := g.Add("Button", "xm y+8 w300", "+ Add position")
+
+    ; Everything from here down has to move when the number of rows changes. Collected as it is
+    ; created rather than looked up later: the control list is the one thing that cannot drift
+    ; out of step with the layout.
+    below := [btnAdd]
+    _A(type, opts, text := "") {
+        c := g.Add(type, opts, text)
+        below.Push(c)
+        return c
+    }
 
     ; --- Resize cycle ------------------------------------------------------------------------
     g.SetFont("s11 w600 c" th["header"], "Segoe UI")
-    g.Add("Text", "xm y+24 w300", "Resize cycle")
+    _A("Text", "xm y+24 w300", "Size")
     g.SetFont("s9 w400 c" th["hint"], "Segoe UI")
-    g.Add("Text", "xm y+2 w300", "One key, cycling these sizes. It also re-centres the window.")
+    ; ⛔ NOT "cycles these without moving the window" — the mock says that and it is wrong. F9
+    ; sizes AND re-centres, unchanged since 2.2.0, and that is a settled decision rather than an
+    ; oversight. A subtitle that denies it would be the only place in the app that lies.
+    _A("Text", "xm y+2 w300", "A separate key, cycling these sizes. It re-centres too.")
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
-    g.Add("Text", "xm y+20 w106", "Hotkey")
-    hResize := g.Add("Hotkey", "x+18 yp-3 w176")
+    _A("Text", "xm y+20 w106", "Resize")
+    hResize := _A("Hotkey", "x+18 yp-3 w176")
 
     edits := []
     loop 3 {
         i := A_Index
-        g.Add("Text", "xm y+10 w106", "Preset " i)
-        ew := g.Add("Edit", "x+18 yp-3 w73 Number")
+        _A("Text", "xm y+10 w106", "Preset " i)
+        ew := _A("Edit", "x+18 yp-3 w73 Number")
         ; The multiplication sign, not the letter x — this is a dimension, not a form field.
         g.SetFont("s10 w400 c" th["hint"], "Segoe UI")
-        g.Add("Text", "x+6 yp+3 w18 Center", "×")
+        _A("Text", "x+6 yp+3 w18 Center", "×")
         g.SetFont("s10 w400 c" th["text"], "Segoe UI")
-        eh := g.Add("Edit", "x+6 yp-3 w73 Number")
+        eh := _A("Edit", "x+6 yp-3 w73 Number")
         edits.Push({ w: ew, h: eh })
     }
 
@@ -133,40 +176,90 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; rightmost, and `Default` makes it the accent-filled button Windows 11 draws for the
     ; default push button.
     ; 300 content, right-hand pair = 88 + 8 + 88 = 184, so the pair starts at 300 - 184 = 116.
-    btnReset := g.Add("Button", "xm y+24 w88", "Reset")
-    btnClose := g.Add("Button", "xm+116 yp w88", "Close")
-    btnSave  := g.Add("Button", "x+8 w88 Default", "Save")
+    btnReset := _A("Button", "xm y+24 w88", "Reset")
+    btnClose := _A("Button", "xm+116 yp w88", "Close")
+    btnSave  := _A("Button", "x+8 w88 Default", "Save")
 
     ; --- the model <-> controls wiring ---------------------------------------------------------
 
-    _RowText(i) {
-        lv.Modify(i, "Col1", _PositionLabel(positions[i], i))
-        lv.Modify(i, "Col2", positions[i].hotkey != "" ? positions[i].hotkey : "not set")
+    ; Moves everything below the rows so hidden rows leave no hole, and resizes the window to
+    ; match. Tracked as a delta from the last layout rather than recomputed from scratch: the
+    ; controls' own positions are the source of truth, so nothing here has to know the design.
+    ; The layout was BUILT with every row visible, so that is the baseline the first reflow
+    ; measures its delta from.
+    shownRows := MAX_POSITIONS
+    shown := false
+    _Reflow(n) {
+        if (n = shownRows)
+            return
+        delta := (n - shownRows) * ROW_H
+        shownRows := n
+        loop MAX_POSITIONS {
+            vis := (A_Index <= n)
+            for _, c in [rows[A_Index].swatch, rows[A_Index].name
+                       , rows[A_Index].hotkey, rows[A_Index].del]
+                c.Visible := vis
+        }
+        for c in below {
+            c.GetPos(&cx, &cy)
+            c.Move(cx, cy + delta)
+        }
+        ; The height is computed from the LAST control rather than left to AutoSize. AutoSize
+        ; re-runs the layout from the controls' declared positions and would undo every move
+        ; above; it also has no reason to exclude the rows that were just hidden.
+        if (shown)
+            g.Show("w332 h" _WantHeight() " NoActivate")
     }
 
-    _RebuildList() {
-        lv.Delete()
-        for i, p in positions
-            lv.Add(, _PositionLabel(p, i), p.hotkey != "" ? p.hotkey : "not set")
+    _WantHeight() {
+        btnSave.GetPos(, &sy, , &sh)
+        return sy + sh + g.MarginY
+    }
+
+    _Swatches() {
+        loop MAX_POSITIONS
+            rows[A_Index].swatch.Opt("+Background"
+                . ((A_Index = sel) ? th["accent"] : th["hint"]))
+    }
+
+    _Readout() {
+        wa := GetNearestMonitorWorkArea(g.Hwnd)
+        txtScreen.Value := wa.width " x " wa.height " work area"
+        if (sel < 1 || sel > positions.Length) {
+            txtReadout.Value := ""
+            return
+        }
+        p := positions[sel]
+        txtReadout.Value := (p.w = 0 && p.h = 0)
+            ? "same size  ·  at " p.ax ", " p.ay " %"
+            : "size " p.w " x " p.h " %  ·  at " p.ax ", " p.ay " %"
     }
 
     ; Fills the per-row controls FROM the model. Never the other way round.
     _ShowRow(i) {
         loading := true
         sel := i
-        if (i < 1 || i > positions.Length) {
-            eName.Value := "", hPos.Value := "", cbKeep.Value := 0
-            eName.Enabled := false, hPos.Enabled := false, cbKeep.Enabled := false
+        _Swatches()
+        if (i >= 1 && i <= positions.Length) {
+            cbKeep.Value := (positions[i].w = 0 && positions[i].h = 0) ? 1 : 0
+            cbKeep.Enabled := true
+            ScreenPictureSet(positions[i], true)
+        } else {
+            cbKeep.Value := 0
+            cbKeep.Enabled := false
             ScreenPictureSet({ ax: 50, ay: 50, w: 0, h: 0 }, false)
-            loading := false
-            return
         }
-        p := positions[i]
-        eName.Enabled := true, hPos.Enabled := true, cbKeep.Enabled := true
-        eName.Value := p.name
-        hPos.Value := p.hotkey
-        cbKeep.Value := (p.w = 0 && p.h = 0) ? 1 : 0
-        ScreenPictureSet(p, true)
+        _Readout()
+        loading := false
+    }
+
+    _RefreshRows() {
+        loading := true
+        for i, p in positions {
+            rows[i].name.Value := p.name
+            rows[i].hotkey.Value := p.hotkey
+        }
+        _Reflow(positions.Length)
         loading := false
     }
 
@@ -177,31 +270,10 @@ ShowSettingsWindow(iniPath, onSaved) {
             return
         p := positions[sel]
         p.ax := pos.ax, p.ay := pos.ay, p.w := pos.w, p.h := pos.h
-        ; Dragging an edge gives the position a real size, so the checkbox has to follow. It is
-        ; a view of w/h, not a separate piece of state.
+        ; Dragging an edge gives the position a real size, so the checkbox follows. It is a
+        ; VIEW of w/h, never a separate piece of state that could disagree with them.
         cbKeep.Value := (p.w = 0 && p.h = 0) ? 1 : 0
-    }
-
-    _OnNameChange(*) {
-        if (loading || sel < 1 || sel > positions.Length)
-            return
-        positions[sel].name := eName.Value
-        _RowText(sel)
-    }
-
-    _OnHotkeyChange(*) {
-        if (loading || sel < 1 || sel > positions.Length)
-            return
-        v := PreserveHotkey(hPos.Value, positions[sel].hotkey)
-        ; ⛔ Filling the control FIRES this handler, and the control re-renders what it was
-        ; given — it is handed ^+c and reads back +^c. Writing that back rewrote the stored
-        ; value just because a row was selected, and on Save it would rewrite the user's INI.
-        ; The `loading` flag cannot prevent it: the notification is delivered from the message
-        ; loop AFTER the flag has been cleared. So compare what the two values MEAN.
-        if (NormalizeHotkeyName(v) = NormalizeHotkeyName(positions[sel].hotkey))
-            return
-        positions[sel].hotkey := v
-        _RowText(sel)
+        _Readout()
     }
 
     _OnKeepChange(*) {
@@ -211,19 +283,38 @@ ShowSettingsWindow(iniPath, onSaved) {
         if (cbKeep.Value) {
             p.w := 0, p.h := 0
         } else {
-            ; Unchecking needs a real size, and it must be the size the box is ALREADY drawn at
+            ; Unticking needs a real size, and it must be the size the box is ALREADY drawn at,
             ; or the box jumps under the user's eyes the instant they tick the box.
             p.w := SP_KEEP_W, p.h := SP_KEEP_H
         }
         ScreenPictureSet(p, true)
+        _Readout()
     }
 
-    _OnSelect(*) {
-        if (loading)
+    _OnRowFocus(i) {
+        if (loading || i = sel)
             return
-        r := lv.GetNext()
-        if (r > 0)
-            _ShowRow(r)
+        _ShowRow(i)
+    }
+
+    _OnRowName(i) {
+        if (loading || i > positions.Length)
+            return
+        positions[i].name := rows[i].name.Value
+    }
+
+    _OnRowHotkey(i) {
+        if (loading || i > positions.Length)
+            return
+        v := PreserveHotkey(rows[i].hotkey.Value, positions[i].hotkey)
+        ; ⛔ Filling the control FIRES this handler, and the control re-renders what it was
+        ; given — handed ^+c, it reads back +^c. Writing that back rewrote the stored value just
+        ; because a row was populated, and on Save it would rewrite the user's INI. The
+        ; `loading` flag cannot prevent it on its own: the notification is delivered from the
+        ; message loop AFTER the flag has been cleared. So compare what the two values MEAN.
+        if (NormalizeHotkeyName(v) = NormalizeHotkeyName(positions[i].hotkey))
+            return
+        positions[i].hotkey := v
     }
 
     _Add(*) {
@@ -238,14 +329,13 @@ ShowSettingsWindow(iniPath, onSaved) {
         ; they never asked for.
         positions.Push({ name: "Position " (positions.Length + 1), hotkey: ""
                        , ax: 50, ay: 50, w: 0, h: 0 })
-        _RebuildList()
-        lv.Modify(positions.Length, "Select Focus")
+        _RefreshRows()
         _ShowRow(positions.Length)
-        eName.Focus()
+        rows[positions.Length].name.Focus()
     }
 
-    _Remove(*) {
-        if (sel < 1 || sel > positions.Length)
+    _Remove(i) {
+        if (i < 1 || i > positions.Length)
             return
         ; The last position cannot be removed. An empty list is a working app with no way back
         ; into it except the tray, and the migration path guarantees at least Center exists.
@@ -253,11 +343,9 @@ ShowSettingsWindow(iniPath, onSaved) {
             MsgBox("There has to be at least one position.", APP_TITLE, "Icon!")
             return
         }
-        positions.RemoveAt(sel)
-        _RebuildList()
-        next := Min(sel, positions.Length)
-        lv.Modify(next, "Select Focus")
-        _ShowRow(next)
+        positions.RemoveAt(i)
+        _RefreshRows()
+        _ShowRow(Min(i, positions.Length))
     }
 
     ; The ONE place controls are filled from settings — first open, re-open, and Reset.
@@ -266,23 +354,21 @@ ShowSettingsWindow(iniPath, onSaved) {
         ; Copied, not aliased: these objects are the ones main.ahk is holding in SETTINGS, and
         ; an edit here that is abandoned with Close must not already have changed them.
         positions := []
-        for p in st["positions"]
+        for p in st["positions"] {
+            if (positions.Length >= MAX_POSITIONS)
+                break
             positions.Push({ name: p.name, hotkey: p.hotkey
                            , ax: p.ax, ay: p.ay, w: p.w, h: p.h })
+        }
         loadedResize := st["resizeHotkey"]
         hResize.Value := loadedResize
         loop 3 {
             edits[A_Index].w.Value := st["sizes"][A_Index].w
             edits[A_Index].h.Value := st["sizes"][A_Index].h
         }
-        _RebuildList()
         loading := false
-        if (positions.Length >= 1) {
-            lv.Modify(1, "Select Focus")
-            _ShowRow(1)
-        } else {
-            _ShowRow(0)
-        }
+        _RefreshRows()
+        _ShowRow(positions.Length >= 1 ? 1 : 0)
     }
 
     ; Reset fills the CONTROLS from the defaults and stops there. It must not touch the INI:
@@ -291,7 +377,7 @@ ShowSettingsWindow(iniPath, onSaved) {
     ;
     ; It now resets the POSITIONS LIST too. While the list was invisible, resetting it would
     ; have deleted the user's positions with nothing on screen to say it happened; now that the
-    ; list is right there, leaving it out would be the surprising half.
+    ; rows are right there, leaving them out would be the surprising half.
     _ResetControls(*) {
         _Populate(SettingsDefaults())
     }
@@ -368,12 +454,21 @@ ShowSettingsWindow(iniPath, onSaved) {
         g.Hide()
     }
 
-    lv.OnEvent("ItemSelect", _OnSelect)
-    eName.OnEvent("Change", _OnNameChange)
-    hPos.OnEvent("Change", _OnHotkeyChange)
+    loop MAX_POSITIONS {
+        i := A_Index
+        ; Each row captures its OWN index. A shared handler reading a mutable "current row"
+        ; would write the wrong row the moment the list is reordered or one is deleted.
+        rows[i].name.OnEvent("Focus",  (*) => _OnRowFocus(i))
+        rows[i].name.OnEvent("Change", (*) => _OnRowName(i))
+        ; ⛔ A Hotkey control supports Change but NOT Focus — registering Focus on one throws
+        ; at load. Typing into it is what selects its row instead, which is the moment the
+        ; picture needs to be showing that row anyway.
+        rows[i].hotkey.OnEvent("Change", (*) => (_OnRowFocus(i), _OnRowHotkey(i)))
+        rows[i].swatch.OnEvent("Click", (*) => _OnRowFocus(i))
+        rows[i].del.OnEvent("Click", (*) => _Remove(i))
+    }
     cbKeep.OnEvent("Click", _OnKeepChange)
     btnAdd.OnEvent("Click", _Add)
-    btnRemove.OnEvent("Click", _Remove)
     btnSave.OnEvent("Click", _Save)
     btnReset.OnEvent("Click", _ResetControls)
     btnClose.OnEvent("Click", (*) => g.Hide())
@@ -389,7 +484,8 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; counts — Enter commits what is already on screen, Escape still closes, Tab cycles
     ; normally, and nothing swallows input.
     btnSave.Focus()
-    g.Show()
+    shown := true
+    g.Show("w332 h" _WantHeight())
     ; Only now can anything be measured: before Show the window has a size but no position.
     ScreenPictureRelayout()
 }
