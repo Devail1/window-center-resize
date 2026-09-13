@@ -88,13 +88,14 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; 2px further from the first row than the rows sit from each other, so it read as another
     ; form row instead of a caption under the bold header. Do not collapse this to a constant.
     g.Add("Text", "xm y+20 w300 h0")        ; the picture is added by ScreenPictureCreate
-    ScreenPictureCreate(g, th["hint"], th["screen"], th["accent"], th["fill"], _OnPictureDrag)
+    ScreenPictureCreate(g, th["hint"], th["screen"], th["taskbar"], th["accent"], th["fill"]
+                     , _OnPictureDrag)
 
     ; The numbers behind the drag. A picture is the fastest way to AIM and a hopeless way to
     ; read back exactly what you aimed at, and these are the values that reach settings.ini.
     g.SetFont("s9 w400 c" th["hint"], "Consolas")
-    txtReadout := g.Add("Text", "xm y+8 w180", "")
-    txtScreen  := g.Add("Text", "x+0 yp w120 Right", "")
+    txtReadout := g.Add("Text", "xm y+8 w186", "")
+    txtScreen  := g.Add("Text", "x+0 yp w114 Right", "")
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
     ; ⛔ Without this there is no way to give a keep-current-size position a size, and a
     ; keep-size position cannot be resized BY DESIGN — its edges are all caption, because "keep
@@ -223,8 +224,10 @@ ShowSettingsWindow(iniPath, onSaved) {
     }
 
     _Readout() {
+        ; The MONITOR's size, because the monitor is what the picture draws — the strip along
+        ; the bottom is the taskbar, and the part above it is the work area a position lives in.
         wa := GetNearestMonitorWorkArea(g.Hwnd)
-        txtScreen.Value := wa.width " x " wa.height " work area"
+        txtScreen.Value := wa.monWidth " x " wa.monHeight
         if (sel < 1 || sel > positions.Length) {
             txtReadout.Value := ""
             return

@@ -16,7 +16,8 @@ Theme(mode) {
             ; selected.
             "screen", "2B2B2B",
             "accent", "4C8DF6",
-            "fill",   "3A4658"
+            "fill",   "3A4658",
+            "taskbar","3C3C3C"
         )
     }
     ; Light is also the fallback for any unrecognised mode. A settings window that throws
@@ -28,6 +29,7 @@ Theme(mode) {
         "header", "101010",
         "screen", "FFFFFF",
         "accent", "3B82F6",
-        "fill",   "FDFDFE"
+        "fill",   "FDFDFE",
+        "taskbar","DADCE0"
     )
 }

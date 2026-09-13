@@ -24,7 +24,7 @@ global SP_GRAB_PX      := 7
 
 global SP_SLOT_H := 170                  ; the letterbox slot's fixed height, in layout units
 
-global _spGui := "", _spSlot := "", _spPic := "", _spBox := "", _spFill := ""
+global _spGui := "", _spSlot := "", _spPic := "", _spBox := "", _spFill := "", _spTask := ""
 ; The border thickness of the drawn window, in pixels. The box Gui paints the border colour and
 ; a single inset child paints the fill, which is the cheapest way to draw an outline without
 ; GDI+ — one extra window rather than four edge strips.
@@ -42,8 +42,8 @@ global SP_KEEP_W := 40, SP_KEEP_H := 55
 ; Adds the slot, the picture and the box to `g` at the current layout cursor. Call
 ; ScreenPictureRelayout() after g.Show() — before the window is on screen it has a size but not
 ; yet a position, so nothing can be measured.
-ScreenPictureCreate(g, slotColor, screenColor, boxColor, fillColor, onChange) {
-    global _spGui, _spSlot, _spPic, _spBox, _spFill, _spOnChange
+ScreenPictureCreate(g, slotColor, screenColor, taskColor, boxColor, fillColor, onChange) {
+    global _spGui, _spSlot, _spPic, _spBox, _spFill, _spTask, _spOnChange
     _spGui := g, _spOnChange := onChange
 
     ; ⛔ WS_CLIPCHILDREN on the parent and WS_CLIPSIBLINGS on both Progress controls. Without
@@ -63,6 +63,12 @@ ScreenPictureCreate(g, slotColor, screenColor, boxColor, fillColor, onChange) {
     ; the picture.
     _spPic := g.Add("Progress", "xp yp wp hp Background" screenColor, 0)
     _SpAddStyle(_spPic.Hwnd, 0x04000000)
+    ; The taskbar. Without it the picture is a bare white rectangle that could be anything —
+    ; it does not read as YOUR SCREEN, and nothing explains why a position can never reach the
+    ; bottom edge. Drawn from the real difference between the monitor and its work area.
+    _spTask := g.Add("Progress", "xp yp wp hp Background" taskColor, 0)
+    _SpAddStyle(_spTask.Hwnd, 0x04000000)
+    _spTask.Enabled := false
 
     ; "+Resize" leaves WS_THICKFRAME on the box, which is what makes Windows honour the sizing
     ; hit-tests below. The frame itself is then removed in WM_NCCALCSIZE — see _SpNcCalcSize.
@@ -111,13 +117,34 @@ ScreenPictureCreate(g, slotColor, screenColor, boxColor, fillColor, onChange) {
 ScreenPictureRelayout() {
     wa := GetNearestMonitorWorkArea(_spGui.Hwnd)
     WinGetPos(&sx, &sy, &sw, &sh, "ahk_id " _spSlot.Hwnd)     ; MEASURED, never assumed
-    aspect := (wa.height > 0) ? wa.width / wa.height : 16 / 9
+    ; The WHOLE MONITOR sets the shape, so the picture is the screen rather than the usable part
+    ; of it. The work area is then a region INSIDE that picture.
+    mw := (wa.monWidth  > 0) ? wa.monWidth  : wa.width
+    mh := (wa.monHeight > 0) ? wa.monHeight : wa.height
+    aspect := (mh > 0) ? mw / mh : 16 / 9
     if (sw / sh > aspect) {
         ph := sh, pw := Round(sh * aspect)
     } else {
         pw := sw, ph := Round(sw / aspect)
     }
-    _SpMoveToScreen(_spPic.Hwnd, sx + Round((sw - pw) / 2), sy + Round((sh - ph) / 2), pw, ph)
+    px := sx + Round((sw - pw) / 2), py := sy + Round((sh - ph) / 2)
+
+    ; Only a BOTTOM taskbar is drawn. A side or top one would need the work area offset in the
+    ; other axis and a strip on that edge; it is drawn as nothing rather than drawn wrong, and
+    ; the picture then simply equals the work area as before.
+    taskPx := 0
+    if (wa.monHeight > wa.height && wa.top = wa.monTop)
+        taskPx := Round(ph * (wa.monHeight - wa.height) / wa.monHeight)
+
+    ; The PICTURE is the work area — everything the drag maths already assumes — and the strip
+    ; sits below it filling the rest of the screen's shape.
+    _SpMoveToScreen(_spPic.Hwnd, px, py, pw, ph - taskPx)
+    if (taskPx > 0) {
+        _SpMoveToScreen(_spTask.Hwnd, px, py + ph - taskPx, pw, taskPx)
+        WinShow("ahk_id " _spTask.Hwnd)
+    } else {
+        WinHide("ahk_id " _spTask.Hwnd)
+    }
     ScreenPictureSet(_spPos, _spEnabled)
 }
 
