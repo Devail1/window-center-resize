@@ -10,7 +10,12 @@ Theme(mode) {
             "bg",     "202020",
             "text",   "F2F2F2",
             "hint",   "A6A6A6",
-            "header", "FFFFFF"
+            "header", "FFFFFF",
+            ; The picture of the screen, and the box inside it. They must never be the same
+            ; value: painted alike, the box is invisible and the picture reads as fully
+            ; selected.
+            "screen", "2B2B2B",
+            "accent", "4C8DF6"
         )
     }
     ; Light is also the fallback for any unrecognised mode. A settings window that throws
@@ -19,6 +24,8 @@ Theme(mode) {
         "bg",     "F3F3F3",
         "text",   "1A1A1A",
         "hint",   "5D5D5D",
-        "header", "101010"
+        "header", "101010",
+        "screen", "FFFFFF",
+        "accent", "3B82F6"
     )
 }

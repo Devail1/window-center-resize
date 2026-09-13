@@ -115,6 +115,25 @@ plan4 := PlanHotkeyRegistration(Map("resizeHotkey", "F9"
     , "positions", [P("A", "^+c"), P("B", "^+C")]))
 AssertEqual(plan4.Length, 2, "a case-different duplicate is dropped from the plan too")
 
+; ⭐ MODIFIER ORDER is not meaning either. The native Hotkey control renders ^+c and reads it
+; back as +^c — so merely SELECTING a row rewrote the stored value, and two rows holding the
+; same key in different orders would have passed the clash check and produced exactly the
+; silent overwrite it exists to prevent.
+AssertEqual(NormalizeHotkeyName("^+c"), NormalizeHotkeyName("+^c")
+          , "modifier order does not make a second key")
+AssertEqual(NormalizeHotkeyName("^!#+F1"), NormalizeHotkeyName("+#!^f1")
+          , "all four modifiers canonicalise regardless of the order typed")
+c5 := FindHotkeyConflict("F9", [P("A", "^+c"), P("B", "+^c")])
+AssertEqual(c5 = "", false, "^+c clashes with +^c")
+
+; ⛔ A direction prefix BINDS to the modifier after it, so <^+c (left-ctrl, shift) and ^<+c
+; (ctrl, left-shift) are DIFFERENT keys. Sorting those would invent an equivalence and refuse a
+; legal save, so anything carrying < or > is compared literally.
+AssertEqual(NormalizeHotkeyName("<^+c") = NormalizeHotkeyName("^<+c"), false
+          , "a direction prefix is not sorted away")
+c6 := FindHotkeyConflict("F9", [P("A", "<^c"), P("B", "<^C")])
+AssertEqual(c6 = "", false, "a direction-prefixed key still clashes with itself")
+
 ; Surrounding whitespace in a hand-edited INI is not a different key either.
 c4 := FindHotkeyConflict("F9", [P("A", "^+c"), P("B", " ^+c ")])
 AssertEqual(c4 = "", false, "whitespace does not make a second key")

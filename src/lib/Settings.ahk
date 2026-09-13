@@ -1,5 +1,13 @@
 #Requires AutoHotkey v2.0
 
+; How many positions the settings window will let you have.
+;
+; NOT a technical limit, and deliberately far below the 32 SettingsLoad tolerates — that bound
+; only exists to make a hostile hand-edited file harmless. This one is policy: every position is
+; a SYSTEM-WIDE hotkey registration, and a settings window that has to scroll has stopped being
+; a dialog and become a page.
+global MAX_POSITIONS := 8
+
 SettingsDefaults() {
     return Map(
         "centerHotkey", "^+c",

@@ -44,7 +44,33 @@ IsValidHotkey(hk) {
 ;
 ; The ORIGINAL string is what gets registered and written back; this is for comparison only.
 NormalizeHotkeyName(hk) {
-    return StrLower(Trim(hk))
+    s := StrLower(Trim(hk))
+    if (s = "")
+        return ""
+    ; ⛔ A direction prefix BINDS to the modifier that follows it, so <^+c (left-ctrl + shift)
+    ; and ^<+c (ctrl + left-shift) are genuinely different keys. Canonicalising their order
+    ; would invent an equivalence and refuse a save that is perfectly legal, so these are
+    ; compared exactly as written. Erring toward "not the same key" is the safe direction here:
+    ; the failure it risks is a clash reported late, not a binding silently destroyed.
+    if (InStr(s, "<") || InStr(s, ">"))
+        return s
+    ; ⛔ Modifier ORDER is not meaning: ^+c and +^c are one key. The native Hotkey control
+    ; renders one and reads back the other, so without this a row rewrote its own stored value
+    ; just by being selected, and two rows holding one key in different orders passed the clash
+    ; check.
+    mods := "", rest := ""
+    loop parse s {
+        if (rest = "" && InStr("^!+#*~$", A_LoopField))
+            mods .= A_LoopField
+        else
+            rest .= A_LoopField
+    }
+    canon := ""
+    for m in ["#", "^", "!", "+", "*", "~", "$"] {
+        if InStr(mods, m)
+            canon .= m
+    }
+    return canon . rest
 }
 
 ; Decides WHAT to register, without registering anything. Pure, so the rule survives being
