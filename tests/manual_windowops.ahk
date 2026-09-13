@@ -1,4 +1,4 @@
 #Requires AutoHotkey v2.0
 #Include "..\src\lib\WindowOps.ahk"
 ^+F12:: MsgBox("resize 50/50 -> " ApplyRectToActiveWindow(50, 50))
-^+F11:: MsgBox("center      -> " CenterActiveWindow())
+^+F11:: MsgBox("center      -> " ApplyPositionToActiveWindow({ ax: 50, ay: 50, w: 0, h: 0 }))

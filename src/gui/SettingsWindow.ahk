@@ -46,7 +46,7 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; Captured by the nested closures below. Declared HERE so they belong to this function's
     ; scope and _Populate's writes are visible to _Save — the guard above is worthless if each
     ; nested function gets its own copy.
-    loadedCenter := "", loadedResize := ""
+    loadedCenter := "", loadedResize := "", loadedPositions := []
 
     th := Theme("light")
 
@@ -102,6 +102,12 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; The ONE place controls are filled from settings — first open, re-open, and Reset.
     _Populate(st) {
         loadedCenter := st["centerHotkey"]
+        ; Copied, not aliased: these objects are the ones main.ahk is holding in SETTINGS, and
+        ; an edit here that is abandoned with Close must not already have changed them.
+        loadedPositions := []
+        for p in st["positions"]
+            loadedPositions.Push({ name: p.name, hotkey: p.hotkey
+                                 , ax: p.ax, ay: p.ay, w: p.w, h: p.h })
         loadedResize := st["resizeHotkey"]
         hCenter.Value := loadedCenter
         hResize.Value := loadedResize
@@ -126,7 +132,16 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; Reset fills the CONTROLS from the defaults and stops there. It must not touch the INI:
     ; a reset the user cannot back out of is worse than no reset at all. They review what
     ; appeared and press Save to commit it, or Close to walk away.
-    btnReset.OnEvent("Click", (*) => _Populate(SettingsDefaults()))
+    ; Reset restores the fields this window SHOWS. It deliberately leaves the positions list
+    ; alone: until the list is on screen, resetting it would delete the user's positions with
+    ; nothing visible to say it happened, and no way to get them back short of Close. When the
+    ; editor lands and the list is visible, this should reset it like everything else.
+    _ResetControls() {
+        d := SettingsDefaults()
+        d["positions"] := loadedPositions
+        _Populate(d)
+    }
+    btnReset.OnEvent("Click", (*) => _ResetControls())
     btnClose.OnEvent("Click", (*) => g.Hide())
     g.OnEvent("Close", (*) => g.Hide())
     g.OnEvent("Escape", (*) => g.Hide())
@@ -152,6 +167,15 @@ ShowSettingsWindow(iniPath, onSaved) {
             return
         }
         out := SettingsDefaults()
+        ; SettingsDefaults carries ONE position. Without this line every position the user
+        ; made is replaced by that default the first time they press Save for any reason —
+        ; changing a size preset would silently delete their list.
+        out["positions"] := loadedPositions
+        ; This window does not edit the list yet, so the Center field IS position 1's hotkey.
+        ; Both are written: the position is what the app registers, and [Hotkeys] Center stays
+        ; in the file so downgrading to 2.2.0 still finds the key it expects.
+        if (out["positions"].Length >= 1)
+            out["positions"][1].hotkey := c
         out["centerHotkey"] := c
         out["resizeHotkey"] := r
         sizes := []

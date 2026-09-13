@@ -33,4 +33,45 @@ catch
     leaked := false
 AssertEqual(leaked, false, "validation must not register in the default context")
 
+; --- What gets registered, and in what order -------------------------------------------------
+; AHK has no way to unregister a hotkey, and re-registering one SILENTLY overwrites the
+; earlier binding's callback. With a list of positions plus the resize key, a duplicate no
+; longer needs a hand-edited file to happen — so the decision about what to register is made
+; here, where it can be tested, rather than inside the loop that calls Hotkey().
+plan := PlanHotkeyRegistration(Map(
+    "resizeHotkey", "F9",
+    "positions", [ { name: "Center", hotkey: "^+c", ax: 50, ay: 50, w: 0, h: 0 }
+                 , { name: "Left",   hotkey: "^!Left", ax: 0, ay: 50, w: 50, h: 100 } ]))
+AssertEqual(plan.Length,      3,          "two positions and the resize key")
+AssertEqual(plan[1].key,      "F9",       "the resize key is claimed first")
+AssertEqual(plan[1].action,   "resize",   "the resize key is tagged as itself")
+AssertEqual(plan[2].key,      "^+c",      "positions follow, in list order")
+AssertEqual(plan[2].action,   "position", "a position is tagged as one")
+AssertEqual(plan[2].index,    1,          "a position carries its index")
+
+; An unbound position is legal and simply does not register.
+plan2 := PlanHotkeyRegistration(Map(
+    "resizeHotkey", "F9",
+    "positions", [ { name: "Nameless", hotkey: "", ax: 50, ay: 50, w: 0, h: 0 } ]))
+AssertEqual(plan2.Length, 1,    "an unbound position registers nothing")
+AssertEqual(plan2[1].key, "F9", "the resize key still registers")
+
+; A duplicate is DROPPED rather than registered over the top of the binding it would kill.
+plan3 := PlanHotkeyRegistration(Map(
+    "resizeHotkey", "F9",
+    "positions", [ { name: "A", hotkey: "^+c", ax: 50, ay: 50, w: 0, h: 0 }
+                 , { name: "B", hotkey: "^+c", ax: 0,  ay: 0,  w: 50, h: 50 }
+                 , { name: "C", hotkey: "F9",  ax: 0,  ay: 0,  w: 50, h: 50 } ]))
+AssertEqual(plan3.Length,    2,          "duplicates are dropped, not stacked")
+AssertEqual(plan3[1].key,    "F9",       "a position cannot steal the resize key")
+AssertEqual(plan3[1].action, "resize",   "the resize key keeps its own action")
+AssertEqual(plan3[2].index,  1,          "between two equal positions the first keeps the key")
+AssertEqual(plan3[2].action, "position", "and it is still a position")
+
+; Invalid hotkeys never reach Hotkey(), which would throw.
+plan4 := PlanHotkeyRegistration(Map(
+    "resizeHotkey", "F9",
+    "positions", [ { name: "Bad", hotkey: "notakey", ax: 50, ay: 50, w: 0, h: 0 } ]))
+AssertEqual(plan4.Length, 1, "an unregisterable hotkey is skipped")
+
 ReportAndExit()

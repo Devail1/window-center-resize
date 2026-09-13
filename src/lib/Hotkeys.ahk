@@ -34,3 +34,33 @@ IsValidHotkey(hk) {
         return false
     }
 }
+
+; Decides WHAT to register, without registering anything. Pure, so the rule survives being
+; tested; the caller only walks the result and calls Hotkey().
+;
+; It exists because AHK v2 cannot unregister a hotkey and re-registering one silently replaces
+; the earlier binding's callback. With one Center key and one Resize key a collision needed a
+; hand-edited file. With a list of positions it needs only two rows that agree, so the rule is
+; written down: the FIRST claim on a key keeps it and everything after is dropped.
+;
+; Resize is claimed BEFORE the positions, and that order is the whole point rather than an
+; implementation detail. Positions are a list the user edits and re-orders; the resize key is
+; one long-standing binding they have muscle memory for. Claiming positions first would let a
+; row somebody just added take F9 and silently end the size cycle, with nothing on screen to
+; say why it stopped working.
+PlanHotkeyRegistration(s) {
+    plan := []
+    seen := Map()
+    r := s["resizeHotkey"]
+    if (r != "" && IsValidHotkey(r)) {
+        seen[r] := true
+        plan.Push({ key: r, action: "resize", index: 0 })
+    }
+    for i, p in s["positions"] {
+        if (p.hotkey = "" || seen.Has(p.hotkey) || !IsValidHotkey(p.hotkey))
+            continue
+        seen[p.hotkey] := true
+        plan.Push({ key: p.hotkey, action: "position", index: i })
+    }
+    return plan
+}

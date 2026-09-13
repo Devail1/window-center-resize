@@ -72,8 +72,13 @@ _ReportStatus(status) {
         TrayTip(APP_NAME, "Windows refused to move this window.")
 }
 
-DoCenter(*) {
-    _ReportStatus(CenterActiveWindow())
+DoPosition(i, *) {
+    global SETTINGS
+    ; The hotkey was bound against the settings as they were at registration time. A save
+    ; between then and now cannot leave a stale index pointing past the end of a shorter list.
+    if (i < 1 || i > SETTINGS["positions"].Length)
+        return
+    _ReportStatus(ApplyPositionToActiveWindow(SETTINGS["positions"][i]))
 }
 
 DoResize(*) {
@@ -98,13 +103,11 @@ RegisterHotkeys(s) {
         }
     }
     live := []
-    if IsValidHotkey(s["centerHotkey"]) {
-        Hotkey(s["centerHotkey"], DoCenter, "On")
-        live.Push(s["centerHotkey"])
-    }
-    if IsValidHotkey(s["resizeHotkey"]) {
-        Hotkey(s["resizeHotkey"], DoResize, "On")
-        live.Push(s["resizeHotkey"])
+    ; What to register is decided in PlanHotkeyRegistration, which is pure and tested. This
+    ; loop only carries it out.
+    for entry in PlanHotkeyRegistration(s) {
+        Hotkey(entry.key, (entry.action = "resize") ? DoResize : DoPosition.Bind(entry.index), "On")
+        live.Push(entry.key)
     }
     prev := live
 }

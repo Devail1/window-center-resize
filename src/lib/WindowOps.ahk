@@ -47,20 +47,39 @@ ApplyRectToActiveWindow(widthPct, heightPct) {
     return "ok"
 }
 
-CenterActiveWindow() {
+; Applies a named position. This REPLACES CenterActiveWindow rather than sitting beside it:
+; centring is the position { ax: 50, ay: 50, w: 0, h: 0 }, so keeping a separate function
+; would be two implementations of one operation, and only one of them would get fixed.
+ApplyPositionToActiveWindow(pos) {
     hwnd := WinExist("A")
     if !hwnd
         return "no-window"
-    ; WinGetPos throws TargetError if the window has closed since WinExist — same trigger
-    ; as _MoveTo's bare catch, so guard it the same way.
+    ; The window's current size is needed BEFORE the move: a zero width or height in the
+    ; position means "keep what it has", and after the move it is too late to ask.
     try {
-        WinGetPos(&x, &y, &w, &h, hwnd)
+        WinGetPos(, , &cw, &ch, hwnd)
     } catch {
         return "error"
     }
     wa := GetNearestMonitorWorkArea(hwnd)
-    r := { x: wa.left + Round((wa.width  - w) / 2)
-         , y: wa.top  + Round((wa.height - h) / 2)
-         , w: w, h: h }
-    return _MoveTo(hwnd, r)
+    r  := AnchoredRect(wa.left, wa.top, wa.width, wa.height, pos, cw, ch)
+    status := _MoveTo(hwnd, r)
+    if (status != "ok")
+        return status
+    ; Same minimum-size correction ApplyRectToActiveWindow does, and the reason it cannot be
+    ; copied from there: that one re-CENTRES. A window that clamps its width upward — Chrome
+    ; below ~500px — would land in the middle of the screen after asking for the left edge,
+    ; on exactly the apps most likely to clamp. Re-anchor instead, at the achieved size, using
+    ; the position's own anchor.
+    try {
+        WinGetPos(, , &aw, &ah, hwnd)
+    } catch {
+        return "ok"        ; the window did move; it may simply have gone away since
+    }
+    if (aw != r.w || ah != r.h) {
+        c := AnchoredRect(wa.left, wa.top, wa.width, wa.height
+                        , { ax: pos.ax, ay: pos.ay, w: 0, h: 0 }, aw, ah)
+        _MoveTo(hwnd, c)   ; if the corrective move fails, the window still moved
+    }
+    return "ok"
 }
