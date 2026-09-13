@@ -109,6 +109,8 @@ global TRACING := false
 ; CURSOR and an offset captured once, when the drag starts. That makes the rewrite idempotent:
 ; snapping the same cursor position twice gives the same rectangle, so there is no feedback.
 global GRAB := { x: 0, y: 0, l: 0, t: 0, r: 0, b: 0 }
+; A drag whose WM_ENTERSIZEMOVE never arrived would run on the PREVIOUS drag's offset and jump.
+global GRABBED := false
 
 ; The live position, in the SAME units settings.ini stores. The picture edits this, never pixels.
 ; Deliberately free in BOTH axes. The obvious default — left half, full height — has ZERO
@@ -118,6 +120,20 @@ global POS := { ax: 50, ay: 50, w: 40, h: 55 }
 ; The size a real window happens to have, for positions storing w/h = 0 ("keep current size").
 ; The picture must draw something, so it draws this. Percent of the work area.
 global KEEPSIZE := { w: 40, h: 55 }
+
+; A runtime error in a GUI script is a MODAL dialog — it blocks the very window being tested and
+; has to be dismissed by hand before anything else can be tried. /ErrorStdOut does not cover it;
+; it only covers load time. Put the fault in the report instead, where it can be read and the
+; session carries on. (main.ahk and the test harness both do this for the same reason.)
+OnError(_SpikeError)
+_SpikeError(err, mode) {
+    msg := "ERROR: "
+    try msg .= err.Message
+    try msg .= "   at line " err.Line
+    Note(msg)
+    try Render()
+    return 1        ; handled — do not raise the dialog
+}
 
 Main()
 
@@ -348,12 +364,15 @@ CursorPos() {
 
 ; The drag starts here, once, and every later frame is measured against what is captured now.
 OnEnterSizeMove(wParam, lParam, msg, hwnd) {
-    global GRAB
+    global GRAB, GRABBED
+    Tally("WM_ENTERSIZEMOVE any")
     if (hwnd != BOX.Hwnd)
         return
+    Tally("WM_ENTERSIZEMOVE on BOX")
     c := CursorPos()
     WinGetPos(&bx, &by, &bw, &bh, "ahk_id " BOX.Hwnd)
     GRAB := { x: c.x, y: c.y, l: bx, t: by, r: bx + bw, b: by + bh }
+    GRABBED := true
 }
 
 OnBoxLButtonDown(wParam, lParam, msg, hwnd) {
@@ -389,6 +408,8 @@ OnBoxMoving(wParam, lParam, msg, hwnd) {
     if (hwnd != BOX.Hwnd)
         return
     Tally("WM_MOVING on BOX")
+    if (!GRABBED)
+        Tally("!! WM_MOVING with NO GRAB")
     if (TRACING && TRACE.Length < 10) {
         MouseGetPos(&mgx, &mgy)
         tc := ReadRect(lParam)
@@ -483,6 +504,10 @@ SnapMove(v, origin, span, slack, prevAnchor) {
 }
 
 SnapPct(v) {
+    ; Guarded at its own door, not only by the caller. It is reached today solely through
+    ; SnapMove's "grid off" check, which is exactly the kind of guard that gets moved.
+    if (!SNAP_PCT)
+        return Max(0, Min(100, v))
     return Max(0, Min(100, Round(v / SNAP_PCT) * SNAP_PCT))
 }
 
@@ -526,8 +551,11 @@ StartTrace() {
 ; WM_EXITSIZEMOVE fires when the modal loop ends, which is the natural moment to read a trace
 ; back without needing a second button press mid-thought.
 OnExitSizeMove(wParam, lParam, msg, hwnd) {
-    global TRACING
-    if (hwnd != BOX.Hwnd || !TRACING)
+    global TRACING, GRABBED
+    if (hwnd != BOX.Hwnd)
+        return
+    GRABBED := false
+    if (!TRACING)
         return
     TRACING := false
     Note("--- trace: is the proposal ABSOLUTE (tracks drag start) or INCREMENTAL? ---")
@@ -680,11 +708,14 @@ RenderLive() {
         return
     s := (FRAMELESS ? "B " : "A ") SubStr(SNAP_MODE, 1, 1) (SNAP_PCT ? SNAP_PCT : "-")
        . " ax " Fmt(POS.ax) "  ay " Fmt(POS.ay) "  w " Fmt(POS.w) "  h " Fmt(POS.h)
+    ; Mod(x, 0) throws "Divide by zero" — and with no grid there is no grid to be off.
     off := ""
-    if (Mod(POS.ax, SNAP_PCT) || Mod(POS.ay, SNAP_PCT))
-        off .= " anchor"
-    if (Mod(POS.w, SNAP_PCT) || Mod(POS.h, SNAP_PCT))
-        off .= " size"
+    if (SNAP_PCT) {
+        if (Mod(POS.ax, SNAP_PCT) || Mod(POS.ay, SNAP_PCT))
+            off .= " anchor"
+        if (Mod(POS.w, SNAP_PCT) || Mod(POS.h, SNAP_PCT))
+            off .= " size"
+    }
     if (off != "")
         s .= "   << OFF THE " SNAP_PCT "% GRID:" off
     LIVE.Value := s
