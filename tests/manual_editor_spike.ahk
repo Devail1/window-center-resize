@@ -351,6 +351,17 @@ PctToRect(p, pic) {
 ; pixels -> percent. The anchor runs across the SLACK, so a full-width box has NO slack and its
 ; anchor is undefined — keep whatever it was rather than dividing by zero.
 RectToPct(r, pic, prev) {
+    ; ⛔ percent -> pixels -> percent is NOT the identity. Both directions round, and at some
+    ; picture sizes the midpoint falls the wrong way: h 60% of 242px is 145, leaving slack 97,
+    ; so ay 50 places at Round(48.5) = 49 and reads back as Round(50.5) = 51. A stored 50 would
+    ; drift to 51 with the user never having touched that axis. Measured at a 150% picture.
+    ;
+    ; So: if the rectangle is EXACTLY what prev already describes, prev is the answer. Nothing
+    ; moved, so nothing changed. This also keeps a "keep current size" position (w/h = 0) from
+    ; being silently converted into a fixed size by a resize that did not actually resize it.
+    was := PctToRect(prev, pic)
+    if (was.x = r.x && was.y = r.y && was.w = r.w && was.h = r.h)
+        return { ax: prev.ax, ay: prev.ay, w: prev.w, h: prev.h }
     slackX := pic.w - r.w, slackY := pic.h - r.h
     return { ax: (slackX > 0) ? Round((r.x - pic.x) / slackX * 100) : prev.ax
            , ay: (slackY > 0) ? Round((r.y - pic.y) / slackY * 100) : prev.ay
@@ -743,22 +754,43 @@ RoundTripCheck() {
              , { ax:   0, ay:   0, w:  25, h:  25 }
              , { ax: 100, ay: 100, w:  25, h:  25 }
              , { ax:  50, ay:  50, w: 100, h: 100 } ]   ; no slack: the anchor must be PRESERVED
-    pic := PictureRect()
-    bad := 0
-    Note("--- round-trip (Q3), picture " pic.w "x" pic.h " ----------------")
-    for c in cases {
-        r := PctToRect(c, pic)
-        MoveToScreenRect(BOX.Hwnd, G.Hwnd, r.x, r.y, r.w, r.h)
-        got := RectToPct(BoxRect(), pic, c)
-        ok := (got.ax = c.ax && got.ay = c.ay && got.w = c.w && got.h = c.h)
-        if (!ok)
-            bad += 1
-        Note((ok ? "  ok    " : "  FAIL  ")
-           . "ax " c.ax "/" got.ax "   ay " c.ay "/" got.ay
-           . "   w " c.w "/" got.w "   h " c.h "/" got.h)
+    ; Run the whole set at several PICTURE SIZES, not just the current one.
+    ;
+    ; This is the DPI question asked in the only way a 96-DPI machine can ask it. At 150%
+    ; AutoHotkey turns a declared "w300" into 450 physical pixels, and anything that trusted the
+    ; 300 breaks. Resizing the picture behind the math's back reproduces exactly that condition:
+    ; if every scale round-trips, no nominal number is reaching the drag math and the code is
+    ; scale-independent by construction.
+    ;
+    ; ⚠️ What this does NOT cover is Windows virtualising coordinates BETWEEN apis on a really
+    ; scaled display. That still needs a real one.
+    Note("--- round-trip across picture scales (Q3) ---")
+    saved := PictureRect()
+    totalBad := 0
+    for scale in [1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.75, 2.0, 0.8, 0.9] {
+        MoveToScreenRect(PICTURE.Hwnd, G.Hwnd, saved.x, saved.y
+                       , Round(saved.w * scale), Round(saved.h * scale))
+        pic := PictureRect()
+        bad := 0
+        for c in cases {
+            r := PctToRect(c, pic)
+            MoveToScreenRect(BOX.Hwnd, G.Hwnd, r.x, r.y, r.w, r.h)
+            got := RectToPct(BoxRect(), pic, c)
+            if !(got.ax = c.ax && got.ay = c.ay && got.w = c.w && got.h = c.h) {
+                bad += 1
+                Note("  FAIL at " Round(scale * 100) "%  "
+                   . "ax " c.ax "/" got.ax "   ay " c.ay "/" got.ay
+                   . "   w " c.w "/" got.w "   h " c.h "/" got.h)
+            }
+        }
+        totalBad += bad
+        Note("  " Format("{:4}", Round(scale * 100) "%") "  picture " Format("{:3}", pic.w)
+           . "x" Format("{:3}", pic.h) "   " (bad = 0 ? "all " cases.Length " ok" : bad " FAILED"))
     }
-    Note(bad = 0 ? "  all " cases.Length " round-tripped"
-                 : "  " bad " of " cases.Length " LOST DATA")
+    MoveToScreenRect(PICTURE.Hwnd, G.Hwnd, saved.x, saved.y, saved.w, saved.h)
+    Note(totalBad = 0
+        ? "  stable at every scale"
+        : "  " totalBad " LOST DATA -- percent/pixel conversion is not stable here")
     ApplyPosToPicture()
     Render()
 }
