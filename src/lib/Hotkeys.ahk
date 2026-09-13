@@ -35,6 +35,18 @@ IsValidHotkey(hk) {
     }
 }
 
+; The form of a hotkey used ONLY for deciding whether two of them are the same key.
+;
+; ⛔ AutoHotkey hotkey names are CASE-INSENSITIVE: ^+c and ^+C are one key, and registering both
+; means the second silently replaces the first — the precise failure every duplicate check here
+; exists to prevent. A case-sensitive comparison waves that pair through. Leading and trailing
+; whitespace is not a second key either, and the INI is hand-editable, so it is trimmed.
+;
+; The ORIGINAL string is what gets registered and written back; this is for comparison only.
+NormalizeHotkeyName(hk) {
+    return StrLower(Trim(hk))
+}
+
 ; Decides WHAT to register, without registering anything. Pure, so the rule survives being
 ; tested; the caller only walks the result and calls Hotkey().
 ;
@@ -53,14 +65,50 @@ PlanHotkeyRegistration(s) {
     seen := Map()
     r := s["resizeHotkey"]
     if (r != "" && IsValidHotkey(r)) {
-        seen[r] := true
+        seen[NormalizeHotkeyName(r)] := true
         plan.Push({ key: r, action: "resize", index: 0 })
     }
     for i, p in s["positions"] {
-        if (p.hotkey = "" || seen.Has(p.hotkey) || !IsValidHotkey(p.hotkey))
+        k := NormalizeHotkeyName(p.hotkey)
+        if (k = "" || seen.Has(k) || !IsValidHotkey(p.hotkey))
             continue
-        seen[p.hotkey] := true
+        seen[k] := true
         plan.Push({ key: p.hotkey, action: "position", index: i })
     }
     return plan
+}
+
+; Finds the FIRST pair of bindings that are the same key, or "" if there is no such pair.
+;
+; PlanHotkeyRegistration drops a duplicate so the running app still works, which is the right
+; behaviour at runtime and the wrong one in a settings window: the user typed two things and
+; one of them would quietly never happen. The window refuses the save instead, and needs to
+; name both rows to say why — hence a structured result rather than a boolean.
+;
+; The claim order matches the plan's on purpose. Resize is claimed first, so when a position
+; collides with it the POSITION is the one reported as losing the key, which is what actually
+; happens.
+;
+; An empty hotkey is not a clash. A row added but not yet bound is a legal state — making it
+; illegal would turn adding a position into a modal argument.
+FindHotkeyConflict(resizeHotkey, positions) {
+    seen := Map()
+    r := NormalizeHotkeyName(resizeHotkey)
+    if (r != "")
+        seen[r] := { kind: "resize", index: 0 }
+    for i, p in positions {
+        k := NormalizeHotkeyName(p.hotkey)
+        if (k = "")
+            continue
+        if (seen.Has(k)) {
+            f := seen[k]
+            return { key:        Trim(p.hotkey)
+                   , firstKind:  f.kind
+                   , firstIndex: f.index
+                   , secondKind: "position"
+                   , secondIndex: i }
+        }
+        seen[k] := { kind: "position", index: i }
+    }
+    return ""
 }

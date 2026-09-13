@@ -74,4 +74,49 @@ plan4 := PlanHotkeyRegistration(Map(
     "positions", [ { name: "Bad", hotkey: "notakey", ax: 50, ay: 50, w: 0, h: 0 } ]))
 AssertEqual(plan4.Length, 1, "an unregisterable hotkey is skipped")
 
+; --- Reporting a conflict, as opposed to silently surviving one -----------------------------
+; PlanHotkeyRegistration DROPS a duplicate so the app still works. That is the right runtime
+; behaviour and the wrong settings-window behaviour: the user typed two things and one of them
+; would quietly never happen. The window refuses the save instead, so this finds the clash and
+; says which two rows it is between.
+
+P(name, hk) => { name: name, hotkey: hk, ax: 50, ay: 50, w: 0, h: 0 }
+
+AssertEqual(FindHotkeyConflict("F9", [P("Center", "^+c"), P("Left", "^!Left")]) = ""
+          , true, "no clash reports nothing")
+
+c1 := FindHotkeyConflict("F9", [P("Center", "^+c"), P("Left", "^+c")])
+AssertEqual(c1 = "",            false,      "two positions on one key is a clash")
+AssertEqual(c1.key,             "^+c",      "the clash names the key")
+AssertEqual(c1.firstKind,       "position", "the earlier row is reported first")
+AssertEqual(c1.firstIndex,      1,          "the earlier row's index")
+AssertEqual(c1.secondIndex,     2,          "the later row's index")
+
+; Resize is claimed BEFORE positions, so it is the one that keeps the key and the position is
+; the one reported as losing it.
+c2 := FindHotkeyConflict("F9", [P("Center", "^+c"), P("Grow", "F9")])
+AssertEqual(c2.firstKind,   "resize",   "resize holds the key it shares with a position")
+AssertEqual(c2.secondKind,  "position", "the position is the one that would be dropped")
+AssertEqual(c2.secondIndex, 2,          "and it says which position")
+
+; An unbound row is legal — a position added but not yet given a key — so two of them are not
+; a clash with each other.
+AssertEqual(FindHotkeyConflict("F9", [P("A", ""), P("B", "")]) = ""
+          , true, "unbound rows do not clash")
+
+; ⭐ Hotkey names are CASE-INSENSITIVE to AutoHotkey: ^+c and ^+C are the same key, and
+; registering both means the second silently replaces the first. A case-sensitive comparison
+; would call this pair fine and ship the exact silent overwrite the check exists to prevent.
+c3 := FindHotkeyConflict("F9", [P("A", "^+c"), P("B", "^+C")])
+AssertEqual(c3 = "", false, "^+c and ^+C are the same key")
+
+; Same for the registration plan, which had the same hole.
+plan4 := PlanHotkeyRegistration(Map("resizeHotkey", "F9"
+    , "positions", [P("A", "^+c"), P("B", "^+C")]))
+AssertEqual(plan4.Length, 2, "a case-different duplicate is dropped from the plan too")
+
+; Surrounding whitespace in a hand-edited INI is not a different key either.
+c4 := FindHotkeyConflict("F9", [P("A", "^+c"), P("B", " ^+c ")])
+AssertEqual(c4 = "", false, "whitespace does not make a second key")
+
 ReportAndExit()
