@@ -92,9 +92,29 @@ global NOTES := []
 ; failures that look identical on screen — the click never reached the child, the move loop
 ; never started, or the RECT rewrite is wrong — and this is what tells them apart.
 global MSGCOUNT := Map()
+; The first few WM_MOVING events of a drag, with the cursor beside the rectangle Windows
+; proposed. If the proposal tracks the DRAG START it is absolute and safe to rewrite; if it
+; tracks the window's CURRENT position it is incremental, and every rewrite feeds back into the
+; next proposal.
+global TRACE := []
+global TRACING := false
+
+; ⛔ THE ONE THAT MATTERS. WM_MOVING's proposed RECT is NOT an absolute function of the cursor:
+; Windows derives it from the window's CURRENT position plus the movement since the last
+; message. So a handler that snaps the rect and writes it back feeds its own output into the
+; next proposal, and the drag is eaten — measured at cursor +80px, box +8px. It reads exactly
+; like "I can't hold and drag."
+;
+; The fix is to ignore the proposed rect's POSITION entirely and derive the position from the
+; CURSOR and an offset captured once, when the drag starts. That makes the rewrite idempotent:
+; snapping the same cursor position twice gives the same rectangle, so there is no feedback.
+global GRAB := { x: 0, y: 0, l: 0, t: 0, r: 0, b: 0 }
 
 ; The live position, in the SAME units settings.ini stores. The picture edits this, never pixels.
-global POS := { ax: 0, ay: 50, w: 50, h: 100 }
+; Deliberately free in BOTH axes. The obvious default — left half, full height — has ZERO
+; vertical slack, so the box genuinely cannot move up or down, and that reads as a broken drag
+; when you are trying to judge how the drag feels.
+global POS := { ax: 50, ay: 50, w: 40, h: 55 }
 ; The size a real window happens to have, for positions storing w/h = 0 ("keep current size").
 ; The picture must draw something, so it draws this. Percent of the work area.
 global KEEPSIZE := { w: 40, h: 55 }
@@ -181,6 +201,8 @@ Main() {
     BMODE := bMode, BSNAP := bSnap, BGRID := bGrid
     RenderMode()
     bMode.OnEvent("Click", (*) => ToggleFrameless())
+    bTrace := G.Add("Button", "xm y+6 w300", "Trace next drag")
+    bTrace.OnEvent("Click", (*) => StartTrace())
     bSnap.OnEvent("Click", (*) => CycleSnapMode())
     bGrid.OnEvent("Click", (*) => CycleGrid())
     bRt.OnEvent("Click", (*) => RoundTripCheck())
@@ -197,6 +219,8 @@ Main() {
     ; felt under the mouse rather than applied on release.
     OnMessage(WM_MOVING, OnBoxMoving)
     OnMessage(WM_SIZING, OnBoxSizing)
+    OnMessage(0x0231, OnEnterSizeMove)             ; WM_ENTERSIZEMOVE
+    OnMessage(0x0232, OnExitSizeMove)              ; WM_EXITSIZEMOVE
     ; Mode B only; both no-op while FRAMELESS is false.
     OnMessage(WM_NCCALCSIZE, OnBoxNcCalcSize)
     OnMessage(WM_NCHITTEST, OnBoxNcHitTest)
@@ -314,6 +338,24 @@ SetPos(ax, ay, w, h) {
 
 ; --- the drag ---------------------------------------------------------------------------------
 
+; Screen coordinates, unambiguously. CoordMode "Mouse" defaults to Client, and a handler that
+; silently mixes client and screen coordinates is the same class of bug as the one above.
+CursorPos() {
+    pt := Buffer(8, 0)
+    DllCall("GetCursorPos", "ptr", pt)
+    return { x: NumGet(pt, 0, "int"), y: NumGet(pt, 4, "int") }
+}
+
+; The drag starts here, once, and every later frame is measured against what is captured now.
+OnEnterSizeMove(wParam, lParam, msg, hwnd) {
+    global GRAB
+    if (hwnd != BOX.Hwnd)
+        return
+    c := CursorPos()
+    WinGetPos(&bx, &by, &bw, &bh, "ahk_id " BOX.Hwnd)
+    GRAB := { x: c.x, y: c.y, l: bx, t: by, r: bx + bw, b: by + bh }
+}
+
 OnBoxLButtonDown(wParam, lParam, msg, hwnd) {
     Tally("WM_LBUTTONDOWN any")
     if (hwnd != BOX.Hwnd)
@@ -347,12 +389,21 @@ OnBoxMoving(wParam, lParam, msg, hwnd) {
     if (hwnd != BOX.Hwnd)
         return
     Tally("WM_MOVING on BOX")
+    if (TRACING && TRACE.Length < 10) {
+        MouseGetPos(&mgx, &mgy)
+        tc := ReadRect(lParam)
+        WinGetPos(&wgx, &wgy, , , "ahk_id " BOX.Hwnd)
+        TRACE.Push("cursor " CursorPos().x "   proposed.l " tc.l "   window.x now " wgx)
+    }
     pic := PictureRect()
     c := ReadRect(lParam)
     w := c.r - c.l, h := c.b - c.t
     slackX := pic.w - w, slackY := pic.h - h
-    l := SnapMove(c.l, pic.x, pic.w, slackX, POS.ax)
-    t := SnapMove(c.t, pic.y, pic.h, slackY, POS.ay)
+    ; The proposal supplies the SIZE, which is stable during a move. The POSITION comes from the
+    ; cursor — see the GRAB comment above for why reading it from the proposal eats the drag.
+    cur := CursorPos()
+    l := SnapMove(cur.x - (GRAB.x - GRAB.l), pic.x, pic.w, slackX, POS.ax)
+    t := SnapMove(cur.y - (GRAB.y - GRAB.t), pic.y, pic.h, slackY, POS.ay)
     POS.ax := (slackX > 0) ? Round((l - pic.x) / slackX * 100) : POS.ax
     POS.ay := (slackY > 0) ? Round((t - pic.y) / slackY * 100) : POS.ay
     WriteRect(lParam, l, t, l + w, t + h)
@@ -388,15 +439,19 @@ OnBoxSizing(wParam, lParam, msg, hwnd) {
     top    := (wParam = WMSZ_TOP || wParam = WMSZ_TOPLEFT || wParam = WMSZ_TOPRIGHT)
     bottom := (wParam = WMSZ_BOTTOM || wParam = WMSZ_BOTTOMLEFT || wParam = WMSZ_BOTTOMRIGHT)
 
+    ; Each dragged edge is derived from the CURSOR and where that edge was when the drag began,
+    ; for the same reason the move is — the proposal is incremental and feeds back on itself.
+    ; The edges NOT being dragged are taken from the proposal, where they are stable.
+    cur := CursorPos()
     l := c.l, t := c.t, r := c.r, b := c.b
     if (left)
-        l := Min(SnapEdge(c.l, pic.x, pic.w), r - minW)
+        l := Min(SnapEdge(cur.x - (GRAB.x - GRAB.l), pic.x, pic.w), r - minW)
     if (right)
-        r := Max(SnapEdge(c.r, pic.x, pic.w), l + minW)
+        r := Max(SnapEdge(cur.x - (GRAB.x - GRAB.r), pic.x, pic.w), l + minW)
     if (top)
-        t := Min(SnapEdge(c.t, pic.y, pic.h), b - minH)
+        t := Min(SnapEdge(cur.y - (GRAB.y - GRAB.t), pic.y, pic.h), b - minH)
     if (bottom)
-        b := Max(SnapEdge(c.b, pic.y, pic.h), t + minH)
+        b := Max(SnapEdge(cur.y - (GRAB.y - GRAB.b), pic.y, pic.h), t + minH)
 
     WriteRect(lParam, l, t, r, b)
     POS := RectToPct({ x: l, y: t, w: r - l, h: b - t }, pic, POS)
@@ -459,6 +514,26 @@ RenderMode() {
         BSNAP.Text := "snap: " SNAP_MODE
     if (IsObject(BGRID))
         BGRID.Text := SNAP_PCT ? "grid: " SNAP_PCT "%" : "grid: off"
+}
+
+StartTrace() {
+    global TRACE, TRACING
+    TRACE := [], TRACING := true
+    Note("--- armed: drag the box, the trace prints when you let go ---")
+    Render()
+}
+
+; WM_EXITSIZEMOVE fires when the modal loop ends, which is the natural moment to read a trace
+; back without needing a second button press mid-thought.
+OnExitSizeMove(wParam, lParam, msg, hwnd) {
+    global TRACING
+    if (hwnd != BOX.Hwnd || !TRACING)
+        return
+    TRACING := false
+    Note("--- trace: is the proposal ABSOLUTE (tracks drag start) or INCREMENTAL? ---")
+    for line in TRACE
+        Note("  " line)
+    Render()
 }
 
 CycleSnapMode() {
