@@ -35,6 +35,9 @@ including `[Hotkeys] Center`, so downgrading to 2.2.0 still finds the key it exp
 - The settings window refuses to save two actions that share a hotkey, and says which two. It
   used to be possible to bind one key twice, in which case only one of them ever ran.
 - Clicking empty space in the settings window lets go of whatever field has focus.
+- **Saving no longer closes the settings window.** With a list to edit, the common move is to
+  save and carry on; the Save button confirms and stays where it is.
+- **The Close button is gone.** The title bar's X does exactly what it did, and so does Escape.
 
 ### Fixed
 

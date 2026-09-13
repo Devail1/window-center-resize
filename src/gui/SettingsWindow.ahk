@@ -170,16 +170,16 @@ ShowSettingsWindow(iniPath, onSaved) {
         edits.Push({ w: ew, h: eh })
     }
 
-    ; Reset repopulates every field from defaults and cannot be undone by the user once it
-    ; runs, so it must not sit adjacent to the commit pair where a misclick lands on it
-    ; instead of Close or Save. It gets its own position at the left margin; Close and Save
-    ; stay right-aligned as a pair, with Save last since Windows places the primary action
-    ; rightmost, and `Default` makes it the accent-filled button Windows 11 draws for the
-    ; default push button.
-    ; 300 content, right-hand pair = 88 + 8 + 88 = 184, so the pair starts at 300 - 184 = 116.
+    ; Reset repopulates every field from defaults and cannot be undone once it runs, so it sits
+    ; at the far left, as far from the commit button as the dialog allows. Save is rightmost
+    ; because Windows places the primary action there, and `Default` makes it the accent-filled
+    ; button Windows 11 draws for the default push button.
+    ;
+    ; There is no Close button. The title bar's X already does exactly what it did — discard and
+    ; hide — and so does Escape, so a third control for it was a row of chrome restating what
+    ; the window frame already offers. 300 content, 88 wide, so Save starts at 300 - 88 = 212.
     btnReset := _A("Button", "xm y+24 w88", "Reset")
-    btnClose := _A("Button", "xm+116 yp w88", "Close")
-    btnSave  := _A("Button", "x+8 w88 Default", "Save")
+    btnSave  := _A("Button", "xm+212 yp w88 Default", "Save")
 
     ; --- the model <-> controls wiring ---------------------------------------------------------
 
@@ -476,7 +476,16 @@ ShowSettingsWindow(iniPath, onSaved) {
             edits[A_Index].h.Value := sizes[A_Index].h
         }
         onSaved(out)
-        g.Hide()
+        ; ⛔ The window deliberately STAYS OPEN. Saving used to hide it, which suited a dialog of
+        ; two fields and suits a list editor badly: the common move is to save and carry on
+        ; adding. Hiding also made Save the only tidy way out, which is why a Close button
+        ; existed at all.
+        ;
+        ; Something still has to confirm the save happened, or it reads as a dead button. The
+        ; button says so itself and puts its own label back, which needs no extra control and no
+        ; space in a window whose height is already the thing being defended.
+        btnSave.Text := "Saved"
+        SetTimer(() => btnSave.Text := "Save", -1400)
     }
 
     ; ⛔ THE WIRING MUST HAPPEN IN A FUNCTION CALL, one per row.
@@ -515,7 +524,6 @@ ShowSettingsWindow(iniPath, onSaved) {
     btnAdd.OnEvent("Click", _Add)
     btnSave.OnEvent("Click", _Save)
     btnReset.OnEvent("Click", _ResetControls)
-    btnClose.OnEvent("Click", (*) => g.Hide())
     g.OnEvent("Close", (*) => g.Hide())
     g.OnEvent("Escape", (*) => g.Hide())
 
