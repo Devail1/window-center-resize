@@ -1,5 +1,46 @@
 # Changelog
 
+## 2.3.0
+
+**Centring is now one of several named positions, and you set where they go by dragging.**
+
+A position is a name, a hotkey, and a place on the screen. You set that place by dragging a
+window around a picture of your own screen in the settings window — no coordinates, no
+percentages to work out. A position can move a window without touching its size, or give it a
+size as a percentage of the screen.
+
+**Nothing about upgrading changes a key you already press.** A settings file written by 2.2.0 or
+earlier has no positions in it, and the first run turns its Center hotkey into a position called
+Center — carrying *your* binding, not the shipped default. One position ships, so no new
+system-wide hotkey is claimed on your machine without you asking for it.
+
+The resize cycle is untouched: the same key, the same three presets, and it still re-centres the
+window as it resizes. `settings.ini` gains a `[Positions]` section and keeps everything else,
+including `[Hotkeys] Center`, so downgrading to 2.2.0 still finds the key it expects.
+
+### Added
+
+- **Named positions.** Up to eight, each with its own name and hotkey. The settings window shows
+  them as a list you edit in place.
+- **A picture of your screen**, with the taskbar drawn where your taskbar actually is, and a
+  window you drag and resize inside it. The numbers it produces are shown beneath it.
+- **"Keep the window's current size"**, which is what lets a position move a window without
+  resizing it — and what makes "align it left but leave it the size it is" a position rather
+  than a compromise.
+
+### Changed
+
+- The Center hotkey field is gone from the settings window, because Center is now the first
+  position and is edited there like any other.
+- The settings window refuses to save two actions that share a hotkey, and says which two. It
+  used to be possible to bind one key twice, in which case only one of them ever ran.
+- Clicking empty space in the settings window lets go of whatever field has focus.
+
+### Fixed
+
+- Hotkeys that differ only in the ORDER of their modifiers, or in case, are now recognised as
+  the same key. `^+c` and `+^c` are one binding, and binding both silently destroyed the first.
+
 ## 2.2.0
 
 **Old download links no longer work, and that is deliberate.**

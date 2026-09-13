@@ -94,8 +94,8 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; The numbers behind the drag. A picture is the fastest way to AIM and a hopeless way to
     ; read back exactly what you aimed at, and these are the values that reach settings.ini.
     g.SetFont("s9 w400 c" th["hint"], "Consolas")
-    txtReadout := g.Add("Text", "xm y+8 w186", "")
-    txtScreen  := g.Add("Text", "x+0 yp w114 Right", "")
+    txtReadout := g.Add("Text", "xm y+8 w198", "")
+    txtScreen  := g.Add("Text", "x+0 yp w102 Right", "")
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
     ; ⛔ Without this there is no way to give a keep-current-size position a size, and a
     ; keep-size position cannot be resized BY DESIGN — its edges are all caption, because "keep
@@ -233,9 +233,12 @@ ShowSettingsWindow(iniPath, onSaved) {
             return
         }
         p := positions[sel]
+        ; Kept short on purpose: the widest it can get is "size 100x100%  at 100,100%", which
+        ; is what the control is sized for. The longer phrasing truncated at "at 0," and a
+        ; readout that silently loses half the numbers is worse than no readout.
         txtReadout.Value := (p.w = 0 && p.h = 0)
-            ? "same size  ·  at " p.ax ", " p.ay " %"
-            : "size " p.w " x " p.h " %  ·  at " p.ax ", " p.ay " %"
+            ? "same size  at " p.ax "," p.ay "%"
+            : "size " p.w "x" p.h "%  at " p.ax "," p.ay "%"
     }
 
     ; Fills the per-row controls FROM the model. Never the other way round.
@@ -398,6 +401,12 @@ ShowSettingsWindow(iniPath, onSaved) {
         _Populate(SettingsDefaults())
     }
 
+    _OnBackgroundClick(wParam, lParam, msg, hwnd) {
+        if (hwnd != g.Hwnd)
+            return
+        DllCall("SetFocus", "ptr", g.Hwnd)
+    }
+
     _Save(*) {
         r := PreserveHotkey(hResize.Value, loadedResize)
         ; The Hotkey control cannot emit malformed syntax, but it CAN emit a bare single
@@ -492,6 +501,16 @@ ShowSettingsWindow(iniPath, onSaved) {
     }
     loop MAX_POSITIONS
         _WireRow(A_Index)
+    ; Clicking empty space lets go of whatever field has focus.
+    ;
+    ; This matters more here than in most dialogs: a focused Hotkey control captures EVERY
+    ; keystroke, including Tab, so without somewhere to click there is no way out of one but
+    ; another control. Win32 does not move focus when you click a window's background, so it is
+    ; moved deliberately — to the dialog itself, which leaves Tab and Escape working normally.
+    ;
+    ; Only the Gui's own background arrives here. The screen picture reaches it too, because its
+    ; controls are disabled and hand their mouse messages up to the parent.
+    OnMessage(0x0201, _OnBackgroundClick)          ; WM_LBUTTONDOWN
     cbKeep.OnEvent("Click", _OnKeepChange)
     btnAdd.OnEvent("Click", _Add)
     btnSave.OnEvent("Click", _Save)

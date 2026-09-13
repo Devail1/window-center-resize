@@ -23,6 +23,11 @@ global SP_MIN_PCT      := 10
 global SP_GRAB_PX      := 7
 
 global SP_SLOT_H := 170                  ; the letterbox slot's fixed height, in layout units
+; The slot shows through around the picture as a frame. Without it the picture is letterboxed
+; only where the aspect ratios happen to differ, so a 16:9 monitor in a 300x170 slot produced a
+; hairline along the top and NOTHING down either side — a screen with three borders and a
+; missing fourth, which reads as a rendering fault rather than a design.
+global SP_FRAME_PX := 2
 
 global _spGui := "", _spSlot := "", _spPic := "", _spBox := "", _spFill := "", _spTask := ""
 ; The border thickness of the drawn window, in pixels. The box Gui paints the border colour and
@@ -54,7 +59,10 @@ ScreenPictureCreate(g, slotColor, screenColor, taskColor, boxColor, fillColor, o
     _SpAddStyle(g.Hwnd, 0x02000000)                       ; WS_CLIPCHILDREN
 
     _spSlot := g.Add("Progress", "xm w300 h" SP_SLOT_H " Background" slotColor, 0)
-    _SpAddStyle(_spSlot.Hwnd, 0x04000000)                 ; WS_CLIPSIBLINGS
+    _SpAddStyle(_spSlot.Hwnd, 0x04000000)
+    ; Decoration, never a mouse target. Disabled, a control hands its mouse messages to the
+    ; parent, which is what lets a click on the screen picture count as a click on empty space.
+    _spSlot.Enabled := false                 ; WS_CLIPSIBLINGS
 
     ; ⛔ "xp yp wp hp" — exactly on top of the slot. It is moved to the letterboxed rectangle in
     ; Relayout, but it must be DECLARED at the slot's full size: AutoHotkey's layout cursor for
@@ -63,6 +71,7 @@ ScreenPictureCreate(g, slotColor, screenColor, taskColor, boxColor, fillColor, o
     ; the picture.
     _spPic := g.Add("Progress", "xp yp wp hp Background" screenColor, 0)
     _SpAddStyle(_spPic.Hwnd, 0x04000000)
+    _spPic.Enabled := false
     ; The taskbar. Without it the picture is a bare white rectangle that could be anything —
     ; it does not read as YOUR SCREEN, and nothing explains why a position can never reach the
     ; bottom edge. Drawn from the real difference between the monitor and its work area.
@@ -122,10 +131,13 @@ ScreenPictureRelayout() {
     mw := (wa.monWidth  > 0) ? wa.monWidth  : wa.width
     mh := (wa.monHeight > 0) ? wa.monHeight : wa.height
     aspect := (mh > 0) ? mw / mh : 16 / 9
-    if (sw / sh > aspect) {
-        ph := sh, pw := Round(sh * aspect)
+    ; Letterbox into the slot MINUS a uniform frame, so the frame is a deliberate border on all
+    ; four sides rather than whatever the aspect ratios leave over.
+    aw := sw - SP_FRAME_PX * 2, ah := sh - SP_FRAME_PX * 2
+    if (aw / ah > aspect) {
+        ph := ah, pw := Round(ah * aspect)
     } else {
-        pw := sw, ph := Round(sw / aspect)
+        pw := aw, ph := Round(aw / aspect)
     }
     px := sx + Round((sw - pw) / 2), py := sy + Round((sh - ph) / 2)
 

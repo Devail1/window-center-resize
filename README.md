@@ -13,15 +13,16 @@
 
 <hr/>
 
-<img src="assets/settings-window.png" alt="The settings window" width="334">
+<img src="assets/settings-window.png" alt="The settings window" width="348">
 
 ## Features
 
 Window Center & Resizer is a utility application for Windows that allows you to easily center and resize windows on your desktop using customizable keyboard shortcuts. It is a **630 KB download** — nothing to install, and no runtime to bring along.
 
-- **Center Window**: Quickly center the active window on your screen.
-- **Resize Window**: Cycle the active window through three size presets, given as a percentage of the screen's work area. The defaults are 50%, 75% and 90%, and all three are editable.
-- **Customizable Keybinds**: Configure your preferred key combinations for centering and resizing.
+- **Named positions**: Put the active window where you want it, with one keystroke. A position is a name, a hotkey, and a place on the screen — and you set that place by dragging a window inside a picture of your own screen, rather than by typing coordinates. Centring is one of these, and it is the one that ships.
+- **Keep the size, or set it**: A position can move a window without touching its size, or give it a size as a percentage of the screen. "Put this on the left but leave it as big as it is" is a position, not a compromise.
+- **Resize cycle**: A separate key cycles the active window through three size presets, given as a percentage of the screen's work area. The defaults are 50%, 75% and 90%, all editable. It re-centres the window as it goes, exactly as it always has.
+- **Customizable keybinds**: Every position carries its own hotkey, and the resize key is yours to choose.
 
 ## Installation
 
