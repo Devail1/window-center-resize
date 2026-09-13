@@ -297,14 +297,27 @@ ShowSettingsWindow(iniPath, onSaved) {
         _ShowRow(i)
     }
 
+    ; ⛔ NO `loading` GUARD HERE, and that is deliberate.
+    ;
+    ; The flag cannot protect a handler that carries DATA. _ShowRow calls into the picture,
+    ; which redraws, which pumps the message queue — so Change notifications already queued get
+    ; dispatched WHILE the flag is set, and their writes are dropped. Measured: typing into a
+    ; row whose focus event was still in flight lost every keystroke, and the row saved under
+    ; its old name with the new one still visible in the field.
+    ;
+    ; It does not need a guard. During a populate the control was just set FROM the model, so
+    ; writing it back is a no-op. Anything else is the user typing, which is exactly what should
+    ; be written.
     _OnRowName(i) {
-        if (loading || i > positions.Length)
+        if (i > positions.Length)
             return
         positions[i].name := rows[i].name.Value
     }
 
+    ; Same reasoning as _OnRowName: no `loading` guard, because the comparison below already
+    ; makes a populate's echo a no-op and the flag cannot be trusted across a message pump.
     _OnRowHotkey(i) {
-        if (loading || i > positions.Length)
+        if (i > positions.Length)
             return
         v := PreserveHotkey(rows[i].hotkey.Value, positions[i].hotkey)
         ; ⛔ Filling the control FIRES this handler, and the control re-renders what it was
@@ -454,19 +467,28 @@ ShowSettingsWindow(iniPath, onSaved) {
         g.Hide()
     }
 
-    loop MAX_POSITIONS {
-        i := A_Index
-        ; Each row captures its OWN index. A shared handler reading a mutable "current row"
-        ; would write the wrong row the moment the list is reordered or one is deleted.
-        rows[i].name.OnEvent("Focus",  (*) => _OnRowFocus(i))
-        rows[i].name.OnEvent("Change", (*) => _OnRowName(i))
+    ; ⛔ THE WIRING MUST HAPPEN IN A FUNCTION CALL, one per row.
+    ;
+    ; An AutoHotkey closure captures the VARIABLE, not its value. Written as a loop over
+    ; `i := A_Index`, all MAX_POSITIONS closures share the single `i` and every one of them ends
+    ; up pointing at the LAST index. Every keystroke, every delete and every focus then went to
+    ; row 8 — which usually does not exist, so the range guard silently dropped it and nothing
+    ; the user typed ever reached the model. Names and hotkeys came back empty from a save, the
+    ; readout stayed blank, and add and remove appeared to do nothing.
+    ;
+    ; Each call to _WireRow has its OWN idx, so each closure captures a different variable.
+    _WireRow(idx) {
+        rows[idx].name.OnEvent("Focus",  (*) => _OnRowFocus(idx))
+        rows[idx].name.OnEvent("Change", (*) => _OnRowName(idx))
         ; ⛔ A Hotkey control supports Change but NOT Focus — registering Focus on one throws
         ; at load. Typing into it is what selects its row instead, which is the moment the
         ; picture needs to be showing that row anyway.
-        rows[i].hotkey.OnEvent("Change", (*) => (_OnRowFocus(i), _OnRowHotkey(i)))
-        rows[i].swatch.OnEvent("Click", (*) => _OnRowFocus(i))
-        rows[i].del.OnEvent("Click", (*) => _Remove(i))
+        rows[idx].hotkey.OnEvent("Change", (*) => (_OnRowFocus(idx), _OnRowHotkey(idx)))
+        rows[idx].swatch.OnEvent("Click", (*) => _OnRowFocus(idx))
+        rows[idx].del.OnEvent("Click", (*) => _Remove(idx))
     }
+    loop MAX_POSITIONS
+        _WireRow(A_Index)
     cbKeep.OnEvent("Click", _OnKeepChange)
     btnAdd.OnEvent("Click", _Add)
     btnSave.OnEvent("Click", _Save)
