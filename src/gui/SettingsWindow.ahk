@@ -102,7 +102,11 @@ ShowSettingsWindow(iniPath, onSaved) {
     ; the size it has" is exactly what having no size to drag means. Dropping the checkbox
     ; therefore did not remove an option, it removed the resize handles from the position every
     ; user starts with, with nothing on screen to explain why the edges did nothing.
-    cbKeep := g.Add("CheckBox", "xm y+6 w300", "Keep the window's current size")
+    ; The label says what TICKING IT DOES, not what gets stored. "Keep the window's current
+    ; size" describes a state and left it unclear that ticking it also makes the box in the
+    ; picture unresizable — which is how the shipped Centre position behaves, so it is the first
+    ; thing a new user meets and the first thing they read as broken.
+    cbKeep := g.Add("CheckBox", "xm y+6 w300", "Move only — don't change the window's size")
 
     ; One row per position, edited in place. There is no separate "selected row" panel: the row
     ; IS the panel, which is a whole block of controls this window does not have to carry.

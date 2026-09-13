@@ -30,10 +30,17 @@ global SP_SLOT_H := 170                  ; the letterbox slot's fixed height, in
 global SP_FRAME_PX := 2
 
 global _spGui := "", _spSlot := "", _spPic := "", _spBox := "", _spFill := "", _spTask := ""
+global _spHandles := [], _spDot := ""
 ; The border thickness of the drawn window, in pixels. The box Gui paints the border colour and
 ; a single inset child paints the fill, which is the cheapest way to draw an outline without
 ; GDI+ — one extra window rather than four edge strips.
 global SP_BORDER := 2
+; The resize handles and the centre dot, in pixels. They live INSIDE the box rather than
+; straddling its border: a child is clipped to its parent, so anything straddling would have to
+; be a separate window per handle, and adding nine controls to the settings Gui would advance its
+; layout cursor and move everything below the picture.
+global SP_HANDLE := 6
+global SP_DOT := 5
 global _spPos := { ax: 50, ay: 50, w: 0, h: 0 }
 global _spOnChange := ""
 global _spEnabled := false
@@ -48,7 +55,8 @@ global SP_KEEP_W := 40, SP_KEEP_H := 55
 ; ScreenPictureRelayout() after g.Show() — before the window is on screen it has a size but not
 ; yet a position, so nothing can be measured.
 ScreenPictureCreate(g, slotColor, screenColor, taskColor, boxColor, fillColor, onChange) {
-    global _spGui, _spSlot, _spPic, _spBox, _spFill, _spTask, _spOnChange
+    global _spGui, _spSlot, _spPic, _spBox, _spFill, _spTask, _spHandles, _spDot
+    global _spOnChange
     _spGui := g, _spOnChange := onChange
 
     ; ⛔ WS_CLIPCHILDREN on the parent and WS_CLIPSIBLINGS on both Progress controls. Without
@@ -98,6 +106,25 @@ ScreenPictureCreate(g, slotColor, screenColor, taskColor, boxColor, fillColor, o
     ; behaviour relied on here. WS_EX_TRANSPARENT alone left WindowFromPoint still returning the
     ; fill, and the fill is decoration — it should never be a mouse target by any route.
     _spFill.Enabled := false
+
+    ; Eight handles and a centre dot. Nothing else says the box can be resized — the cursor
+    ; changes only once you are already on an edge, which you have to guess at first.
+    ;
+    ; Every one gets the same treatment as the fill: decoration, never a mouse target. A child
+    ; covering the box's interior steals its hit-tests, and a handle that swallowed the click
+    ; meant to grab it would be the exact opposite of the affordance it is there to provide.
+    _spHandles := []
+    loop 8 {
+        hd := _spBox.Add("Progress", "x0 y0 w" SP_HANDLE " h" SP_HANDLE " Background" boxColor, 0)
+        _SpAddStyle(hd.Hwnd, 0x04000000)
+        _SpAddExStyle(hd.Hwnd, 0x00000020)
+        hd.Enabled := false
+        _spHandles.Push(hd)
+    }
+    _spDot := _spBox.Add("Progress", "x0 y0 w" SP_DOT " h" SP_DOT " Background" boxColor, 0)
+    _SpAddStyle(_spDot.Hwnd, 0x04000000)
+    _SpAddExStyle(_spDot.Hwnd, 0x00000020)
+    _spDot.Enabled := false
 
     ; ⛔ The handlers are registered BEFORE the box is shown and before its frame is
     ; recalculated. Registered after, _SpFrameChanged ran with NO WM_NCCALCSIZE handler in
@@ -286,6 +313,35 @@ _SpFitFill() {
     WinGetPos(, , &w, &h, "ahk_id " _spBox.Hwnd)
     WinMove(SP_BORDER, SP_BORDER
           , Max(1, w - SP_BORDER * 2), Max(1, h - SP_BORDER * 2), "ahk_id " _spFill.Hwnd)
+    _SpFitHandles(w, h)
+}
+
+; Lays the handles out flush inside the box's edges, in the box's own client coordinates.
+;
+; A keep-current-size position shows the DOT ONLY. Its edges are all caption by design, so
+; drawing eight resize handles on it would advertise something the box refuses to do — and that
+; mismatch is exactly what reads as "the resize is broken".
+_SpFitHandles(w, h) {
+    if (_spDot = "" || _spHandles.Length < 8)
+        return
+    sizing := !(_spPos.w = 0 && _spPos.h = 0)
+    hs := SP_HANDLE
+    midX := Round((w - hs) / 2), midY := Round((h - hs) / 2)
+    right := w - hs, bottom := h - hs
+    at := [ [0, 0],     [midX, 0],     [right, 0]
+          , [0, midY],                 [right, midY]
+          , [0, bottom], [midX, bottom], [right, bottom] ]
+    for i, p in at {
+        if (sizing) {
+            WinMove(p[1], p[2], hs, hs, "ahk_id " _spHandles[i].Hwnd)
+            WinShow("ahk_id " _spHandles[i].Hwnd)
+        } else {
+            WinHide("ahk_id " _spHandles[i].Hwnd)
+        }
+    }
+    WinMove(Round((w - SP_DOT) / 2), Round((h - SP_DOT) / 2), SP_DOT, SP_DOT
+          , "ahk_id " _spDot.Hwnd)
+    WinShow("ahk_id " _spDot.Hwnd)
 }
 
 ; ⛔ A sizable window has an OS-enforced MINIMUM TRACKING SIZE, and it is far larger than a box

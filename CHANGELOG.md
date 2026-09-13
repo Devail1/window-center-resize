@@ -23,7 +23,8 @@ including `[Hotkeys] Center`, so downgrading to 2.2.0 still finds the key it exp
 - **Named positions.** Up to eight, each with its own name and hotkey. The settings window shows
   them as a list you edit in place.
 - **A picture of your screen**, with the taskbar drawn where your taskbar actually is, and a
-  window you drag and resize inside it. The numbers it produces are shown beneath it.
+  window you drag and resize inside it — with handles on its edges and corners, as you would
+  expect of a window. The numbers it produces are shown beneath it.
 - **"Keep the window's current size"**, which is what lets a position move a window without
   resizing it — and what makes "align it left but leave it the size it is" a position rather
   than a compromise.
