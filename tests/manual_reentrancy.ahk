@@ -85,6 +85,27 @@ front := DllCall("FindWindowEx", "ptr", _spBox.Hwnd, "ptr", 0, "str", "msctls_pr
 AssertEqual(front, _spDot.Hwnd
           , "the centre dot is the front-most child of the box, not hidden behind the fill")
 
+; A drag tick must not be dominated by AutoHotkey's WinDelay. The redraw path performs about a
+; dozen WinMove/WinShow/WinHide calls, and at the 100ms default that is over a second of sleeping
+; per frame - measured at 1436 ms before the fix, 9.5 ms after.
+;
+; A_WinDelay is put BACK to the default first: every handler that redraws is its own thread and
+; inherits the auto-execute value, so the guard has to work from cold. Inheriting an already
+; lowered value is exactly how this would pass while shipping broken.
+SetWinDelay(100)
+SetControlDelay(20)
+ScreenPictureSet({ ax: 20, ay: 50, w: 0, h: 0 }, true)      ; warm
+DllCall("QueryPerformanceFrequency", "int64*", &qpf := 0)
+DllCall("QueryPerformanceCounter", "int64*", &t0 := 0)
+loop 20
+    ScreenPictureSet({ ax: 20 + Mod(A_Index * 2, 60), ay: 50, w: 0, h: 0 }, true)
+DllCall("QueryPerformanceCounter", "int64*", &t1 := 0)
+msPerFrame := (t1 - t0) * 1000.0 / qpf / 20
+; 200ms is deliberately loose - the two states are 9.5ms and 1436ms, so nothing in between is a
+; near miss, and a generous bound keeps this from flapping on a busy machine.
+AssertEqual(msPerFrame < 200, true
+          , "a drag frame is not dominated by WinDelay (" Round(msPerFrame, 1) " ms/frame)")
+
 try FileDelete(ini)
 
 ; ⛔ Tear the window down BEFORE exiting. ExitApp destroys the box Gui after the script's globals

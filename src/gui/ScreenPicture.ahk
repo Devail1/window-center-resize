@@ -151,6 +151,7 @@ ScreenPictureCreate(g, slotColor, screenColor, taskColor, boxColor, fillColor, o
 ; monitor between opens, and a 9:16 screen drawn at the dialog's width would be ~750px tall, so
 ; the picture gives up WIDTH rather than the dialog changing size.
 ScreenPictureRelayout() {
+    _SpFastWindowOps()
     wa := GetNearestMonitorWorkArea(_spGui.Hwnd)
     WinGetPos(&sx, &sy, &sw, &sh, "ahk_id " _spSlot.Hwnd)     ; MEASURED, never assumed
     ; The WHOLE MONITOR sets the shape, so the picture is the screen rather than the usable part
@@ -212,9 +213,28 @@ _SpKeepPx(pic) {
     return { w: Round(pic.w * SP_KEEP_W / 100), h: Round(pic.h * SP_KEEP_H / 100) }
 }
 
+; ⛔ AutoHotkey sleeps A_WinDelay — which DEFAULTS TO 100ms — after every WinMove, WinShow and
+; WinHide. Redrawing the box is a dozen of those (the fill, the box, eight handles, the dot), and
+; it runs on every tick of a drag, so the default turns one frame into more than a second of
+; sleeping. Measured on this window: 1436 ms per frame at the default, 9.5 ms with the delay off
+; — 151x, and none of it was drawing.
+;
+; Thread-scoped, so it is set at the top of each entry point rather than once: a GUI event
+; handler is its own thread and inherits the auto-execute value, not whatever the last handler
+; set. Deliberately NOT set globally — WindowOps moves OTHER applications' windows, where the
+; delay is a different question and not one this file should answer.
+;
+; This is also what made the editor "settle slower than a driver reads it": a synthetic-input
+; test that measured ~700ms after a click was reading a window still working through its sleeps.
+_SpFastWindowOps() {
+    SetWinDelay(-1)
+    SetControlDelay(-1)
+}
+
 _SpRedrawBox() {
     if (_spPic = "" || _spBox = "")
         return
+    _SpFastWindowOps()
     pic := _SpPictureRect()
     k := _SpKeepPx(pic)
     r := AnchoredRect(pic.x, pic.y, pic.w, pic.h, _spPos, k.w, k.h)
@@ -315,6 +335,8 @@ _SpWriteRect(lParam, l, t, r, b) {
 _SpSize(wParam, lParam, msg, hwnd) {
     if (_spBox = "" || hwnd != _spBox.Hwnd)
         return
+    ; The resize drag's per-tick path, and its own thread. See _SpFastWindowOps.
+    _SpFastWindowOps()
     _SpFitFill()
 }
 
