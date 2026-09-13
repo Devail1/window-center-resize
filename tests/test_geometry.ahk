@@ -37,4 +37,45 @@ AssertEqual(r4.y, 257, "y rounds to a whole pixel")
 r5 := CenteredRect(0, 40, 1920, 1040, 50, 50)
 AssertEqual(r5.y, 300, "y accounts for a non-zero work-area top")
 
+; --- Anchored rectangles --------------------------------------------------------------------
+; A position is an anchor plus a size. ax/ay run 0..100 across the SLACK in the work area —
+; the space the window does not occupy — so 0 is flush left/top, 100 is flush right/bottom,
+; and 50 is centred whatever the window's size. w/h of 0 means "keep the size it has", which
+; is the only way the Center action can be a position without starting to resize windows.
+
+; Center, expressed as a position: identical to what CenterActiveWindow does today.
+a1 := AnchoredRect(0, 0, 1920, 1040, { ax: 50, ay: 50, w: 0, h: 0 }, 800, 600)
+AssertEqual(a1.w, 800, "zero width keeps the window's current width")
+AssertEqual(a1.h, 600, "zero height keeps the window's current height")
+AssertEqual(a1.x, 560, "a 50 anchor centres horizontally")
+AssertEqual(a1.y, 220, "a 50 anchor centres vertically")
+
+; Left half and right half.
+a2 := AnchoredRect(0, 0, 1920, 1040, { ax: 0, ay: 50, w: 50, h: 100 }, 800, 600)
+AssertEqual(a2.x, 0,    "a 0 anchor is flush against the left edge")
+AssertEqual(a2.w, 960,  "a sized position ignores the window's current width")
+AssertEqual(a2.h, 1040, "100% height fills the work area")
+AssertEqual(a2.y, 0,    "a full-height window has no slack to anchor within")
+
+a3 := AnchoredRect(0, 0, 1920, 1040, { ax: 100, ay: 50, w: 50, h: 100 }, 800, 600)
+AssertEqual(a3.x, 960, "a 100 anchor is flush against the right edge")
+
+; Mixed: keep the width, set the height. Issue #13's "align left but keep my size" is this
+; with w and h both zero.
+a4 := AnchoredRect(0, 0, 1920, 1040, { ax: 0, ay: 100, w: 0, h: 50 }, 800, 600)
+AssertEqual(a4.w, 800, "one axis can keep its size while the other is set")
+AssertEqual(a4.h, 520, "the sized axis still comes from the work area")
+AssertEqual(a4.y, 520, "a 100 anchor is flush against the bottom edge")
+
+; The work-area offset is honoured the same way CenteredRect honours it.
+a5 := AnchoredRect(1920, 40, 1280, 1024, { ax: 0, ay: 0, w: 50, h: 50 }, 800, 600)
+AssertEqual(a5.x, 1920, "a secondary monitor anchors within its own bounds")
+AssertEqual(a5.y, 40,   "a non-zero work-area top is the flush-top position")
+
+; Whole pixels only, exactly as CenteredRect: 1365*33/100 = 450.45 -> 450, and the remaining
+; slack of 915 at a 33 anchor is 301.95 -> 302.
+a6 := AnchoredRect(0, 0, 1365, 767, { ax: 33, ay: 50, w: 33, h: 33 }, 100, 100)
+AssertEqual(a6.w, 450, "anchored width rounds to a whole pixel")
+AssertEqual(a6.x, 302, "anchored x rounds to a whole pixel")
+
 ReportAndExit()
