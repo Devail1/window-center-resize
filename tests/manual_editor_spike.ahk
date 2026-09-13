@@ -62,7 +62,11 @@ global PIC := ""            ; the monitor picture (a Progress control used as a 
 global BOX := ""            ; the draggable child Gui
 global LIVE := ""           ; the one-line readout, updated during the drag
 global REPORT := ""         ; the log, updated only on discrete events
-global FRAMELESS := false   ; mode B: client rect == window rect
+; (user decision) MODE B SHIPS. The system frame insets the visible fill by 7px per side, so a
+; box stored as "left 50%" draws as ~46% and "flush left" draws with a gap — the picture lies
+; by more than the 5% grid it snaps to. Mode A is kept only so the two can still be compared.
+global FRAMELESS := true    ; mode B: client rect == window rect
+global BMODE := ""          ; the mode toggle, whose label IS the mode indicator
 global NOTES := []
 ; Which messages actually arrive. When the box refuses to move there are three different
 ; failures that look identical on screen — the click never reached the child, the move loop
@@ -78,7 +82,7 @@ global KEEPSIZE := { w: 40, h: 55 }
 Main()
 
 Main() {
-    global G, PIC, BOX, LIVE, REPORT
+    global G, PIC, BOX, LIVE, REPORT, BMODE
 
     th := Theme("light")
 
@@ -129,6 +133,7 @@ Main() {
     BOX := Gui("-Caption +Resize +Parent" G.Hwnd)
     BOX.BackColor := "3B82F6"
     BOX.Show("NoActivate")
+    FrameChanged()          ; mode B is the default, so the frame must be recalculated at once
     ; Raised to the front of its siblings at the END of Main() — see RaiseBox(). A child Gui is
     ; a SIBLING of the parent's controls, and new siblings go to the FRONT of the z-order, so
     ; the two Progress controls underneath it were covering it completely: every click landed on
@@ -149,8 +154,10 @@ Main() {
     b3.OnEvent("Click", (*) => SetPos(50, 50, 0, 0))
     b4.OnEvent("Click", (*) => SetPos(50, 50, 100, 100))
 
-    bMode := G.Add("Button", "xm y+10 w150", "Mode B: frameless")
+    bMode := G.Add("Button", "xm y+10 w150", "")
     bRt   := G.Add("Button", "x+6 yp w144", "Round-trip check")
+    BMODE := bMode
+    RenderMode()
     bMode.OnEvent("Click", (*) => ToggleFrameless())
     bRt.OnEvent("Click", (*) => RoundTripCheck())
 
@@ -397,12 +404,22 @@ SnapEdge(v, origin, span) {
 ; from DefWindowProc, so the edges have to be hit-tested by hand. Both halves are needed; neither
 ; works alone.
 
+RenderMode() {
+    if (IsObject(BMODE))
+        BMODE.Text := FRAMELESS ? "MODE B  ->  switch to A" : "MODE A  ->  switch to B"
+}
+
+; WM_NCCALCSIZE is only consulted when the window is told to recalculate its frame.
+FrameChanged() {
+    DllCall("SetWindowPos", "ptr", BOX.Hwnd, "ptr", 0, "int", 0, "int", 0, "int", 0, "int", 0
+          , "uint", SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)
+}
+
 ToggleFrameless() {
     global FRAMELESS
     FRAMELESS := !FRAMELESS
-    ; A frame change only takes effect when the window is told to recalculate it.
-    DllCall("SetWindowPos", "ptr", BOX.Hwnd, "ptr", 0, "int", 0, "int", 0, "int", 0, "int", 0
-          , "uint", SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)
+    RenderMode()
+    FrameChanged()
     ApplyPosToPicture()
     RaiseBox()
     Note("mode " (FRAMELESS ? "B  frameless, hand-rolled hit-test" : "A  system frame"))
@@ -508,9 +525,15 @@ Note(line) {
 RenderLive() {
     if (LIVE = "")
         return
-    s := "ax " Fmt(POS.ax) "  ay " Fmt(POS.ay) "  w " Fmt(POS.w) "  h " Fmt(POS.h)
+    s := (FRAMELESS ? "B " : "A ")
+       . " ax " Fmt(POS.ax) "  ay " Fmt(POS.ay) "  w " Fmt(POS.w) "  h " Fmt(POS.h)
+    off := ""
     if (Mod(POS.ax, SNAP_PCT) || Mod(POS.ay, SNAP_PCT))
-        s .= "   off-grid anchor"
+        off .= " anchor"
+    if (Mod(POS.w, SNAP_PCT) || Mod(POS.h, SNAP_PCT))
+        off .= " size"
+    if (off != "")
+        s .= "   << OFF THE " SNAP_PCT "% GRID:" off
     LIVE.Value := s
 }
 
