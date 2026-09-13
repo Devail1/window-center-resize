@@ -246,6 +246,20 @@ _SpRaise() {
           , "int", 0, "int", 0, "int", 0, "int", 0, "uint", FLAGS)
     DllCall("SetWindowPos", "ptr", _spBox.Hwnd, "ptr", HWND_TOP
           , "int", 0, "int", 0, "int", 0, "int", 0, "uint", FLAGS)
+    ; ⛔ The box's OWN children have the same problem, one level down. _spFill is added before
+    ; the handles and the dot, so both end up BEHIND it — and the fill covers the box's whole
+    ; interior. The dot sits dead centre, entirely inside the fill, so it is painted over
+    ; completely; the handles straddle the edges and survive only as the 2px that stick out past
+    ; the fill's inset. WinShow reports them visible the whole time, which is what makes this
+    ; look like a drawing glitch rather than a z-order bug: they appear for one frame, because
+    ; WinShow paints them last, and the RedrawWindow below then repaints in z-order and buries
+    ; them again.
+    for hd in _spHandles
+        DllCall("SetWindowPos", "ptr", hd.Hwnd, "ptr", HWND_TOP
+              , "int", 0, "int", 0, "int", 0, "int", 0, "uint", FLAGS)
+    if (_spDot != "")
+        DllCall("SetWindowPos", "ptr", _spDot.Hwnd, "ptr", HWND_TOP
+              , "int", 0, "int", 0, "int", 0, "int", 0, "uint", FLAGS)
     ; A raise or a move changes what is on top; it does not on its own mark anything as needing
     ; to be drawn again.
     static RDW := 0x0001 | 0x0004 | 0x0080 | 0x0100 | 0x0400
