@@ -48,8 +48,24 @@ global WS_CLIPSIBLINGS := 0x04000000, WS_CLIPCHILDREN := 0x02000000
 global SWP_NOSIZE := 0x0001, SWP_NOMOVE := 0x0002, SWP_NOZORDER := 0x0004
 global SWP_NOACTIVATE := 0x0010, SWP_FRAMECHANGED := 0x0020
 
-; The snap grid, in percent of the picture. 5 is the plan's number.
+; The snap grid, in percent of the picture. 5 is the plan's number; the spike cycles it so the
+; grid can be FELT rather than argued about. 0 means no snapping at all.
 global SNAP_PCT := 5
+global SNAP_STEPS := [0, 2, 5, 10]
+
+; WHAT the snap applies to while MOVING. These are three different grids and they feel
+; different, which is the whole reason the toggle exists:
+;
+;   "anchor"  snap the anchor to 5% of the SLACK. The step therefore changes size with the box
+;             — a narrow box jumps in coarse pixels, a wide one in fine ones — and the edges do
+;             not line up with anything visible. 0 / 50 / 100 are exactly reachable.
+;   "edge"    snap the leading edge to 5% of the PICTURE. Uniform steps, edges land on the same
+;             grid a resize uses. But the CENTRE becomes unreachable for odd widths: a 33% wide
+;             box centres at 33.5%, which is not on the grid.
+;   "magnet"  the edge grid, plus stops at flush-left, centred and flush-right. Uniform feel,
+;             edges aligned, and centring still exact. Costs one extra comparison per drag.
+global SNAP_MODE := "anchor"
+global SNAP_MODES := ["anchor", "edge", "magnet"]
 ; A position may not be dragged smaller than this, in percent. Zero-size is not a position, and
 ; a box too small to grab again is a trap.
 global MIN_PCT := 10
@@ -58,7 +74,10 @@ global MIN_PCT := 10
 global GRAB_PX := 7
 
 global G := ""              ; parent Gui
-global PIC := ""            ; the monitor picture (a Progress control used as a coloured rect)
+; Named PICTURE, not PIC: AutoHotkey is CASE-INSENSITIVE, so a global PIC and the local `pic`
+; that three of the drag handlers use for the measured rectangle are the same identifier. The
+; local silently shadows the control object inside those functions.
+global PICTURE := ""        ; the monitor picture (a Progress control used as a coloured rect)
 global BOX := ""            ; the draggable child Gui
 global LIVE := ""           ; the one-line readout, updated during the drag
 global REPORT := ""         ; the log, updated only on discrete events
@@ -67,6 +86,7 @@ global REPORT := ""         ; the log, updated only on discrete events
 ; by more than the 5% grid it snaps to. Mode A is kept only so the two can still be compared.
 global FRAMELESS := true    ; mode B: client rect == window rect
 global BMODE := ""          ; the mode toggle, whose label IS the mode indicator
+global BSNAP := "", BGRID := ""
 global NOTES := []
 ; Which messages actually arrive. When the box refuses to move there are three different
 ; failures that look identical on screen — the click never reached the child, the move loop
@@ -82,7 +102,7 @@ global KEEPSIZE := { w: 40, h: 55 }
 Main()
 
 Main() {
-    global G, PIC, BOX, LIVE, REPORT, BMODE
+    global G, PICTURE, BOX, LIVE, REPORT, BMODE, BSNAP, BGRID
 
     th := Theme("light")
 
@@ -120,9 +140,9 @@ Main() {
     ; for every control added afterwards comes from the DECLARED rectangle, not the moved one.
     ; Declared as "x0 y0 w10 h10" the cursor stayed at y=10 and the buttons, the labels and the
     ; report were all laid out on top of the picture. Measured, not guessed.
-    PIC := G.Add("Progress", "xp yp wp hp BackgroundFFFFFF", 0)
-    ClipSiblings(PIC.Hwnd)
-    MoveToScreenRect(PIC.Hwnd, G.Hwnd
+    PICTURE := G.Add("Progress", "xp yp wp hp BackgroundFFFFFF", 0)
+    ClipSiblings(PICTURE.Hwnd)
+    MoveToScreenRect(PICTURE.Hwnd, G.Hwnd
                    , sx + Round((sw - pw) / 2), sy + Round((sh - ph) / 2), pw, ph)
 
     ; The draggable box.
@@ -156,9 +176,13 @@ Main() {
 
     bMode := G.Add("Button", "xm y+10 w150", "")
     bRt   := G.Add("Button", "x+6 yp w144", "Round-trip check")
-    BMODE := bMode
+    bSnap := G.Add("Button", "xm y+6 w150", "")
+    bGrid := G.Add("Button", "x+6 yp w144", "")
+    BMODE := bMode, BSNAP := bSnap, BGRID := bGrid
     RenderMode()
     bMode.OnEvent("Click", (*) => ToggleFrameless())
+    bSnap.OnEvent("Click", (*) => CycleSnapMode())
+    bGrid.OnEvent("Click", (*) => CycleGrid())
     bRt.OnEvent("Click", (*) => RoundTripCheck())
 
     G.SetFont("s9 w600 c" th["text"], "Consolas")
@@ -211,7 +235,7 @@ ClipSiblings(hwnd) {
 ; completely hidden; the box needs to be in front of both. Nothing here can be left to the
 ; order the controls happen to be declared in.
 ;
-; Required order, front to back:  BOX  >  PIC  >  slot.
+; Required order, front to back:  BOX  >  PICTURE  >  slot.
 Raise(hwnd) {
     static HWND_TOP := 0
     DllCall("SetWindowPos", "ptr", hwnd, "ptr", HWND_TOP, "int", 0, "int", 0, "int", 0
@@ -219,7 +243,7 @@ Raise(hwnd) {
 }
 
 RaiseBox() {
-    Raise(PIC.Hwnd)
+    Raise(PICTURE.Hwnd)
     Raise(BOX.Hwnd)
     Repaint()
 }
@@ -234,7 +258,7 @@ Repaint() {
 }
 
 PictureRect() {
-    WinGetPos(&x, &y, &w, &h, "ahk_id " PIC.Hwnd)
+    WinGetPos(&x, &y, &w, &h, "ahk_id " PICTURE.Hwnd)
     return { x: x, y: y, w: w, h: h }
 }
 
@@ -327,11 +351,10 @@ OnBoxMoving(wParam, lParam, msg, hwnd) {
     c := ReadRect(lParam)
     w := c.r - c.l, h := c.b - c.t
     slackX := pic.w - w, slackY := pic.h - h
-    ax := (slackX > 0) ? SnapPct((c.l - pic.x) / slackX * 100) : POS.ax
-    ay := (slackY > 0) ? SnapPct((c.t - pic.y) / slackY * 100) : POS.ay
-    POS.ax := ax, POS.ay := ay
-    l := pic.x + Round(slackX * ax / 100)
-    t := pic.y + Round(slackY * ay / 100)
+    l := SnapMove(c.l, pic.x, pic.w, slackX, POS.ax)
+    t := SnapMove(c.t, pic.y, pic.h, slackY, POS.ay)
+    POS.ax := (slackX > 0) ? Round((l - pic.x) / slackX * 100) : POS.ax
+    POS.ay := (slackY > 0) ? Round((t - pic.y) / slackY * 100) : POS.ay
     WriteRect(lParam, l, t, l + w, t + h)
     RenderLive()
     return 1
@@ -381,6 +404,29 @@ OnBoxSizing(wParam, lParam, msg, hwnd) {
     return 1
 }
 
+; Snap the LEADING EDGE of a moving box, and clamp it so the box cannot leave the picture.
+; `v` and `origin` are absolute; `slack` is how far the box can travel; `prevAnchor` is what to
+; fall back on when there is no slack at all (a full-width box has no anchor to choose).
+SnapMove(v, origin, span, slack, prevAnchor) {
+    if (slack <= 0)
+        return origin + Round(slack * prevAnchor / 100)
+    lo := origin, hi := origin + slack
+    if (!SNAP_PCT)
+        return Round(Max(lo, Min(hi, v)))
+    if (SNAP_MODE = "anchor")
+        return origin + Round(slack * SnapPct((v - origin) / slack * 100) / 100)
+    best := SnapEdge(v, origin, span)                  ; the picture's own grid
+    if (SNAP_MODE = "magnet") {
+        ; flush-left, centred, flush-right — the three the anchor model names exactly, and the
+        ; three the edge grid cannot always reach.
+        for stop in [lo, origin + Round(slack / 2), hi] {
+            if (Abs(stop - v) < Abs(best - v))
+                best := stop
+        }
+    }
+    return Round(Max(lo, Min(hi, best)))
+}
+
 SnapPct(v) {
     return Max(0, Min(100, Round(v / SNAP_PCT) * SNAP_PCT))
 }
@@ -388,6 +434,8 @@ SnapPct(v) {
 ; Snap an absolute edge to the picture's own 5% grid, and clamp it inside the picture. Clamping
 ; AFTER the snap is what stops a drag past the edge leaving the box half outside its own screen.
 SnapEdge(v, origin, span) {
+    if (!SNAP_PCT)
+        return Round(Max(origin, Min(origin + span, v)))
     step := span * SNAP_PCT / 100
     snapped := origin + Round((v - origin) / step) * step
     return Round(Max(origin, Min(origin + span, snapped)))
@@ -407,6 +455,36 @@ SnapEdge(v, origin, span) {
 RenderMode() {
     if (IsObject(BMODE))
         BMODE.Text := FRAMELESS ? "MODE B  ->  switch to A" : "MODE A  ->  switch to B"
+    if (IsObject(BSNAP))
+        BSNAP.Text := "snap: " SNAP_MODE
+    if (IsObject(BGRID))
+        BGRID.Text := SNAP_PCT ? "grid: " SNAP_PCT "%" : "grid: off"
+}
+
+CycleSnapMode() {
+    global SNAP_MODE
+    for i, m in SNAP_MODES {
+        if (m = SNAP_MODE) {
+            SNAP_MODE := SNAP_MODES[Mod(i, SNAP_MODES.Length) + 1]
+            break
+        }
+    }
+    RenderMode()
+    Note("snap mode -> " SNAP_MODE)
+    Render()
+}
+
+CycleGrid() {
+    global SNAP_PCT
+    for i, v in SNAP_STEPS {
+        if (v = SNAP_PCT) {
+            SNAP_PCT := SNAP_STEPS[Mod(i, SNAP_STEPS.Length) + 1]
+            break
+        }
+    }
+    RenderMode()
+    Note("grid -> " (SNAP_PCT ? SNAP_PCT "%" : "off"))
+    Render()
 }
 
 ; WM_NCCALCSIZE is only consulted when the window is told to recalculate its frame.
@@ -525,7 +603,7 @@ Note(line) {
 RenderLive() {
     if (LIVE = "")
         return
-    s := (FRAMELESS ? "B " : "A ")
+    s := (FRAMELESS ? "B " : "A ") SubStr(SNAP_MODE, 1, 1) (SNAP_PCT ? SNAP_PCT : "-")
        . " ax " Fmt(POS.ax) "  ay " Fmt(POS.ay) "  w " Fmt(POS.w) "  h " Fmt(POS.h)
     off := ""
     if (Mod(POS.ax, SNAP_PCT) || Mod(POS.ay, SNAP_PCT))
