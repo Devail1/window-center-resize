@@ -50,8 +50,28 @@ global SWP_NOACTIVATE := 0x0010, SWP_FRAMECHANGED := 0x0020
 
 ; The snap grid, in percent of the picture. 5 is the plan's number; the spike cycles it so the
 ; grid can be FELT rather than argued about. 0 means no snapping at all.
-global SNAP_PCT := 5
-global SNAP_STEPS := [0, 2, 5, 10]
+; (user decision) 2%. NOT 2.5%: ClampAnchor in Settings.ahk stores the anchor as Round(value),
+; so a 2.5 grid would be saved as 2, 5, 8, 10, 13 — the value dragged would not be the value
+; stored, which is the single thing a picture exists to rule out. 2 still lands every anchor
+; that means anything: flush 0, centre 50, flush 100, quarters 25 and 75.
+global SNAP_PCT := 2
+global SNAP_STEPS := [2, 5, 1, 0]
+
+; POSITION and SIZE do not want the same grid, which is the thing 5%-everywhere got wrong.
+;
+; Position wants to be COARSE. There are only a handful of placements anyone means — flush,
+; quarter, centre — and a coarse grid makes the box land on them decisively.
+;
+; Size wants to be FINE. Widths are a continuum, and the most-wanted ones are not evenly
+; spaced: a third is 33.3%, which is not on a 5% grid, or a 2% one. So the size grid is fine
+; AND carries magnets at the fractions people actually ask for. Magnets need a pull RADIUS
+; wider than the grid step or they never win.
+; (user decision) 1% plus magnets. At 5% a nudge smaller than half a step rounded straight back
+; and the width would not move at all — measured: twelve nudges, width 40 every time.
+global SIZE_PCT := 0                     ; 0 selects magnet mode
+global SIZE_STEPS := [0, 1, 2, 5]        ; 0 selects the magnet mode below
+global SIZE_MAGNETS := [25, 33, 50, 67, 75, 100]
+global MAGNET_RADIUS := 2                ; percent
 
 ; WHAT the snap applies to while MOVING. These are three different grids and they feel
 ; different, which is the whole reason the toggle exists:
@@ -219,7 +239,7 @@ Main() {
     bMode.OnEvent("Click", (*) => ToggleFrameless())
     bTrace := G.Add("Button", "xm y+6 w300", "Trace next drag")
     bTrace.OnEvent("Click", (*) => StartTrace())
-    bSnap.OnEvent("Click", (*) => CycleSnapMode())
+    bSnap.OnEvent("Click", (*) => CycleSizeGrid())
     bGrid.OnEvent("Click", (*) => CycleGrid())
     bRt.OnEvent("Click", (*) => RoundTripCheck())
 
@@ -465,14 +485,25 @@ OnBoxSizing(wParam, lParam, msg, hwnd) {
     ; The edges NOT being dragged are taken from the proposal, where they are stable.
     cur := CursorPos()
     l := c.l, t := c.t, r := c.r, b := c.b
-    if (left)
-        l := Min(SnapEdge(cur.x - (GRAB.x - GRAB.l), pic.x, pic.w), r - minW)
-    if (right)
-        r := Max(SnapEdge(cur.x - (GRAB.x - GRAB.r), pic.x, pic.w), l + minW)
-    if (top)
-        t := Min(SnapEdge(cur.y - (GRAB.y - GRAB.t), pic.y, pic.h), b - minH)
-    if (bottom)
-        b := Max(SnapEdge(cur.y - (GRAB.y - GRAB.b), pic.y, pic.h), t + minH)
+    ; The OPPOSITE edge is held exactly where it is and the SIZE is what snaps. Snapping the
+    ; dragged edge instead made the resulting size depend on where the opposite edge happened
+    ; to sit, which is how a 5% grid produced a 48%-wide box.
+    if (left) {
+        raw := r - Clamp(cur.x - (GRAB.x - GRAB.l), pic.x, pic.x + pic.w)
+        l := r - Max(minW, Min(r - pic.x, SnapSize(raw, pic.w)))
+    }
+    if (right) {
+        raw := Clamp(cur.x - (GRAB.x - GRAB.r), pic.x, pic.x + pic.w) - l
+        r := l + Max(minW, Min(pic.x + pic.w - l, SnapSize(raw, pic.w)))
+    }
+    if (top) {
+        raw := b - Clamp(cur.y - (GRAB.y - GRAB.t), pic.y, pic.y + pic.h)
+        t := b - Max(minH, Min(b - pic.y, SnapSize(raw, pic.h)))
+    }
+    if (bottom) {
+        raw := Clamp(cur.y - (GRAB.y - GRAB.b), pic.y, pic.y + pic.h) - t
+        b := t + Max(minH, Min(pic.y + pic.h - t, SnapSize(raw, pic.h)))
+    }
 
     WriteRect(lParam, l, t, r, b)
     POS := RectToPct({ x: l, y: t, w: r - l, h: b - t }, pic, POS)
@@ -503,12 +534,41 @@ SnapMove(v, origin, span, slack, prevAnchor) {
     return Round(Max(lo, Min(hi, best)))
 }
 
+Clamp(v, lo, hi) {
+    return Max(lo, Min(hi, v))
+}
+
 SnapPct(v) {
     ; Guarded at its own door, not only by the caller. It is reached today solely through
     ; SnapMove's "grid off" check, which is exactly the kind of guard that gets moved.
     if (!SNAP_PCT)
         return Max(0, Min(100, v))
     return Max(0, Min(100, Round(v / SNAP_PCT) * SNAP_PCT))
+}
+
+; Snap a SIZE, in pixels, against the picture dimension it is a fraction of. This is what a
+; resize snaps now — NOT the edge. Snapping the edge made the size depend on where the opposite
+; edge happened to be, so a 5% edge grid produced sizes like 48%.
+SnapSize(px, span) {
+    if (span <= 0)
+        return px
+    pct := px / span * 100
+    if (SIZE_PCT)
+        return Round(span * (Round(pct / SIZE_PCT) * SIZE_PCT) / 100)
+    ; Magnet mode: 1% everywhere, with a wider pull toward the useful fractions.
+    ;
+    ; A magnet must beat the RAW value, not the already-rounded one. Compared against the 1%
+    ; grid the magnet can never win — rounding is always within 0.5% and the magnet is up to
+    ; MAGNET_RADIUS away — so the pull silently did nothing.
+    best := Round(pct)
+    nearest := MAGNET_RADIUS + 1
+    for m in SIZE_MAGNETS {
+        if (Abs(m - pct) <= MAGNET_RADIUS && Abs(m - pct) < nearest) {
+            nearest := Abs(m - pct)
+            best := m
+        }
+    }
+    return Round(span * best / 100)
 }
 
 ; Snap an absolute edge to the picture's own 5% grid, and clamp it inside the picture. Clamping
@@ -536,9 +596,9 @@ RenderMode() {
     if (IsObject(BMODE))
         BMODE.Text := FRAMELESS ? "MODE B  ->  switch to A" : "MODE A  ->  switch to B"
     if (IsObject(BSNAP))
-        BSNAP.Text := "snap: " SNAP_MODE
+        BSNAP.Text := "size: " (SIZE_PCT ? SIZE_PCT "%" : "1% + magnets")
     if (IsObject(BGRID))
-        BGRID.Text := SNAP_PCT ? "grid: " SNAP_PCT "%" : "grid: off"
+        BGRID.Text := SNAP_PCT ? "move: " SNAP_PCT "%" : "move: off"
 }
 
 StartTrace() {
@@ -561,6 +621,20 @@ OnExitSizeMove(wParam, lParam, msg, hwnd) {
     Note("--- trace: is the proposal ABSOLUTE (tracks drag start) or INCREMENTAL? ---")
     for line in TRACE
         Note("  " line)
+    Render()
+}
+
+CycleSizeGrid() {
+    global SIZE_PCT
+    for i, v in SIZE_STEPS {
+        if (v = SIZE_PCT) {
+            SIZE_PCT := SIZE_STEPS[Mod(i, SIZE_STEPS.Length) + 1]
+            break
+        }
+    }
+    RenderMode()
+    Note("size grid -> " (SIZE_PCT ? SIZE_PCT "%" : "1% + magnets at " )
+       . (SIZE_PCT ? "" : "25/33/50/67/75/100"))
     Render()
 }
 
@@ -710,12 +784,10 @@ RenderLive() {
        . " ax " Fmt(POS.ax) "  ay " Fmt(POS.ay) "  w " Fmt(POS.w) "  h " Fmt(POS.h)
     ; Mod(x, 0) throws "Divide by zero" — and with no grid there is no grid to be off.
     off := ""
-    if (SNAP_PCT) {
-        if (Mod(POS.ax, SNAP_PCT) || Mod(POS.ay, SNAP_PCT))
-            off .= " anchor"
-        if (Mod(POS.w, SNAP_PCT) || Mod(POS.h, SNAP_PCT))
-            off .= " size"
-    }
+    if (SNAP_PCT && (Mod(POS.ax, SNAP_PCT) || Mod(POS.ay, SNAP_PCT)))
+        off .= " anchor"
+    if (SIZE_PCT && (Mod(POS.w, SIZE_PCT) || Mod(POS.h, SIZE_PCT)))
+        off .= " size"
     if (off != "")
         s .= "   << OFF THE " SNAP_PCT "% GRID:" off
     LIVE.Value := s
