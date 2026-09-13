@@ -17,6 +17,8 @@ global APP_TITLE := "Window Center & Resizer"
 
 global _settingsGui := ""
 global _settingsPopulate := ""      ; the ONE routine that fills the controls from settings
+; Set for as long as the window is being built or re-shown. See ShowSettingsWindow.
+global _settingsBuilding := false
 
 ; The native Hotkey control cannot represent every hotkey the INI can hold. A Win-key
 ; combination ("#Up") assigned to it reads back as an EMPTY STRING, silently — measured, not
@@ -44,7 +46,32 @@ _PositionLabel(p, i) {
     return (Trim(p.name) != "") ? Trim(p.name) : "Position " i
 }
 
+; ⛔ RE-ENTRANCY GUARD, and it is load-bearing. Building this window YIELDS to the message
+; queue — ScreenPictureCreate's _spBox.Show() pumps WM_SIZE into _SpFitFill, and _Reflow moves
+; controls — so a second tray activation (the tray icon's DEFAULT item fires on a double-click)
+; arrives mid-construction. The single-instance check below cannot stop it: _settingsGui is not
+; assigned until the very end of the build, ~490 lines later, so the second call also takes the
+; "first" branch and builds a SECOND window. Both then share ScreenPicture's module-level
+; globals, the second construction overwrites them, and the first window's picture is never laid
+; out — it shows as a blank rectangle with no draggable box. Measured 2026-09-13: two "first"
+; branch entries on every double-click, and two live windows on screen.
+;
+; Nothing is thrown, so this is invisible to every error path. Dropping the second activation is
+; the whole fix: the window is already on its way up.
 ShowSettingsWindow(iniPath, onSaved) {
+    global _settingsBuilding
+    if (_settingsBuilding)
+        return
+    _settingsBuilding := true
+    ; finally, not a trailing assignment: _UncaughtAppError swallows anything that escapes, and
+    ; a flag left set would make the Settings item dead for the rest of the session.
+    try
+        _BuildSettingsWindow(iniPath, onSaved)
+    finally
+        _settingsBuilding := false
+}
+
+_BuildSettingsWindow(iniPath, onSaved) {
     global _settingsGui, _settingsPopulate
     if (_settingsGui != "") {          ; single instance
         ; Re-opening must RELOAD from settings. Closing without saving used to leave the
