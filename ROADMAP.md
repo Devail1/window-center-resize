@@ -25,23 +25,37 @@ upgrade-available case has never actually run. If it is broken, nobody on an old
 would ever be told there is a new one — and they would have no way to notice. Worth proving
 before adding anything else.
 
-**Add and remove size presets.** Today there are exactly three, and the number is fixed.
-Some people want two, some want five. The cycling logic already handles any number — the
-limit is the settings window and the settings file. Removing a preset has to clear the
-orphaned entry from `settings.ini`, or the deleted row reappears the next time the app
-starts.
+**Named positions.** Today the app knows one position — the middle — and three sizes. The
+next version knows a list: each entry has a name, a hotkey, and a rectangle given as
+percentages of the work area. You set the rectangle by dragging a window inside a picture of
+your screen, in the settings window, instead of typing four numbers.
+
+This replaces the three preset rows rather than joining them, and it absorbs two items that
+used to sit here on their own — adding and removing presets, and naming them. Both were the
+same problem: the settings file holds a fixed three of everything, and the settings window
+has a row per thing. A list solves it once.
+
+Three constraints it is committed to:
+
+- **The resize shortcut survives unchanged, in its own section.** It still sizes and centres.
+  Cycling sizes is a different gesture from jumping to a named position — "a bit bigger"
+  versus "over there" — and the two do not need to compose, because a position already stores
+  its own width and height: "left half, but bigger" is a second position, not a second
+  keypress. Nobody's existing shortcut changes behaviour.
+- **The screen picture is drawn at the current monitor's real aspect ratio, portrait
+  included.** A 16:9 preview shown to someone on a vertical monitor is a preview that lies.
+  Because a 9:16 screen drawn at the dialog's width would be some 750 px tall, the picture
+  letterboxes into a fixed height and gives up width instead — the window never changes size.
+- **It replaces the preset rows. It never joins them.** This is the line, and it is not
+  rhetorical: see *Not planned*, below.
 
 ## Under consideration
 
-**Showing which preset is active.** The resize shortcut cycles silently, so with three
-presets you learn the order by feel. With five or six that stops working. This only becomes
-worth solving if the previous item ships, and any answer costs either a visible element on
-every keypress or a new menu.
-
-**Naming presets.** Related to the above, and only meaningful somewhere a name can be seen.
-The settings window's `Preset 1` / `Preset 2` labels are the obvious place, though a name
-that appears only while you are editing is a modest return for a new field in the settings
-file.
+**Showing which size is active.** The resize shortcut cycles silently, so with three sizes
+you learn the order by feel. With five or six that stops working. Named positions do not fix
+this — they are a different gesture, each with its own key — so it stays a live question for
+the sizes alone, and any answer still costs either a visible element on every keypress or a
+new menu.
 
 **A higher-resolution screenshot** in the README and on the landing page. The current image
 is displayed at its exact pixel size, so it looks soft on high-DPI displays, which is most
@@ -65,9 +79,22 @@ a meaningful increase in what this app does to your machine, for one input field
 Windows-key shortcuts still work: set them by editing `settings.ini` directly, as described
 in the README, and the app preserves them when you save from the settings window.
 
-**Anything that makes this a window manager.** Snapping, tiling, layouts, per-application
-rules, multi-window arrangement, saving and restoring window positions. These are good
-features and this is the wrong program for them; several are already in Microsoft PowerToys.
+**Anything that makes this a window manager.** Tiling, per-application rules, multi-window
+arrangement, saving and restoring a whole desktop. These are good features and this is the
+wrong program for them; several are already in Microsoft PowerToys.
+
+The sharp edge of that line is **drag-to-zone** — drag a window, an overlay appears, drop it
+into a region. It is not ruled out for being hard. It is buildable in a couple of hundred
+lines of AutoHotkey, and it would cost the thing that makes this app worth keeping: the app
+would have to subscribe to every window move on the system, permanently, to know when to show
+the overlay. Today it is asleep between keypresses and that is the pitch. *Named positions*,
+above, deliberately keeps the dragging inside a settings screen you open twice a year, where
+it costs nothing at rest.
+
+The other half of the same line is surface. A previous rebuild grew a screen preview with
+drag-resize, then tabs behind it, reached 81 files, and shipped to nobody. The widget was not
+the mistake; adding it on top of what was already there was. Any editor that arrives as an
+*extra* screen rather than *the* screen has crossed back over.
 
 ## Help wanted
 
