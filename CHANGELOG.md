@@ -28,6 +28,9 @@ including `[Hotkeys] Center`, so downgrading to 2.2.0 still finds the key it exp
 - **"Keep the window's current size"**, which is what lets a position move a window without
   resizing it — and what makes "align it left but leave it the size it is" a position rather
   than a compromise.
+- **The settings window resizes.** Drag its edges and the controls follow; make it taller and
+  the picture of your screen gets bigger, which is the part worth having room for. If it ends up
+  shorter than its contents it scrolls, so nothing can end up out of reach.
 
 ### Changed
 
@@ -44,6 +47,12 @@ including `[Hotkeys] Center`, so downgrading to 2.2.0 still finds the key it exp
 
 - Hotkeys that differ only in the ORDER of their modifiers, or in case, are now recognised as
   the same key. `^+c` and `+^c` are one binding, and binding both silently destroyed the first.
+- Opening the settings window by double-clicking the tray icon could build two of them, one of
+  which came up with an empty grey rectangle where the picture of your screen should be.
+- The dot marking a position's centre could disappear as soon as the window redrew.
+- Dragging the window around the picture was slow, and is now immediate.
+- Pressing the resize key while the settings window was focused resized the settings window
+  itself and cut off its lower half, with no way to get it back. It resizes properly now.
 
 ## 2.2.0
 
