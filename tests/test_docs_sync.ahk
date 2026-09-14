@@ -100,6 +100,27 @@ AssertEqual(AppVersion(root "\src\main.ahk") != "", true, "src/main.ahk declares
 AssertEqual(DocsVersion(root "\docs\index.html"), AppVersion(root "\src\main.ahk")
           , "the landing page's advertised version matches APP_VERSION")
 
+; --- the version must be exactly THREE numeric segments -------------------------------------
+;
+; CompareVersions in UpdateCheck.ahk reads exactly three segments and coerces a non-numeric one
+; to 0, so a FOURTH segment is invisible to it. A hotfix shipped as 2.3.0.1 therefore compares
+; EQUAL to the 2.3.0 it supersedes, and every installed copy is told "You're up to date" -
+; forever, silently, with nothing logged anywhere. Measured 2026-08-11:
+;
+;   remote 2.1.0.1    vs installed 2.1.0  ->  0  SILENT   <- the trap
+;   remote 2.1.1.0    vs installed 2.1.0  ->  1  notifies
+;   remote 2.1.0-beta vs installed 2.1.0  ->  0  SILENT
+;
+; Until now the only thing standing between a release and that was a sentence in
+; docs/RELEASING.md step 5. A rule that lives in prose cannot fail; this one can.
+;
+; ⛔ It guards the APP side only - the version this build believes it is. It CANNOT guard the git
+; TAG, which is written by hand at release time and is what the update check actually reads.
+; RELEASING.md step 5 still owns that half, and always will.
+AssertEqual(RegExMatch(AppVersion(root "\src\main.ahk"), "^\d+\.\d+\.\d+$") ? true : false
+          , true
+          , "APP_VERSION is exactly three numeric segments (CompareVersions ignores a 4th)")
+
 ; The release page is GENERATED from the CHANGELOG section for the current version
 ; (build/release-notes.ps1), so the two cannot drift - but only if the section exists. Tagging a
 ; version the CHANGELOG never mentions makes the generator throw at release time, which is late:
