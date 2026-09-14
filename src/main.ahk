@@ -61,10 +61,6 @@ global SIZE_INDEX := 0        ; 0 so the FIRST press selects preset 1 (fixes Bug
 
 
 _ReportStatus(status) {
-    ; "own-window" is deliberately silent. It means the hotkey was pressed while this app's own
-    ; settings window had focus, and the action was skipped so the app does not mangle its own
-    ; UI - see _IsOwnWindow in WindowOps.ahk. Nothing happening IS the expected behaviour there,
-    ; and a tray balloon explaining it would be noise on a key the user pressed by accident.
     if (status = "no-window")
         TrayTip(APP_NAME, "No active window found.")
     else if (status = "elevated")

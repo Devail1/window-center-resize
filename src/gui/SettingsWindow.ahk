@@ -118,7 +118,12 @@ _BuildSettingsWindow(iniPath, onSaved) {
 
     ; +0x00200000 is WS_VSCROLL. The style has to exist for ShowScrollBar to be able to
     ; reveal it; it is hidden immediately unless the content actually overflows.
-    g := Gui("-MaximizeBox -MinimizeBox +0x00200000", APP_TITLE)
+    ; +Resize is all a sizing border costs. What AutoHotkey does NOT do is move or stretch a
+    ; single control when the window changes size - there is no layout manager - so the Size
+    ; handler below does that, and 0x00200000 (WS_VSCROLL) covers the case where the content
+    ; is taller than the window however it got that way.
+    ; MinSize stops the column being dragged down to a width the controls cannot express.
+    g := Gui("-MaximizeBox -MinimizeBox +Resize +MinSize332x220 +0x00200000", APP_TITLE)
     g.MarginX := 16, g.MarginY := 16
     g.BackColor := th["bg"]
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
@@ -245,6 +250,14 @@ _BuildSettingsWindow(iniPath, onSaved) {
     ; which is every normal screen - the scrollbar is not even shown then.
     scrollY := 0
     scrollMax := 0
+    sizing := false                              ; see _OnSize
+    ; The width every control was positioned against; the scale factor's denominator.
+    BASE_W := 300
+    layout := []
+    ; How much taller than its designed height the picture slot currently is. Tracked as a
+    ; running total and applied as a DELTA, because _Reflow also moves these controls when rows
+    ; are hidden - recomputing absolute positions from a captured table would undo that.
+    slotExtra := 0
     _Reflow(n) {
         if (n = shownRows)
             return
@@ -326,6 +339,81 @@ _BuildSettingsWindow(iniPath, onSaved) {
         DllCall("ScrollWindowEx", "ptr", g.Hwnd, "int", 0, "int", dy
               , "ptr", 0, "ptr", 0, "ptr", 0, "ptr", 0
               , "uint", SW_SCROLLCHILDREN | SW_INVALIDATE | SW_ERASE)
+        _SyncScrollBar()
+    }
+
+    ; The flag guards against RE-ENTRY. This handler moves and resizes windows, and showing or
+    ; hiding a scrollbar changes the client area - both of which can put another WM_SIZE in front
+    ; of the one being handled. Cheap insurance against laying out on top of a layout.
+    ;
+    ; ⚠️ Not a measured fix for a specific hang. A mutant with _GrowPicture disabled DOES hang the
+    ; resize path, and this flag does not stop it - so something in there can still run away, and
+    ; it is not understood. It is masked today because _GrowPicture absorbs the spare height.
+    _OnSize(guiObj, minMax, w, h) {
+        if (minMax = -1)                         ; minimised: there is nothing to lay out
+            return
+        if (sizing)
+            return
+        sizing := true
+        try
+            _DoSize(w, h)
+        finally
+            sizing := false
+    }
+
+    _DoSize(w, h) {
+        _Restretch(w)
+        _GrowPicture(h)
+        ; The picture is letterboxed into the slot, and the slot just changed shape.
+        ScreenPictureRelayout()
+        _SyncScrollForHeight(h)
+    }
+
+    ; Width only. Heights stay as designed - a taller window shows more of the content, it does
+    ; not stretch the rows, and that is what the scrollbar is for.
+    _Restretch(clientW) {
+        avail := clientW - g.MarginX * 2
+        if (avail < 80 || layout.Length = 0)
+            return
+        scale := avail / BASE_W
+        for e in layout
+            e.c.Move(g.MarginX + Round(e.dx * scale), , Round(e.w * scale))
+    }
+
+    ; Spare height goes to the PICTURE, which is the only control here worth making bigger - it is
+    ; what the user is aiming with. Everything else keeps its designed height, so a taller window
+    ; means a bigger picture rather than stretched text boxes.
+    _GrowPicture(clientH) {
+        btnSave.GetPos(, &sy, , &sh)
+        ; Content as it stands, minus the growth already applied: the height it would want if the
+        ; picture were its designed size.
+        natural := sy + sh + g.MarginY + scrollY - slotExtra
+        delta := Max(0, clientH - natural) - slotExtra
+        if (delta = 0)
+            return
+        slotExtra += delta
+        _spSlot.GetPos(, &slotY, , &slotH)
+        _spSlot.Move(, , , slotH + delta)
+        ; Everything below the picture moves with it. Measured against the slot's OLD bottom, so
+        ; this composes with wherever _Reflow has already put things.
+        bottom := slotY + slotH
+        for hwnd, c in g {
+            if (c.Hwnd = _spSlot.Hwnd || c.Hwnd = _spPic.Hwnd || c.Hwnd = _spTask.Hwnd)
+                continue
+            c.GetPos(, &cy)
+            if (cy >= bottom)
+                c.Move(, cy + delta)
+        }
+    }
+
+    ; After a resize the window height is the USER'S, not ours, so the scroll range is recomputed
+    ; against it rather than the window being re-shown at a height of our choosing.
+    _SyncScrollForHeight(clientH) {
+        btnSave.GetPos(, &sy, , &sh)
+        content := sy + sh + g.MarginY + scrollY  ; + scrollY: control positions are already scrolled
+        scrollMax := Max(0, content - clientH)
+        if (scrollY > scrollMax)                 ; the window grew past what was scrolled away
+            _ScrollTo(scrollMax)
         _SyncScrollBar()
     }
 
@@ -674,6 +762,21 @@ _BuildSettingsWindow(iniPath, onSaved) {
     btnReset.OnEvent("Click", _ResetControls)
     g.OnEvent("Close", (*) => g.Hide())
     g.OnEvent("Escape", (*) => g.Hide())
+
+    ; The layout is captured ONCE, at the width everything was designed against, as an offset and
+    ; a width per control. Resizing then maps that table through a single scale factor, so a
+    ; control added later is carried along without this handler being taught about it.
+    ;
+    ; ⛔ The picture's fill and taskbar layers are skipped: ScreenPictureRelayout owns those and
+    ; positions them by MEASURING the slot, so stretching them here would be two pieces of code
+    ; moving the same windows and disagreeing.
+    for hwnd, c in g {
+        if (c.Hwnd = _spPic.Hwnd || c.Hwnd = _spTask.Hwnd)
+            continue
+        c.GetPos(&cx, , &cw)
+        layout.Push({ c: c, dx: cx - g.MarginX, w: cw })
+    }
+    g.OnEvent("Size", _OnSize)
 
     _settingsGui := g
     _settingsPopulate := _Populate
