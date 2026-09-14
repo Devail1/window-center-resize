@@ -149,9 +149,21 @@ release that is genuinely newer, and the update check would silently stop workin
 
 Use plain `v2.0.0`, `v2.0.1`, `v2.1.0`.
 
-## 6. Update the directory listings
+## 6. The directory listings look after themselves
 
-Softpedia and MajorGeeks host their own copies and link their own URLs. From 2.2.0 their
-download links point at an asset that no longer exists, and their listed size (1.23 MB / 2 MB)
-is wrong. Submit an update to each. MajorGeeks re-scans with Bitdefender and ESET; both were
-clean on the compiled build and should stay clean here.
+⛔ **Do NOT submit an update to Softpedia or MajorGeeks.** Both track this repository and re-pull
+on their own; this step used to say to submit one, and that was wrong. Measured: MajorGeeks moved
+to 2.0.0, then 2.1.0, then 2.2.0 (2 MB, 09/12/26) with nothing submitted, and Softpedia was first
+seen tracking the repo on 2026-08-04. **The watch is passive.** MajorGeeks re-scans with
+Bitdefender and ESET when it pulls; both were clean on the compiled build and should stay clean
+on a stock interpreter plus a text file.
+
+⚠️ **The one field that does NOT refresh is the DESCRIPTION, and MajorGeeks' is wrong.** It still
+reads *"This project is based on the Electron React Boilerplate, which provides a reliable
+foundation for Electron and React development."* — untrue since 2.0.0 dropped Electron in August
+2026, and it is the copy a visitor reads before deciding to download. Version, size and date have
+all re-pulled around it repeatedly; the prose has not. **Correcting it needs a human writing to
+them**, and it is the only directory work a release actually creates.
+
+The signal worth watching after a release is a listing being *pulled*, not the download count —
+see the closing note in `build/av-baseline.md`.
