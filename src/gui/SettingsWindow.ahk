@@ -1,4 +1,4 @@
-#Requires AutoHotkey v2.0
+﻿#Requires AutoHotkey v2.0
 #Include "..\lib\Settings.ahk"
 #Include "..\lib\Hotkeys.ahk"
 #Include "ScreenPicture.ahk"
@@ -17,8 +17,23 @@ global APP_TITLE := "Window Center & Resizer"
 
 global _settingsGui := ""
 global _settingsPopulate := ""      ; the ONE routine that fills the controls from settings
+; The ONE routine that sizes the window. Exposed for the same reason as _settingsPopulate:
+; the reopen branch is outside the closure and must not invent a second way to do it.
+global _settingsShowFitted := ""
 ; Set for as long as the window is being built or re-shown. See ShowSettingsWindow.
 global _settingsBuilding := false
+
+; The tallest the window may be. 0 means "as much of the monitor's work area as is decent", which
+; is what ships; a test sets it to a small number to force the overflow case on a screen that is
+; nowhere near small enough to produce it naturally.
+;
+; Why there is a limit at all: the window sizes itself to its content, and the content grows with
+; the positions list — 695px for one, and 26px per row after that, so eight positions want 877px.
+; That fits a 1080p work area and does NOT fit a 768px laptop. With no sizing border to drag and
+; nothing scrolling, a window taller than the screen is a dead end, which is exactly the trap the
+; F9-on-our-own-window bug turned out to be.
+global SETTINGS_MAX_HEIGHT := 0
+global SETTINGS_SCREEN_MARGIN := 24     ; left around the window when it has to be clamped
 
 ; The native Hotkey control cannot represent every hotkey the INI can hold. A Win-key
 ; combination ("#Up") assigned to it reads back as an EMPTY STRING, silently — measured, not
@@ -72,13 +87,16 @@ ShowSettingsWindow(iniPath, onSaved) {
 }
 
 _BuildSettingsWindow(iniPath, onSaved) {
-    global _settingsGui, _settingsPopulate
+    global _settingsGui, _settingsPopulate, _settingsShowFitted
     if (_settingsGui != "") {          ; single instance
         ; Re-opening must RELOAD from settings. Closing without saving used to leave the
         ; abandoned edit sitting in the box — contradicting the live binding, and committed
         ; by the next Save. Same populate routine as first open, not a second code path.
         _settingsPopulate(SettingsLoad(iniPath))
-        _settingsGui.Show()
+        ; ⛔ NOT _settingsGui.Show(). A bare Show() AUTO-SIZES from the controls' declared
+        ; positions, which throws away every move _Reflow made and ignores the screen-height
+        ; clamp - the same trap _Reflow's own comment warns about.
+        _settingsShowFitted()
         ; The monitor's aspect ratio is re-read here, not cached: the user may have dragged
         ; this window to a different screen since it was last open.
         ScreenPictureRelayout()
@@ -98,7 +116,9 @@ _BuildSettingsWindow(iniPath, onSaved) {
 
     th := Theme("light")
 
-    g := Gui("-MaximizeBox -MinimizeBox", APP_TITLE)
+    ; +0x00200000 is WS_VSCROLL. The style has to exist for ShowScrollBar to be able to
+    ; reveal it; it is hidden immediately unless the content actually overflows.
+    g := Gui("-MaximizeBox -MinimizeBox +0x00200000", APP_TITLE)
     g.MarginX := 16, g.MarginY := 16
     g.BackColor := th["bg"]
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
@@ -221,6 +241,10 @@ _BuildSettingsWindow(iniPath, onSaved) {
     ; measures its delta from.
     shownRows := MAX_POSITIONS
     shown := false
+    ; Scroll offset in pixels, and how far it may go. Both stay 0 whenever the content fits,
+    ; which is every normal screen - the scrollbar is not even shown then.
+    scrollY := 0
+    scrollMax := 0
     _Reflow(n) {
         if (n = shownRows)
             return
@@ -240,12 +264,103 @@ _BuildSettingsWindow(iniPath, onSaved) {
         ; re-runs the layout from the controls' declared positions and would undo every move
         ; above; it also has no reason to exclude the rows that were just hidden.
         if (shown)
-            g.Show("w332 h" _WantHeight() " NoActivate")
+            _ShowFitted("NoActivate")
     }
 
+    ; The height the LAYOUT wants, measured from the last control rather than left to AutoSize.
+    ; ⛔ Scroll is reset to the top first: btnSave's position IS the measurement, so measuring a
+    ; scrolled window reports it short by exactly the scroll offset, and clamping to that gives a
+    ; window that shrinks a little more every time the list changes.
     _WantHeight() {
+        _ScrollTo(0)
         btnSave.GetPos(, &sy, , &sh)
         return sy + sh + g.MarginY
+    }
+
+    ; The tallest this window may be on this monitor. The override exists so a test can force the
+    ; overflow case; no screen here is short enough to produce it with the 8-position cap.
+    _MaxHeight() {
+        if (SETTINGS_MAX_HEIGHT > 0)
+            return SETTINGS_MAX_HEIGHT
+        wa := GetNearestMonitorWorkArea(g.Hwnd)
+        return wa.height - SETTINGS_SCREEN_MARGIN
+    }
+
+    ; Sizes the window to its content, or to the screen when the content is taller, and gives the
+    ; scrollbar exactly the difference to cover.
+    _ShowFitted(opts := "") {
+        want := _WantHeight()
+        h := Min(want, _MaxHeight())
+        scrollMax := Max(0, want - h)
+        _SyncScrollBar()
+        g.Show("w332 h" h (opts != "" ? " " opts : ""))
+    }
+
+    _SyncScrollBar() {
+        static SB_VERT := 1, SIF_RANGE := 0x1, SIF_PAGE := 0x2, SIF_POS := 0x4
+        si := Buffer(28, 0)
+        NumPut("uint", 28, si, 0)
+        NumPut("uint", SIF_RANGE | SIF_PAGE | SIF_POS, si, 4)
+        NumPut("int", 0, si, 8)                      ; nMin
+        NumPut("int", scrollMax, si, 12)             ; nMax
+        NumPut("uint", 1, si, 16)                    ; nPage: 1, so nMax IS the last position
+        NumPut("int", scrollY, si, 20)               ; nPos
+        DllCall("SetScrollInfo", "ptr", g.Hwnd, "int", SB_VERT, "ptr", si, "int", true)
+        ; Hidden entirely when the window fits, rather than shown greyed out. A dead scrollbar on
+        ; a window that does not scroll is a claim that there is more to see.
+        DllCall("ShowScrollBar", "ptr", g.Hwnd, "int", SB_VERT, "int", scrollMax > 0)
+    }
+
+    _ScrollTo(y) {
+        y := Max(0, Min(y, scrollMax))
+        if (y = scrollY)
+            return
+        dy := scrollY - y                            ; scrolling down moves content UP
+        scrollY := y
+        ; ⛔ SW_SCROLLCHILDREN is the whole reason this is three lines instead of a rewrite: it
+        ; moves the CHILD WINDOWS too, which carries the picture's three layers and the draggable
+        ; box (itself a child Gui) along with the ordinary controls. Moving them by hand would
+        ; mean teaching this function ScreenPicture's internals, and ScreenPicture measures
+        ; everything live, so it needs no telling.
+        static SW_SCROLLCHILDREN := 0x0001, SW_INVALIDATE := 0x0002, SW_ERASE := 0x0004
+        DllCall("ScrollWindowEx", "ptr", g.Hwnd, "int", 0, "int", dy
+              , "ptr", 0, "ptr", 0, "ptr", 0, "ptr", 0
+              , "uint", SW_SCROLLCHILDREN | SW_INVALIDATE | SW_ERASE)
+        _SyncScrollBar()
+    }
+
+    _OnVScroll(wParam, lParam, msg, hwnd) {
+        if (hwnd != g.Hwnd || scrollMax = 0)
+            return
+        static SB_LINEUP := 0, SB_LINEDOWN := 1, SB_PAGEUP := 2, SB_PAGEDOWN := 3
+             , SB_THUMBPOSITION := 4, SB_THUMBTRACK := 5
+        code := wParam & 0xFFFF
+        if (code = SB_LINEUP)
+            _ScrollTo(scrollY - ROW_H)
+        else if (code = SB_LINEDOWN)
+            _ScrollTo(scrollY + ROW_H)
+        else if (code = SB_PAGEUP)
+            _ScrollTo(scrollY - ROW_H * 4)
+        else if (code = SB_PAGEDOWN)
+            _ScrollTo(scrollY + ROW_H * 4)
+        else if (code = SB_THUMBPOSITION || code = SB_THUMBTRACK)
+            _ScrollTo((wParam >> 16) & 0xFFFF)
+        return 0
+    }
+
+    _OnWheel(wParam, lParam, msg, hwnd) {
+        static GA_ROOT := 2
+        if (scrollMax = 0)
+            return
+        ; The wheel is delivered to whatever is under the cursor, which is usually a control and
+        ; can be the box - so the window is identified by its ROOT, not by hwnd itself.
+        if (DllCall("GetAncestor", "ptr", hwnd, "uint", GA_ROOT, "ptr") != g.Hwnd)
+            return
+        delta := (wParam >> 16) & 0xFFFF
+        if (delta > 32767)
+            delta -= 65536                           ; WM_MOUSEWHEEL's delta is SIGNED
+        _ScrollTo(scrollY - Round(delta / 120) * ROW_H * 2)
+        return 0
     }
 
     _Swatches() {
@@ -551,6 +666,8 @@ _BuildSettingsWindow(iniPath, onSaved) {
     ; Only the Gui's own background arrives here. The screen picture reaches it too, because its
     ; controls are disabled and hand their mouse messages up to the parent.
     OnMessage(0x0201, _OnBackgroundClick)          ; WM_LBUTTONDOWN
+    OnMessage(0x0115, _OnVScroll)                  ; WM_VSCROLL
+    OnMessage(0x020A, _OnWheel)                    ; WM_MOUSEWHEEL
     cbKeep.OnEvent("Click", _OnKeepChange)
     btnAdd.OnEvent("Click", _Add)
     btnSave.OnEvent("Click", _Save)
@@ -560,6 +677,7 @@ _BuildSettingsWindow(iniPath, onSaved) {
 
     _settingsGui := g
     _settingsPopulate := _Populate
+    _settingsShowFitted := _ShowFitted
     _Populate(s)
     ; Focus must not start in a Hotkey control: it captures every keystroke (that is its whole
     ; purpose — building a key combination from whatever you press) including Tab, so the user
@@ -568,7 +686,7 @@ _BuildSettingsWindow(iniPath, onSaved) {
     ; normally, and nothing swallows input.
     btnSave.Focus()
     shown := true
-    g.Show("w332 h" _WantHeight())
+    _ShowFitted()
     ; Only now can anything be measured: before Show the window has a size but no position.
     ScreenPictureRelayout()
 }
