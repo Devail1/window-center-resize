@@ -207,7 +207,7 @@ _BuildSettingsWindow(iniPath, onSaved) {
     ; ⛔ NOT "cycles these without moving the window" — the mock says that and it is wrong. F9
     ; sizes AND re-centres, unchanged since 2.2.0, and that is a settled decision rather than an
     ; oversight. A subtitle that denies it would be the only place in the app that lies.
-    _A("Text", "xm y+2 w300", "A separate key, cycling these sizes. It re-centres too.")
+    _A("Text", "xm y+2 w300", "A separate key, cycling these sizes. It re-centers too.")
     g.SetFont("s10 w400 c" th["text"], "Segoe UI")
 
     _A("Text", "xm y+20 w106", "Resize")
