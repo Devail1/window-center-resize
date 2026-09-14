@@ -467,14 +467,20 @@ declined, and the watch signal is unchanged: a pulled directory listing, not the
 
 | Artifact | SHA-256 | Result |
 |---|---|---|
-| `Window-Center-Resize-portable.zip` (670,887 B) | `4f6fc1e8ecfd0d500f2848afef06181dbe77154649e0cbbe6fe5eeef1abc23f9` | **0 malicious, 0 suspicious of 74.** 68 undetected, Microsoft undetected. |
-| `WindowCenterResizer.ahk` (99,064 B) | `fa15cd7c4e5b66e463d2543151557818b8874e41d5a3aa47fc0772dc7feef74d` | — |
+| `Window-Center-Resize-portable.zip` (670,876 B) | `6e9d10850e6202a87d102561c4d7c21ebc6b60054c6ab2765c43cc07b17f8c34` | **0 malicious, 0 suspicious of 74.** 68 undetected, Microsoft undetected. |
+| `WindowCenterResizer.ahk` (99,054 B) | `a5fd05b1e3210213e7e3018750353ff5fd16c8201cbaace11e502af141b7d069` | — |
 | `WindowCenterResizer.exe` (1,272,832 B) | `a2a54b8abc476d7671d4de0771bb54bf5f2373d79ff6871d0ba6a62c3b88ae00` | **0 flagged**, Microsoft undetected, re-scored 2026-09-14 02:43 UTC. Stock AutoHotkey 2.0.26, unchanged since 2.2.0 and verified byte-identical by the build's interpreter gate. |
 
 ✅ **Gate passes.** Same interpreter as 2.2.0, so the reputation this release leans on is the one
 that release already established rather than a fresh unknown.
 
-⚠️ **The first scan of this zip was not usable and was re-run.** 24 of 74 engines returned
+⚠️ **This is the SECOND artifact scanned for 2.3.0.** The first (`4f6fc1e8…`) was built before a
+source comment was corrected, so its flattened script no longer matched the tree the release is
+cut from - and the script hash is the one figure here a third party can reproduce, so publishing a
+stale one would have made the only verifiable number wrong. Rebuilt, rescanned, same verdict:
+0 malicious, 0 suspicious, 68 undetected, no timeouts.
+
+⚠️ **An earlier scan was also discarded for coverage.** 24 of 74 engines returned
 `timeout` — including BitDefender, ESET, Kaspersky and Avast — leaving 42 verdicts. The re-run
 on the SAME hash returned 68 undetected with zero timeouts and zero failures. Nothing about the
 file changed. ⛔ **A count is only worth recording once the engines behind it actually ran**: 0 of

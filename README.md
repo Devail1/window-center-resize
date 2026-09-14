@@ -62,7 +62,7 @@ Check it rather than believing it. Both links are live, so they show what the en
 **today** rather than what they said when this was written:
 
 - [`WindowCenterResizer.exe`](https://www.virustotal.com/gui/file/a2a54b8abc476d7671d4de0771bb54bf5f2373d79ff6871d0ba6a62c3b88ae00) — the interpreter. This is the useful one: it is AutoHotkey's own binary, so you can verify it against [the AutoHotkey project](https://www.autohotkey.com/) instead of taking anything here on trust.
-- [`Window-Center-Resize-portable.zip` 2.3.0](https://www.virustotal.com/gui/file/4f6fc1e8ecfd0d500f2848afef06181dbe77154649e0cbbe6fe5eeef1abc23f9) — the download itself, 0 of 74 when published.
+- [`Window-Center-Resize-portable.zip` 2.3.0](https://www.virustotal.com/gui/file/6e9d10850e6202a87d102561c4d7c21ebc6b60054c6ab2765c43cc07b17f8c34) — the download itself, 0 of 74 when published.
 
 ⚠️ A scan result is a snapshot of the scanners, not a property of the file. This project has
 watched an unchanged binary be re-scored twice, once into a class Defender quarantines — which
