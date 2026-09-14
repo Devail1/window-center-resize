@@ -346,9 +346,9 @@ _BuildSettingsWindow(iniPath, onSaved) {
     ; hiding a scrollbar changes the client area - both of which can put another WM_SIZE in front
     ; of the one being handled. Cheap insurance against laying out on top of a layout.
     ;
-    ; ⚠️ Not a measured fix for a specific hang. A mutant with _GrowPicture disabled DOES hang the
-    ; resize path, and this flag does not stop it - so something in there can still run away, and
-    ; it is not understood. It is masked today because _GrowPicture absorbs the spare height.
+    ; ⚠️ PRECAUTIONARY, not a fix for anything observed. No re-entrant WM_SIZE has been measured
+    ; here. It is kept because the cost is a boolean and the failure it prevents is a layout
+    ; computed from half-applied positions, which would be very hard to recognise as such.
     _OnSize(guiObj, minMax, w, h) {
         if (minMax = -1)                         ; minimised: there is nothing to lay out
             return
