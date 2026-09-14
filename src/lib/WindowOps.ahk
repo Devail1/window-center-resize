@@ -20,10 +20,27 @@ _MoveTo(hwnd, r) {
     }
 }
 
+; ⛔ The hotkeys act on whatever is ACTIVE, and this app's own settings window is a window like
+; any other - so pressing the resize key while it has focus made the app resize its own settings
+; screen. Measured: a 1920x1032 work area and preset 1 gave a 960x516 settings window with its
+; controls cut off at the bottom. Worse than untidy, it is a DEAD END: that window deliberately
+; has no sizing border, so there is no way to drag it back; it stays wrong until reopened.
+;
+; Compared by PROCESS rather than against the settings Gui's handle, so this file keeps knowing
+; nothing about the GUI layer, and message boxes and any future window are covered by the same
+; guard.
+_IsOwnWindow(hwnd) {
+    pid := 0
+    DllCall("GetWindowThreadProcessId", "ptr", hwnd, "uint*", &pid)
+    return pid = DllCall("GetCurrentProcessId", "uint")
+}
+
 ApplyRectToActiveWindow(widthPct, heightPct) {
     hwnd := WinExist("A")
     if !hwnd
         return "no-window"
+    if _IsOwnWindow(hwnd)
+        return "own-window"
     wa := GetNearestMonitorWorkArea(hwnd)
     r  := CenteredRect(wa.left, wa.top, wa.width, wa.height, widthPct, heightPct)
     status := _MoveTo(hwnd, r)
@@ -54,6 +71,8 @@ ApplyPositionToActiveWindow(pos) {
     hwnd := WinExist("A")
     if !hwnd
         return "no-window"
+    if _IsOwnWindow(hwnd)                  ; see _IsOwnWindow
+        return "own-window"
     ; The window's current size is needed BEFORE the move: a zero width or height in the
     ; position means "keep what it has", and after the move it is too late to ask.
     try {
