@@ -487,3 +487,30 @@ file changed. ⛔ **A count is only worth recording once the engines behind it a
 42 and 0 of 68 read identically in a summary and are not the same evidence. The interpreter's own
 entry still shows 17 timeouts for the same reason, which is why Microsoft's verdict is quoted
 rather than an aggregate.
+
+### 2026-09-15 — the flagged assets are deleted, not merely unlinked
+
+The 2026-09-12 entry recorded that "anyone arriving on an old link gets a 404 rather than a
+quarantine." That was true of `releases/latest/download/Window-Center-Resize.exe` and **false of
+the releases archive**, which went on serving the compiled build from the 2.0.0 and 2.1.0 pages —
+two clicks from the repo sidebar, and already taken 515 times:
+
+| Release | Asset | Downloads at deletion |
+|---|---|---|
+| 2.0.0 | `Window-Center-Resize.exe` / `WindowCenterResizer.exe` | 93 / 38 |
+| 2.1.0 | `Window-Center-Resize.exe` / `WindowCenterResizer.exe` | 328 / 56 |
+
+**All four deleted** (`gh release delete-asset`). Tags, release notes and source archives are
+untouched, so the history still reads; only the binaries are gone. ⛔ Do not re-upload them —
+this is the same standing decision as dropping the `latest` asset at 2.2.0, applied to the
+archive it missed.
+
+**v1.0.2 (Electron) is deliberately left published.** Microsoft has never flagged it, and it is
+the only cross-stack measurement this project has — deleting it would destroy the control in the
+comparison above.
+
+**README consequence.** With no flagged binary reachable anywhere, the README's antivirus
+section no longer has to warn anyone off a download they might still make. It is trimmed to what
+a current user needs — what is in the zip, the live VirusTotal links, and the three consequences
+of shipping an unmodified interpreter — and the detection names, the byte-level comparison and
+the history now live here alone.

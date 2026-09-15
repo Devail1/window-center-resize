@@ -36,27 +36,15 @@ There is no installer. The app runs from wherever you put it and writes nothing 
 
 ### Why the download is a zip with two files in it
 
-Because the single `.exe` this project used to ship got quarantined by Windows Defender, and a zip of two files does not.
-
-Up to and including 2.1.0, releases were built with AutoHotkey's compiler, `Ahk2Exe`. That tool does not produce a normal program: it takes a copy of the AutoHotkey interpreter and welds your script into it as a resource. Appending a script to the AutoHotkey interpreter is also a genuinely common way to ship malware, so Defender's machine-learning classifiers score that *shape* — not the code inside it, which they never read.
-
-Measured on 2026-09-12, both files unsigned, against the same Microsoft engine build:
-
-| | Stock `AutoHotkey64.exe` | The compiled 2.1.0 release |
-|---|---|---|
-| Microsoft | **undetected** | `Trojan:Win32/Wacatac.B!ml` |
-| All engines | **0 of 70** | 3 of 71 |
-| Size | 1,272,832 bytes | 1,290,240 bytes |
-
-The two differ by 17,920 bytes — 1.4% of the file. Everything else is byte-for-byte the same binary Microsoft considers clean. The 1.4% is what `Ahk2Exe` adds, and it is the whole difference between a download that works and one Chrome deletes before it finishes.
-
-So this release stops adding it. The zip contains:
+The zip contains three files, and they belong together:
 
 | File | What it is |
 |---|---|
 | `WindowCenterResizer.exe` | The stock AutoHotkey v2 interpreter, **byte-identical** to the one published by AutoHotkey. Renamed, and nothing else — renaming does not change a file's contents, and reputation follows contents. |
 | `WindowCenterResizer.ahk` | This program, in plain text. The interpreter runs the script that shares its name. |
 | `icon.ico` | The tray icon. |
+
+Up to and including 2.1.0 this shipped as a single `.exe` built by AutoHotkey's compiler, which welds the script into a copy of the interpreter — the same shape a great deal of real malware is packaged in, and Windows Defender eventually began deleting it on sight. Shipping the interpreter unmodified ends that: the binary a scanner sees is AutoHotkey's own, not one this project made. The measurements behind that change are in [`build/av-baseline.md`](build/av-baseline.md).
 
 Check it rather than believing it. Both links are live, so they show what the engines say
 **today** rather than what they said when this was written:
@@ -74,9 +62,7 @@ Three consequences worth knowing before you download it:
 - **`WindowCenterResizer.exe` on its own does nothing.** Separated from its `.ahk` it reports *"Script file not found."* That is the interpreter telling you it has no program to run.
 - **You can read the entire program before running it**, which was never true of the compiled builds. It is the same code as [`src/`](src/), flattened into one file by [`build/build-portable.ps1`](build/build-portable.ps1).
 
-⛔ **Old download links are dead, deliberately.** Anything pointing at `releases/latest/download/Window-Center-Resize.exe` — older README copies, software directories, mirrors — will 404 from 2.2.0 onward. That URL served the compiled build, and continuing to serve it would mean knowingly handing people a file their antivirus deletes. A broken link is the better failure.
-
-If you have a copy of 2.1.0 or earlier that Windows quarantined, delete it and download this release instead; there is nothing to restore or exclude.
+⛔ **The compiled builds are gone, deliberately.** The `releases/latest/download/Window-Center-Resize.exe` link 404s from 2.2.0 onward, and the `.exe` assets have been removed from the 2.0.0 and 2.1.0 release pages as well — older README copies, software directories and mirrors pointing at either will find nothing there. Continuing to serve those files would mean knowingly handing people something their antivirus deletes; a broken link is the better failure. If you already have one, delete it and download the current release. There is nothing to restore or exclude.
 
 ## Usage
 
