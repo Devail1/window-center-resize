@@ -76,7 +76,7 @@ To change a shortcut, click its field in Settings and press the keys you want �
 
 The shortcuts only work while the app is running, so most people want it to start with Windows. Put a **shortcut to** the executable in your Startup folder:
 
-1. Press <kbd>Win</kbd> + <kbd>R</kbd>, type `shell:startup`, and press Enter. That opens your own Startup folder. Use `shell:common startup` instead for every user on the machine — that folder needs administrator rights to write to.
+1. Open any folder in File Explorer, click the address bar, type `shell:startup`, and press Enter. That opens your own Startup folder. Use `shell:common startup` instead for every user on the machine — that folder needs administrator rights to write to.
 2. Drag `WindowCenterResizer.exe` into that folder **with the right mouse button**, release, and choose **Create shortcuts here** from the menu that appears.
 
 ⛔ **Put a shortcut in that folder, not the executable itself.** Moving the `.exe` out of its folder separates it from `WindowCenterResizer.ahk`, and it will start with *"Script file not found."* instead of running — and even if you moved the whole folder's contents, it would leave your `settings.ini` behind and start with default hotkeys and presets, silently, because a missing settings file is not treated as a problem. Leave the folder where it is and point a shortcut at it.
